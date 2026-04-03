@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   # Frontend - React Application
   frontend:
@@ -111,6 +113,7 @@ services:
     ports:
       - "3004:3004"
     environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
       PORT: 3004
       NODE_ENV: development
       DB_HOST: postgres-appointment

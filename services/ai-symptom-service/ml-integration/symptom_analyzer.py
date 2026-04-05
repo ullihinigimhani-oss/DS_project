@@ -9,7 +9,9 @@ from prometheus_client import generate_latest, CONTENT_TYPE_LATEST, Counter, His
 import time
 import joblib
 import numpy as np
+import pandas as pd
 import os
+import csv
 from pathlib import Path
 
 app = Flask(__name__)
@@ -65,12 +67,32 @@ try:
     else:
         feature_names = joblib.load(features_path)
 
+    reduced_path = model_dir / 'models' / 'reduced_symptoms.pkl'
+    if not reduced_path.exists():
+        print(f"Warning: Reduced symptom map not found at {reduced_path}")
+        reduced_symptoms = None
+    else:
+        reduced_symptoms = joblib.load(reduced_path)
+
+    consult_path = model_dir / 'training_data' / 'doc_consult.csv'
+    if consult_path.exists():
+        with consult_path.open(newline='', encoding='utf-8') as handle:
+            consult_scores = {
+                row['disease'].strip(): int(row['risk'])
+                for row in csv.DictReader(handle)
+            }
+    else:
+        print(f"Warning: Doctor consult data not found at {consult_path}")
+        consult_scores = {}
+
     print(f"Model loaded successfully from {model_dir}")
 except Exception as e:
     print(f"Error loading model: {e}")
     clf = None
     le = None
     feature_names = []
+    reduced_symptoms = None
+    consult_scores = {}
 
 
 def extract_symptoms_from_text(text):
@@ -248,6 +270,30 @@ def predict_disease(x_value, top_n=5):
         return [], []
 
 
+def get_related_symptoms(disease_name):
+    if reduced_symptoms is None or disease_name not in reduced_symptoms.index:
+        return []
+
+    active = reduced_symptoms.loc[disease_name]
+    return [symptom for symptom, value in active.items() if int(value) == 1]
+
+
+def build_consultation(disease_name):
+    risk = consult_scores.get(disease_name)
+    if risk is None:
+        return None
+
+    return {
+        'risk': risk,
+        'consultDoctorImmediately': risk > 50,
+        'message': (
+            'You should consult a doctor as soon as possible'
+            if risk > 50
+            else 'You may consult a doctor'
+        ),
+    }
+
+
 @app.route('/health', methods=['GET'])
 def health():
     return jsonify({
@@ -289,10 +335,11 @@ def analyze_symptoms():
             }), 200
 
         if feature_names:
-            x_value = np.zeros((1, len(feature_names)))
-            for i, feature in enumerate(feature_names):
-                if feature in detected_symptoms:
-                    x_value[0][i] = 1
+            feature_vector = {feature: 0 for feature in feature_names}
+            for symptom in detected_symptoms:
+                if symptom in feature_vector:
+                    feature_vector[symptom] = 1
+            x_value = pd.DataFrame([feature_vector], columns=feature_names)
         else:
             x_value = np.zeros((1, 20))
             for i, symptom in enumerate(detected_symptoms[:20]):
@@ -312,8 +359,15 @@ def analyze_symptoms():
 
             top_disease = diseases[0]
             top_confidence_percent = round(confidences[0] * 100, 1)
+            related_symptoms = get_related_symptoms(top_disease)
+            consultation = build_consultation(top_disease)
 
-            if confidences[0] > 0.5:
+            if consultation and consultation['consultDoctorImmediately']:
+                recommendation = (
+                    f"Based on your symptoms, the most likely condition is **{top_disease}** "
+                    f"(Confidence: {top_confidence_percent}%). {consultation['message']}."
+                )
+            elif confidences[0] > 0.5:
                 recommendation = f"Based on your symptoms, the most likely condition is **{top_disease}** (Confidence: {top_confidence_percent}%). However, consult a healthcare professional for proper diagnosis."
             elif confidences[0] > 0.3:
                 recommendation = f"Your symptoms suggest **{top_disease}** (Confidence: {top_confidence_percent}%), but multiple conditions are possible. Please consult a healthcare professional."
@@ -322,6 +376,8 @@ def analyze_symptoms():
         else:
             recommendation = "Could not determine diagnosis from symptoms. Please consult a doctor."
             conditions = []
+            related_symptoms = []
+            consultation = None
 
         return jsonify({
             'success': True,
@@ -331,6 +387,8 @@ def analyze_symptoms():
                 'possibleConditions': conditions,
                 'confidence': confidences[0] if confidences else 0,
                 'recommendation': recommendation,
+                'matchedDiseaseSymptoms': related_symptoms,
+                'consultationAdvice': consultation,
             }
         }), 200
 
@@ -348,7 +406,8 @@ def get_features():
     return jsonify({
         'success': True,
         'features': feature_names,
-        'count': len(feature_names)
+        'count': len(feature_names),
+        'consultationDiseases': len(consult_scores)
     }), 200
 
 

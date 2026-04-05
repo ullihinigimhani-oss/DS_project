@@ -29,6 +29,7 @@ services:
       TELEMEDICINE_SERVICE_URL: http://telemedicine-service:3005
       PAYMENT_SERVICE_URL: http://payment-service:3006
       NOTIFICATION_SERVICE_URL: http://notification-service:3007
+      AI_SERVICE_URL: http://ai-symptom-service:3008
     depends_on:
       - auth-service
       - patient-service
@@ -37,6 +38,7 @@ services:
       - telemedicine-service
       - payment-service
       - notification-service
+      - ai-symptom-service
     networks:
       - healthcare-network
 
@@ -104,6 +106,38 @@ services:
       - postgres-doctor
     volumes:
       - doctor_uploads:/uploads/doctor-verification
+    networks:
+      - healthcare-network
+
+  # AI Symptom Service
+  ai-symptom-service:
+    build: ../services/ai-symptom-service
+    ports:
+      - "3008:3008"
+    environment:
+      PORT: 3008
+      NODE_ENV: development
+      DB_HOST: postgres-ai
+      DB_PORT: 5432
+      DB_NAME: ai_db
+      DB_USER: admin
+      DB_PASSWORD: password
+      ML_SERVICE_URL: http://ai-ml-service:5000
+    depends_on:
+      - postgres-ai
+      - ai-ml-service
+    networks:
+      - healthcare-network
+
+  # Python ML service for AI symptom analysis
+  ai-ml-service:
+    build:
+      context: ..
+      dockerfile: services/ai-symptom-service/ml-integration/Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      PYTHON_SERVICE_PORT: 5000
     networks:
       - healthcare-network
 
@@ -231,6 +265,19 @@ services:
     networks:
       - healthcare-network
 
+  postgres-ai:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ai_db
+    ports:
+      - "5408:5432"
+    volumes:
+      - ai_db_data:/var/lib/postgresql/data
+    networks:
+      - healthcare-network
+
   postgres-appointment:
     image: postgres:15-alpine
     environment:
@@ -300,6 +347,7 @@ volumes:
   patient_db_data:
   patient_uploads:
   doctor_db_data:
+  ai_db_data:
   doctor_uploads:
   appointment_db_data:
   telemedicine_db_data:

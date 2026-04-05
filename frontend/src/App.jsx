@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
+import LoginForm from './components/LoginForm'
+import RegisterForm from './components/RegisterForm'
 import SectionCard from './components/SectionCard'
 import StatusPill from './components/StatusPill'
+import { loginUser, registerUser } from './utils/authService'
 import {
   analyzeSymptoms,
   apiBaseUrl,
@@ -13,6 +16,50 @@ import './App.css'
 
 const defaultSymptoms = 'I have fever, cough, headache and runny nose'
 const defaultUserId = 'patient-001'
+const sessionStorageKey = 'healthcare-auth-shell-session'
+
+const roleSummaries = {
+  patient: {
+    title: 'Patient workspace',
+    subtitle: 'Symptom checks, booking, prescriptions, and records will center here.',
+  },
+  doctor: {
+    title: 'Doctor workspace',
+    subtitle: 'Schedule, verification, prescriptions, and profile editing will sit here.',
+  },
+  admin: {
+    title: 'Admin workspace',
+    subtitle: 'Audit views, user management, and platform operations will plug in here.',
+  },
+}
+
+const previewCards = [
+  {
+    title: 'Appointments',
+    description: 'Will connect to booking and availability once the auth-protected patient flow is ready.',
+    status: 'Queued',
+  },
+  {
+    title: 'Medical records',
+    description: 'Prepared for upload, listing, and document review after patient-service screens land.',
+    status: 'Upcoming',
+  },
+  {
+    title: 'Payments',
+    description: 'Checkout, receipts, and billing state will follow once the payment UX branch starts.',
+    status: 'Queued',
+  },
+]
+
+function createPreviewSession(base) {
+  return {
+    name: base.name || base.email?.split('@')[0] || 'Preview user',
+    email: base.email || 'preview@health.local',
+    role: base.userType || base.role || 'patient',
+    mode: 'preview',
+    token: null,
+  }
+}
 
 export default function App() {
   const [gatewayHealth, setGatewayHealth] = useState(null)
@@ -25,23 +72,68 @@ export default function App() {
   const [analysisError, setAnalysisError] = useState('')
   const [analysisLoading, setAnalysisLoading] = useState(false)
   const [historyLoading, setHistoryLoading] = useState(false)
+  const [authTab, setAuthTab] = useState('login')
+  const [authBusy, setAuthBusy] = useState(false)
+  const [authMessage, setAuthMessage] = useState('')
+  const [authError, setAuthError] = useState('')
+  const [session, setSession] = useState(null)
+  const [loginValues, setLoginValues] = useState({
+    email: 'patient@example.com',
+    password: 'password123',
+    role: 'patient',
+  })
+  const [registerValues, setRegisterValues] = useState({
+    name: 'New User',
+    email: 'newuser@example.com',
+    phone: '',
+    password: 'password123',
+    userType: 'patient',
+  })
+
+  const serviceHealthy = gatewayHealth?.status === 'running'
+  const activeRole = session?.role || loginValues.role
+  const roleSummary = roleSummaries[activeRole] || roleSummaries.patient
+  const topCondition = analysis?.possibleConditions?.[0] || null
 
   const quickStats = useMemo(() => {
     return [
       {
         label: 'Gateway base',
-        value: gatewayBaseUrl,
+        value: gatewayBaseUrl.replace('http://', ''),
       },
       {
-        label: 'API base',
-        value: apiBaseUrl,
+        label: 'Auth mode',
+        value: session?.mode === 'preview' ? 'Preview shell' : session ? 'Connected' : 'Signed out',
+      },
+      {
+        label: 'Role focus',
+        value: activeRole,
       },
       {
         label: 'Doctors loaded',
         value: String(doctorDirectory.length),
       },
     ]
-  }, [doctorDirectory.length])
+  }, [activeRole, doctorDirectory.length, session])
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(sessionStorageKey)
+      if (saved) {
+        setSession(JSON.parse(saved))
+      }
+    } catch {
+      // Ignore bad local data and continue with a clean session.
+    }
+  }, [])
+
+  useEffect(() => {
+    if (session) {
+      window.localStorage.setItem(sessionStorageKey, JSON.stringify(session))
+    } else {
+      window.localStorage.removeItem(sessionStorageKey)
+    }
+  }, [session])
 
   useEffect(() => {
     const loadGatewayHealth = async () => {
@@ -88,6 +180,77 @@ export default function App() {
     loadHistory(defaultUserId)
   }, [])
 
+  const handleLoginChange = (event) => {
+    const { name, value } = event.target
+    setLoginValues((current) => ({ ...current, [name]: value }))
+  }
+
+  const handleRegisterChange = (event) => {
+    const { name, value } = event.target
+    setRegisterValues((current) => ({ ...current, [name]: value }))
+  }
+
+  const handleLogin = async (event) => {
+    event.preventDefault()
+    setAuthBusy(true)
+    setAuthError('')
+    setAuthMessage('')
+
+    try {
+      const data = await loginUser(loginValues)
+
+      if (data?.success && data?.data?.token) {
+        setSession({
+          name: data.data.name || loginValues.email,
+          email: data.data.email || loginValues.email,
+          role: data.data.userType || loginValues.role,
+          mode: 'connected',
+          token: data.data.token,
+        })
+        setAuthMessage('Signed in successfully.')
+      } else {
+        const preview = createPreviewSession(loginValues)
+        setSession(preview)
+        setAuthMessage(data.message || 'Auth backend is still pending, so preview mode was enabled.')
+      }
+    } catch (error) {
+      const preview = createPreviewSession(loginValues)
+      setSession(preview)
+      setAuthError('Auth API is not fully ready yet. Preview mode was enabled instead.')
+      setAuthMessage(error.message)
+    } finally {
+      setAuthBusy(false)
+    }
+  }
+
+  const handleRegister = async (event) => {
+    event.preventDefault()
+    setAuthBusy(true)
+    setAuthError('')
+    setAuthMessage('')
+
+    try {
+      const data = await registerUser(registerValues)
+
+      if (data?.success && data?.data) {
+        const nextSession = createPreviewSession(registerValues)
+        setSession(nextSession)
+        setAuthMessage(data.message || 'Account shell created. Preview mode enabled.')
+      } else {
+        const preview = createPreviewSession(registerValues)
+        setSession(preview)
+        setAuthMessage(data.message || 'Registration shell saved in preview mode.')
+      }
+    } catch (error) {
+      const preview = createPreviewSession(registerValues)
+      setSession(preview)
+      setAuthError('Registration backend is not ready yet. Preview mode was enabled instead.')
+      setAuthMessage(error.message)
+    } finally {
+      setAuthBusy(false)
+    }
+  }
+
   const handleAnalyze = async (event) => {
     event.preventDefault()
     setAnalysisLoading(true)
@@ -110,26 +273,33 @@ export default function App() {
     }
   }
 
-  const serviceHealthy = gatewayHealth?.status === 'running'
+  const handleSignOut = () => {
+    setSession(null)
+    setAuthMessage('You have left preview mode.')
+    setAuthError('')
+  }
 
   return (
     <div className="app-shell">
-      <header className="hero">
+      <header className="hero auth-hero">
         <div className="hero-copy">
-          <p className="eyebrow">Smart Healthcare Platform</p>
-          <h1>Frontend control room for gateway, doctors, and AI triage.</h1>
+          <p className="eyebrow">Frontend Auth Shell</p>
+          <h1>Role-aware entry flow for the platform while full authentication is still being wired.</h1>
           <p className="hero-text">
-            This frontend is wired to your running Docker stack through the gateway,
-            with a live symptom checker and doctor directory pulled from the backend.
+            This branch adds login and registration shells, stores preview auth state locally,
+            and gives patient, doctor, and admin users a cleaner landing experience without
+            blocking the already live doctor and AI modules.
           </p>
           <div className="hero-actions">
             <StatusPill
               status={serviceHealthy ? 'ok' : 'warn'}
               label={serviceHealthy ? 'Gateway online' : 'Gateway needs attention'}
             />
-            <span className="subtle-text">
-              {gatewayHealth?.timestamp || gatewayHealth?.error || 'Waiting for gateway health'}
-            </span>
+            <StatusPill
+              status={session ? 'ok' : 'warn'}
+              label={session ? `${activeRole} shell active` : 'No active session'}
+            />
+            <span className="subtle-text">{apiBaseUrl}</span>
           </div>
         </div>
         <div className="stats-grid">
@@ -142,33 +312,117 @@ export default function App() {
         </div>
       </header>
 
-      <main className="content-grid">
+      <main className="content-grid auth-layout">
         <SectionCard
-          title="Platform Status"
-          subtitle="Quick read on the gateway entrypoint and frontend API wiring."
+          title="Access Portal"
+          subtitle="Connected to the gateway auth routes now, with preview mode standing in until full auth is ready."
         >
-          <div className="health-grid">
-            <div className="health-row">
-              <span>Gateway service</span>
-              <strong>{gatewayHealth?.service || 'api-gateway'}</strong>
+          <div className="auth-tabs">
+            <button
+              type="button"
+              className={`tab-button ${authTab === 'login' ? 'active' : ''}`}
+              onClick={() => setAuthTab('login')}
+            >
+              Sign in
+            </button>
+            <button
+              type="button"
+              className={`tab-button ${authTab === 'register' ? 'active' : ''}`}
+              onClick={() => setAuthTab('register')}
+            >
+              Create account
+            </button>
+          </div>
+
+          {authTab === 'login' ? (
+            <LoginForm
+              values={loginValues}
+              onChange={handleLoginChange}
+              onSubmit={handleLogin}
+              loading={authBusy}
+              roleHint={loginValues.role}
+            />
+          ) : (
+            <RegisterForm
+              values={registerValues}
+              onChange={handleRegisterChange}
+              onSubmit={handleRegister}
+              loading={authBusy}
+            />
+          )}
+
+          {authError ? <p className="error-text">{authError}</p> : null}
+          {authMessage ? <p className="empty-state">{authMessage}</p> : null}
+        </SectionCard>
+
+        <SectionCard
+          title="Session Shell"
+          subtitle="A persisted frontend session so you can design role-specific spaces before the final backend auth flow arrives."
+        >
+          {session ? (
+            <div className="session-shell">
+              <div className="session-header">
+                <div>
+                  <h3>{session.name}</h3>
+                  <p>{session.email}</p>
+                </div>
+                <StatusPill
+                  status={session.mode === 'connected' ? 'ok' : 'warn'}
+                  label={session.mode === 'connected' ? 'Connected session' : 'Preview session'}
+                />
+              </div>
+
+              <div className="role-summary">
+                <strong>{roleSummary.title}</strong>
+                <p>{roleSummary.subtitle}</p>
+              </div>
+
+              <div className="role-chip-row">
+                {Object.keys(roleSummaries).map((role) => (
+                  <span
+                    key={role}
+                    className={`inline-role ${role === activeRole ? 'active' : ''}`}
+                  >
+                    {role}
+                  </span>
+                ))}
+              </div>
+
+              <button type="button" className="secondary-button" onClick={handleSignOut}>
+                Sign out
+              </button>
             </div>
-            <div className="health-row">
-              <span>Status</span>
-              <StatusPill
-                status={serviceHealthy ? 'ok' : 'warn'}
-                label={gatewayHealth?.status || 'checking'}
-              />
+          ) : (
+            <div className="session-shell empty-shell">
+              <strong>No active session yet</strong>
+              <p>
+                Sign in or register to start a role preview. The UI will keep working even if the
+                auth service only returns placeholder responses for now.
+              </p>
             </div>
-            <div className="health-row">
-              <span>Port</span>
-              <strong>{gatewayHealth?.port || '3000'}</strong>
-            </div>
+          )}
+        </SectionCard>
+
+        <SectionCard
+          title="Role Readiness"
+          subtitle="This branch focuses on the auth entry shell and the role-specific frontend landing idea."
+        >
+          <div className="preview-grid">
+            {previewCards.map((card) => (
+              <article key={card.title} className="preview-card">
+                <div className="preview-card-top">
+                  <h3>{card.title}</h3>
+                  <StatusPill status="warn" label={card.status} />
+                </div>
+                <p>{card.description}</p>
+              </article>
+            ))}
           </div>
         </SectionCard>
 
         <SectionCard
           title="Doctor Directory"
-          subtitle="Public doctor listing served from doctor-service through the gateway."
+          subtitle="Still live and available from the foundation branch, now sitting below the auth shell."
         >
           {directoryState === 'loading' ? <p className="empty-state">Loading doctors...</p> : null}
           {directoryState === 'error' ? (
@@ -195,7 +449,7 @@ export default function App() {
 
         <SectionCard
           title="AI Symptom Analyzer"
-          subtitle="Submit symptoms to the AI service through the gateway and review structured recommendations."
+          subtitle="The AI service stays connected here so the shell branch still demonstrates real backend value."
         >
           <form className="analysis-form" onSubmit={handleAnalyze}>
             <label>
@@ -230,7 +484,7 @@ export default function App() {
           {analysis ? (
             <div className="analysis-result">
               <div className="result-banner">
-                <strong>{analysis.possibleConditions?.[0]?.name || 'No diagnosis'}</strong>
+                <strong>{topCondition?.name || 'No diagnosis'}</strong>
                 <span>
                   Confidence: {analysis.confidence ? `${Math.round(analysis.confidence * 100)}%` : '0%'}
                 </span>
@@ -251,22 +505,13 @@ export default function App() {
                   <span>Risk score: {analysis.consultationAdvice.risk}</span>
                 </div>
               ) : null}
-
-              <div className="conditions-list">
-                {(analysis.possibleConditions || []).map((condition) => (
-                  <div key={condition.name} className="condition-row">
-                    <span>{condition.name}</span>
-                    <strong>{condition.confidencePercent}%</strong>
-                  </div>
-                ))}
-              </div>
             </div>
           ) : null}
         </SectionCard>
 
         <SectionCard
           title="Analysis History"
-          subtitle="Most recent persisted symptom analyses from PostgreSQL."
+          subtitle="Recent AI analyses remain visible so role flows can eventually personalize this area."
         >
           {historyLoading ? <p className="empty-state">Loading history...</p> : null}
           {!historyLoading && history.length === 0 ? (

@@ -1,24 +1,26 @@
 .app-shell {
-  width: min(1180px, calc(100% - 32px));
+  width: min(1200px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 32px 0 48px;
+  padding: 28px 0 52px;
 }
 
 .hero {
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
-  gap: 24px;
+  grid-template-columns: 1.45fr 1fr;
+  gap: 22px;
   align-items: stretch;
   margin-bottom: 24px;
 }
 
-.hero-copy,
+.auth-hero .hero-copy,
 .stat-card,
-.card {
-  border: 1px solid rgba(16, 35, 59, 0.08);
-  background: rgba(255, 255, 255, 0.86);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 18px 50px rgba(39, 76, 119, 0.09);
+.card,
+.preview-card,
+.session-shell {
+  border: 1px solid rgba(27, 47, 74, 0.1);
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 18px 50px rgba(31, 59, 86, 0.1);
+  backdrop-filter: blur(12px);
 }
 
 .hero-copy {
@@ -28,23 +30,24 @@
 
 .eyebrow {
   margin: 0 0 12px;
-  color: #0a7c86;
+  color: #ca6a45;
   font-size: 0.82rem;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .hero-copy h1 {
   margin: 0;
-  font-size: clamp(2.4rem, 5vw, 4.2rem);
+  color: #233248;
+  font-size: clamp(2.35rem, 5vw, 4.1rem);
   line-height: 0.98;
 }
 
 .hero-text {
-  max-width: 60ch;
+  max-width: 64ch;
   margin: 18px 0 0;
-  color: #47627d;
+  color: #5a6a7f;
 }
 
 .hero-actions {
@@ -56,37 +59,44 @@
 }
 
 .subtle-text {
-  color: #5f7690;
+  color: #68788d;
   font-size: 0.92rem;
 }
 
 .stats-grid {
   display: grid;
-  gap: 16px;
+  gap: 14px;
 }
 
 .stat-card {
   border-radius: 22px;
-  padding: 22px;
+  padding: 20px;
 }
 
 .stat-card span {
   display: block;
-  color: #5f7690;
+  color: #708096;
   font-size: 0.92rem;
 }
 
 .stat-card strong {
   display: block;
-  margin-top: 8px;
+  margin-top: 10px;
+  color: #25354c;
   word-break: break-word;
-  font-size: 1.05rem;
+  font-size: 1.04rem;
 }
 
 .content-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
+}
+
+.auth-layout > :first-child,
+.auth-layout > :nth-child(2),
+.auth-layout > :nth-child(3) {
+  min-height: 100%;
 }
 
 .card {
@@ -96,33 +106,13 @@
 
 .card-header h2 {
   margin: 0;
+  color: #25354c;
   font-size: 1.35rem;
 }
 
 .card-header p {
   margin: 8px 0 0;
-  color: #5f7690;
-}
-
-.health-grid,
-.doctor-list,
-.conditions-list,
-.history-list {
-  margin-top: 18px;
-}
-
-.health-row,
-.condition-row,
-.doctor-meta,
-.history-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.health-row + .health-row,
-.condition-row + .condition-row {
-  margin-top: 12px;
+  color: #667689;
 }
 
 .status-pill {
@@ -130,67 +120,70 @@
   align-items: center;
   border-radius: 999px;
   padding: 7px 12px;
-  font-size: 0.85rem;
+  font-size: 0.84rem;
   font-weight: 700;
 }
 
 .status-pill.ok {
-  color: #0d6848;
-  background: #dcf8e8;
+  color: #215f4d;
+  background: #d9f0e4;
 }
 
 .status-pill.warn {
-  color: #8a3c21;
-  background: #fde5d6;
+  color: #954f35;
+  background: #f9dfd3;
 }
 
-.doctor-card,
-.history-card {
-  border: 1px solid rgba(16, 35, 59, 0.08);
-  border-radius: 18px;
-  padding: 16px;
-  background: #f9fcff;
-}
-
-.doctor-card + .doctor-card,
-.history-card + .history-card {
-  margin-top: 12px;
-}
-
-.doctor-card h3 {
-  margin: 0;
-}
-
-.doctor-card p,
-.history-card p {
-  margin: 6px 0 0;
-  color: #47627d;
-}
-
-.doctor-meta {
-  margin-top: 14px;
-  color: #5f7690;
-  font-size: 0.92rem;
-}
-
-.analysis-form {
-  display: grid;
-  gap: 16px;
+.auth-tabs {
+  display: inline-flex;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 999px;
+  background: #ecf2f8;
   margin-top: 18px;
 }
 
+.tab-button,
+.role-chip {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 14px;
+  color: #34506f;
+  background: transparent;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.tab-button.active,
+.role-chip.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, #2f5c89, #497ba8);
+}
+
+.auth-form,
+.analysis-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.auth-form label,
 .analysis-form label {
   display: grid;
   gap: 8px;
-  font-weight: 600;
+  color: #314255;
+  font-weight: 700;
 }
 
+.auth-form input,
+.auth-form select,
 .analysis-form input,
 .analysis-form textarea {
   width: 100%;
-  border: 1px solid rgba(65, 101, 134, 0.24);
+  border: 1px solid rgba(74, 105, 138, 0.22);
   border-radius: 16px;
   padding: 14px 16px;
+  color: #233248;
   background: #ffffff;
 }
 
@@ -198,18 +191,33 @@
   resize: vertical;
 }
 
-.form-actions {
+.inline-select {
+  display: grid;
+  gap: 8px;
+}
+
+.inline-select span {
+  color: #5d7088;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.role-picker {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 8px;
+}
+
+.role-picker.compact .role-chip {
+  padding: 9px 12px;
 }
 
 button {
   border: none;
   border-radius: 16px;
   padding: 13px 18px;
-  color: white;
-  background: linear-gradient(135deg, #0f6d7a, #268ea0);
+  color: #ffffff;
+  background: linear-gradient(135deg, #ca6a45, #e08c5f);
   cursor: pointer;
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
@@ -225,16 +233,130 @@ button:disabled {
 }
 
 .secondary-button {
-  color: #10355a;
-  background: #deedf9;
+  color: #29405e;
+  background: #dfeaf4;
+}
+
+.session-shell {
+  margin-top: 18px;
+  border-radius: 20px;
+  padding: 18px;
+}
+
+.session-header,
+.history-header,
+.doctor-meta,
+.preview-card-top,
+.health-row,
+.condition-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.session-header h3,
+.preview-card h3,
+.doctor-card h3 {
+  margin: 0;
+  color: #25354c;
+}
+
+.session-header p,
+.preview-card p,
+.doctor-card p,
+.history-card p,
+.role-summary p {
+  margin: 6px 0 0;
+  color: #607186;
+}
+
+.role-summary {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #f7f4ef;
+}
+
+.role-summary strong {
+  color: #2f4157;
+}
+
+.role-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 18px;
+}
+
+.inline-role {
+  border-radius: 999px;
+  padding: 7px 11px;
+  color: #57718d;
+  background: #edf3f8;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.inline-role.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, #2f5c89, #497ba8);
+}
+
+.empty-shell {
+  display: grid;
+  gap: 10px;
+}
+
+.preview-grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.preview-card {
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.doctor-list,
+.history-list,
+.health-grid,
+.conditions-list {
+  margin-top: 18px;
+}
+
+.doctor-card,
+.history-card {
+  border: 1px solid rgba(27, 47, 74, 0.08);
+  border-radius: 18px;
+  padding: 16px;
+  background: #f8fbfd;
+}
+
+.doctor-card + .doctor-card,
+.history-card + .history-card {
+  margin-top: 12px;
+}
+
+.doctor-meta {
+  margin-top: 14px;
+  color: #6d7c90;
+  font-size: 0.92rem;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .analysis-result {
   margin-top: 18px;
   padding: 18px;
   border-radius: 20px;
-  background: linear-gradient(180deg, #f4fbff, #edf7fb);
-  border: 1px solid rgba(38, 142, 160, 0.16);
+  background: linear-gradient(180deg, #f7fbff, #edf5fb);
+  border: 1px solid rgba(73, 123, 168, 0.16);
 }
 
 .result-banner,
@@ -267,32 +389,32 @@ button:disabled {
 .chip {
   border-radius: 999px;
   padding: 6px 10px;
-  color: #0e4a6b;
-  background: #dff2fb;
+  color: #31506d;
+  background: #deedf8;
   font-size: 0.85rem;
 }
 
-.conditions-list {
-  display: grid;
-  gap: 10px;
+.condition-row + .condition-row,
+.health-row + .health-row {
+  margin-top: 12px;
 }
 
 .condition-row {
   padding-top: 10px;
-  border-top: 1px solid rgba(16, 35, 59, 0.08);
+  border-top: 1px solid rgba(27, 47, 74, 0.08);
 }
 
 .empty-state,
 .error-text {
   margin-top: 18px;
-  color: #5f7690;
+  color: #5c6d81;
 }
 
 .error-text {
-  color: #ad3e1f;
+  color: #ad5236;
 }
 
-@media (max-width: 960px) {
+@media (max-width: 980px) {
   .hero,
   .content-grid {
     grid-template-columns: 1fr;
@@ -301,19 +423,22 @@ button:disabled {
 
 @media (max-width: 640px) {
   .app-shell {
-    width: min(100% - 20px, 1180px);
+    width: min(100% - 20px, 1200px);
     padding-top: 20px;
   }
 
   .hero-copy,
-  .card {
+  .card,
+  .stat-card {
     padding: 20px;
   }
 
-  .health-row,
-  .condition-row,
+  .session-header,
+  .history-header,
   .doctor-meta,
-  .history-header {
+  .preview-card-top,
+  .health-row,
+  .condition-row {
     flex-direction: column;
     align-items: flex-start;
   }

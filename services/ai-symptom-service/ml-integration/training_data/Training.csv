@@ -1,0 +1,31 @@
+high_fever,cough,headache,fatigue,runny_nose,chest_pain,nausea,vomiting,diarrhoea,stomach_pain,prognosis
+1,1,1,1,1,0,0,0,0,0,Common Cold
+1,1,1,1,1,0,0,0,0,0,Common Cold
+1,1,0,1,1,0,0,0,0,0,Common Cold
+0,1,1,1,1,0,0,0,0,0,Common Cold
+1,1,1,0,1,0,0,0,0,0,Common Cold
+0,1,0,1,1,0,0,0,0,0,Common Cold
+1,0,1,1,1,0,0,0,0,0,Common Cold
+0,1,1,0,1,0,0,0,0,0,Common Cold
+1,1,0,0,1,0,0,0,0,0,Common Cold
+0,1,0,1,0,0,0,0,0,0,Common Cold
+1,1,1,1,0,1,1,0,0,0,Flu
+1,1,1,1,0,1,1,0,0,0,Flu
+1,1,1,1,0,0,1,0,0,0,Flu
+1,1,0,1,0,1,1,0,0,0,Flu
+1,0,1,1,0,1,1,0,0,0,Flu
+1,1,1,1,0,1,0,0,0,0,Flu
+1,1,0,1,0,1,0,0,0,0,Flu
+1,0,1,1,0,0,1,0,0,0,Flu
+1,1,1,0,0,1,1,0,0,0,Flu
+1,1,0,1,0,0,1,0,0,0,Flu
+0,0,0,1,0,0,1,1,1,1,Gastroenteritis
+0,0,0,1,0,0,1,1,1,1,Gastroenteritis
+0,0,1,1,0,0,1,1,1,1,Gastroenteritis
+0,0,0,1,0,0,1,1,1,0,Gastroenteritis
+0,0,0,0,0,0,1,1,1,1,Gastroenteritis
+0,0,0,1,0,0,1,1,0,1,Gastroenteritis
+0,0,0,1,0,0,1,0,1,1,Gastroenteritis
+0,0,1,1,0,0,0,1,1,1,Gastroenteritis
+0,0,0,1,0,0,1,1,0,0,Gastroenteritis
+0,0,0,0,0,0,1,1,1,0,Gastroenteritis

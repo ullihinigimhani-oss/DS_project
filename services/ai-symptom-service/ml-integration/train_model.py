@@ -1,35 +1,46 @@
 """
 Model Training Script
-Trains a Random Forest classifier and saves the model artifacts.
+Trains a Decision Tree classifier and saves the model artifacts.
 Run this script once to generate model files.
 """
 
 import pandas as pd
 import numpy as np
 from sklearn import preprocessing
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import train_test_split
 import joblib
 from pathlib import Path
 import sys
 
 
-def train_and_save_model(training_csv_path, output_dir='models'):
+def load_dataset(csv_path):
+    data = pd.read_csv(csv_path)
+    data.columns = [str(col).strip() for col in data.columns]
+
+    prognosis = data['prognosis'].astype(str).str.strip()
+    feature_frame = data.drop(columns=['prognosis'])
+
+    # The original dataset contains duplicate feature names like "fluid_overload".
+    # Collapse duplicates so the exported feature list is stable for inference.
+    feature_frame = feature_frame.T.groupby(level=0).max().T
+
+    return feature_frame, prognosis
+
+
+def train_and_save_model(training_csv_path, testing_csv_path=None, output_dir='models'):
     """
-    Train the Random Forest model and save artifacts
+    Train the Decision Tree model and save artifacts
     """
     try:
         Path(output_dir).mkdir(parents=True, exist_ok=True)
 
         print(f"Loading training data from {training_csv_path}...")
-        training = pd.read_csv(training_csv_path)
-
-        cols = training.columns[:-1]
-        x_value = training[cols]
-        y_value = training['prognosis']
+        x_value, y_value = load_dataset(training_csv_path)
+        cols = x_value.columns
 
         print(f"Training features: {len(cols)} symptoms")
-        print(f"Number of training samples: {len(training)}")
+        print(f"Number of training samples: {len(x_value)}")
         print(f"Unique diseases: {y_value.nunique()}")
         print(f"Disease distribution:\n{y_value.value_counts().head(10)}")
 
@@ -44,29 +55,39 @@ def train_and_save_model(training_csv_path, output_dir='models'):
         joblib.dump(label_encoder, f'{output_dir}/label_encoder.pkl')
         print(f"Saved label encoder with {label_encoder.classes_.shape[0]} disease classes")
 
-        x_train, x_test, y_train, y_test = train_test_split(
-            x_value, y_encoded, test_size=0.2, random_state=42, stratify=y_encoded
-        )
+        reduced_data = pd.concat([x_value, y_value.rename('prognosis')], axis=1).groupby('prognosis').max()
+        joblib.dump(reduced_data, f'{output_dir}/reduced_symptoms.pkl')
+        print("Saved reduced symptom map for disease explanations")
 
-        print("\nTraining Random Forest Classifier...")
-        classifier = RandomForestClassifier(
-            n_estimators=200,
-            max_depth=20,
-            min_samples_split=5,
-            min_samples_leaf=2,
-            random_state=42,
-            n_jobs=-1,
-            class_weight='balanced'
-        )
-        classifier.fit(x_train, y_train)
+        print("\nTraining Decision Tree Classifier...")
+        classifier = DecisionTreeClassifier(random_state=42)
+        class_counts = pd.Series(y_encoded).value_counts()
 
-        train_score = classifier.score(x_train, y_train)
-        test_score = classifier.score(x_test, y_test)
-        cv_scores = cross_val_score(classifier, x_train, y_train, cv=5)
+        if class_counts.min() >= 2 and len(x_value) > len(class_counts):
+            x_train, x_test, y_train, y_test = train_test_split(
+                x_value, y_encoded, test_size=0.2, random_state=42, stratify=y_encoded
+            )
+            classifier.fit(x_train, y_train)
 
-        print(f"Training Accuracy: {train_score:.4f}")
-        print(f"Testing Accuracy: {test_score:.4f}")
-        print(f"Cross-Validation Score: {cv_scores.mean():.4f} (+/- {cv_scores.std():.4f})")
+            train_score = classifier.score(x_train, y_train)
+            test_score = classifier.score(x_test, y_test)
+
+            print(f"Training Accuracy: {train_score:.4f}")
+            print(f"Testing Accuracy: {test_score:.4f}")
+        else:
+            # Some copies of the public disease dataset have only one row per disease.
+            # In that case we train on the full matrix and skip an internal split.
+            classifier.fit(x_value, y_encoded)
+            full_score = classifier.score(x_value, y_encoded)
+            print(f"Training Accuracy: {full_score:.4f}")
+            print("Testing Accuracy: skipped (dataset has fewer than 2 samples per class)")
+
+        if testing_csv_path and Path(testing_csv_path).exists():
+            print(f"Loading testing data from {testing_csv_path}...")
+            x_eval, y_eval = load_dataset(testing_csv_path)
+            y_eval_encoded = label_encoder.transform(y_eval)
+            eval_score = classifier.score(x_eval, y_eval_encoded)
+            print(f"External Testing Accuracy: {eval_score:.4f}")
 
         feature_importance = classifier.feature_importances_
         top_features_idx = np.argsort(feature_importance)[-10:][::-1]
@@ -93,9 +114,11 @@ def train_and_save_model(training_csv_path, output_dir='models'):
 
 if __name__ == '__main__':
     training_file = Path(__file__).parent / 'training_data' / 'Training.csv'
+    testing_file = Path(__file__).parent / 'training_data' / 'Testing.csv'
 
     if not training_file.exists():
-      training_file = Path(__file__).parent.parent.parent.parent / 'model' / 'Training.csv'
+        training_file = Path(__file__).parent.parent.parent.parent / 'model' / 'Training.csv'
+        testing_file = Path(__file__).parent.parent.parent.parent / 'model' / 'Testing.csv'
 
     if not training_file.exists():
         print("Error: Training.csv not found")
@@ -105,5 +128,9 @@ if __name__ == '__main__':
         sys.exit(1)
 
     print(f"Loading training data from: {training_file}")
-    success = train_and_save_model(str(training_file), output_dir='models')
+    success = train_and_save_model(
+        str(training_file),
+        testing_csv_path=str(testing_file) if testing_file.exists() else None,
+        output_dir='models'
+    )
     sys.exit(0 if success else 1)

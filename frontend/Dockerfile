@@ -1,6 +1,9 @@
-FROM node:18-alpine
+FROM node:18-alpine AS builder
 
 WORKDIR /app
+
+ARG VITE_API_BASE_URL=http://localhost:3000/api
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 COPY package.json package-lock.json* npm-shrinkwrap.json* ./
 
@@ -10,6 +13,9 @@ COPY . .
 
 RUN npm run build
 
-EXPOSE 80
+FROM nginx:1.27-alpine
 
-CMD ["npm", "run", "preview"]
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+EXPOSE 80

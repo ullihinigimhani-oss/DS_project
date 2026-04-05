@@ -51,6 +51,24 @@ const previewCards = [
   },
 ]
 
+const roadmapCards = [
+  {
+    title: 'Telemedicine',
+    description: 'Video sessions and live consult handoff will arrive after auth routes settle.',
+    label: 'Upcoming',
+  },
+  {
+    title: 'Notifications',
+    description: 'Bell states, reminders, and patient nudges will connect once events stabilize.',
+    label: 'Queued',
+  },
+  {
+    title: 'Medical records',
+    description: 'Patient-owned records and uploads will land in the next frontend pass.',
+    label: 'Planned',
+  },
+]
+
 function createPreviewSession(base) {
   return {
     name: base.name || base.email?.split('@')[0] || 'Preview user',
@@ -106,15 +124,15 @@ export default function App() {
         value: session?.mode === 'preview' ? 'Preview shell' : session ? 'Connected' : 'Signed out',
       },
       {
-        label: 'Role focus',
-        value: activeRole,
-      },
-      {
         label: 'Doctors loaded',
         value: String(doctorDirectory.length),
       },
+      {
+        label: 'Analysis records',
+        value: String(history.length),
+      },
     ]
-  }, [activeRole, doctorDirectory.length, session])
+  }, [doctorDirectory.length, history.length, session])
 
   useEffect(() => {
     try {
@@ -155,7 +173,7 @@ export default function App() {
         const data = await fetchPublicDoctors()
         setDoctorDirectory(Array.isArray(data.data) ? data.data : [])
         setDirectoryState('success')
-      } catch (error) {
+      } catch (_error) {
         setDirectoryState('error')
       }
     }
@@ -169,7 +187,7 @@ export default function App() {
     try {
       const data = await fetchAnalysisHistory(nextUserId)
       setHistory(Array.isArray(data.data) ? data.data : [])
-    } catch (error) {
+    } catch (_error) {
       setHistory([])
     } finally {
       setHistoryLoading(false)
@@ -284,11 +302,11 @@ export default function App() {
       <header className="hero auth-hero">
         <div className="hero-copy">
           <p className="eyebrow">Frontend Auth Shell</p>
-          <h1>Role-aware entry flow for the platform while full authentication is still being wired.</h1>
+          <h1>Role-aware entry flow with live doctor and AI integrations already connected.</h1>
           <p className="hero-text">
-            This branch adds login and registration shells, stores preview auth state locally,
-            and gives patient, doctor, and admin users a cleaner landing experience without
-            blocking the already live doctor and AI modules.
+            This branch combines the auth shell with the working foundation modules, so the
+            frontend stays attractive and useful while the remaining service screens are still
+            being built.
           </p>
           <div className="hero-actions">
             <StatusPill
@@ -422,7 +440,7 @@ export default function App() {
 
         <SectionCard
           title="Doctor Directory"
-          subtitle="Still live and available from the foundation branch, now sitting below the auth shell."
+          subtitle="Approved doctor profiles from doctor-service, presented as the first live discovery surface."
         >
           {directoryState === 'loading' ? <p className="empty-state">Loading doctors...</p> : null}
           {directoryState === 'error' ? (
@@ -537,6 +555,24 @@ export default function App() {
           </div>
         </SectionCard>
       </main>
+
+      <section className="card" style={{ marginTop: '24px' }}>
+        <div className="card-header">
+          <h2>Next Surface Areas</h2>
+          <p>These modules are staged neatly so the next branches can slot in without redesigning the full shell.</p>
+        </div>
+        <div className="preview-grid">
+          {roadmapCards.map((card) => (
+            <article key={card.title} className="preview-card">
+              <div className="preview-card-top">
+                <h3>{card.title}</h3>
+                <StatusPill status="warn" label={card.label} />
+              </div>
+              <p>{card.description}</p>
+            </article>
+          ))}
+        </div>
+      </section>
     </div>
   )
 }

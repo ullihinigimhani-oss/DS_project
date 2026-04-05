@@ -14,6 +14,39 @@ import './App.css'
 const defaultSymptoms = 'I have fever, cough, headache and runny nose'
 const defaultUserId = 'patient-001'
 
+const roadmapCards = [
+  {
+    title: 'Auth journeys',
+    description: 'Login, registration, and role-aware navigation will plug in next.',
+    label: 'Queued',
+  },
+  {
+    title: 'Appointments',
+    description: 'Booking and availability flows will sit on top of doctor schedules.',
+    label: 'Queued',
+  },
+  {
+    title: 'Telemedicine',
+    description: 'Video sessions and live consult handoff will arrive after auth routes settle.',
+    label: 'Upcoming',
+  },
+  {
+    title: 'Payments',
+    description: 'Checkout, billing state, and receipts are waiting for final payment wiring.',
+    label: 'Upcoming',
+  },
+  {
+    title: 'Notifications',
+    description: 'Bell states, reminders, and patient nudges will connect once events stabilize.',
+    label: 'Queued',
+  },
+  {
+    title: 'Medical records',
+    description: 'Patient-owned records and uploads will land in the next frontend pass.',
+    label: 'Planned',
+  },
+]
+
 export default function App() {
   const [gatewayHealth, setGatewayHealth] = useState(null)
   const [doctorDirectory, setDoctorDirectory] = useState([])
@@ -26,22 +59,57 @@ export default function App() {
   const [analysisLoading, setAnalysisLoading] = useState(false)
   const [historyLoading, setHistoryLoading] = useState(false)
 
+  const topCondition = analysis?.possibleConditions?.[0] || null
+  const serviceHealthy = gatewayHealth?.status === 'running'
   const quickStats = useMemo(() => {
     return [
       {
-        label: 'Gateway base',
-        value: gatewayBaseUrl,
+        label: 'Live entrypoint',
+        value: gatewayBaseUrl.replace('http://', ''),
       },
       {
-        label: 'API base',
-        value: apiBaseUrl,
-      },
-      {
-        label: 'Doctors loaded',
+        label: 'Connected doctors',
         value: String(doctorDirectory.length),
       },
+      {
+        label: 'Analysis records',
+        value: String(history.length),
+      },
+      {
+        label: 'Foundation mode',
+        value: 'Live integrations only',
+      },
     ]
-  }, [doctorDirectory.length])
+  }, [doctorDirectory.length, history.length])
+
+  const liveModules = [
+    {
+      title: 'Gateway',
+      value: gatewayHealth?.status || 'checking',
+      detail: gatewayHealth?.timestamp || 'Waiting for gateway response',
+      status: serviceHealthy ? 'ok' : 'warn',
+    },
+    {
+      title: 'Doctor directory',
+      value: `${doctorDirectory.length} listed`,
+      detail: 'Public doctor profiles from doctor-service',
+      status: directoryState === 'success' ? 'ok' : directoryState === 'error' ? 'warn' : 'pending',
+    },
+    {
+      title: 'AI triage',
+      value: topCondition?.name || 'Ready',
+      detail: topCondition
+        ? `${topCondition.confidencePercent}% confidence from ai-symptom-service`
+        : 'Submit symptoms to generate a triage result',
+      status: analysis ? 'ok' : 'pending',
+    },
+    {
+      title: 'History sync',
+      value: `${history.length} saved`,
+      detail: 'Persisted symptom analyses from PostgreSQL',
+      status: history.length > 0 ? 'ok' : historyLoading ? 'pending' : 'warn',
+    },
+  ]
 
   useEffect(() => {
     const loadGatewayHealth = async () => {
@@ -110,31 +178,33 @@ export default function App() {
     }
   }
 
-  const serviceHealthy = gatewayHealth?.status === 'running'
-
   return (
     <div className="app-shell">
       <header className="hero">
-        <div className="hero-copy">
-          <p className="eyebrow">Smart Healthcare Platform</p>
-          <h1>Frontend control room for gateway, doctors, and AI triage.</h1>
+        <div className="hero-copy panel panel-hero">
+          <p className="eyebrow">Frontend Foundation</p>
+          <h1>Warm, clear, and ready for the services already alive in your stack.</h1>
           <p className="hero-text">
-            This frontend is wired to your running Docker stack through the gateway,
-            with a live symptom checker and doctor directory pulled from the backend.
+            This foundation page is connected to the running gateway, doctor directory,
+            and AI symptom analyzer. The rest of the experience is staged neatly so we
+            can grow the frontend feature by feature without losing visual consistency.
           </p>
           <div className="hero-actions">
             <StatusPill
               status={serviceHealthy ? 'ok' : 'warn'}
               label={serviceHealthy ? 'Gateway online' : 'Gateway needs attention'}
             />
-            <span className="subtle-text">
-              {gatewayHealth?.timestamp || gatewayHealth?.error || 'Waiting for gateway health'}
-            </span>
+            <StatusPill status="pending" label="Frontend foundation branch" />
+            <span className="subtle-text">{apiBaseUrl}</span>
+          </div>
+          <div className="hero-note">
+            <strong>Current focus:</strong> polished shell, live doctor browsing, AI triage,
+            and clean placeholders for the next service waves.
           </div>
         </div>
         <div className="stats-grid">
           {quickStats.map((item) => (
-            <div key={item.label} className="stat-card">
+            <div key={item.label} className="stat-card panel">
               <span>{item.label}</span>
               <strong>{item.value}</strong>
             </div>
@@ -142,12 +212,24 @@ export default function App() {
         </div>
       </header>
 
+      <section className="module-strip">
+        {liveModules.map((module) => (
+          <article key={module.title} className="module-card panel">
+            <div className="module-header">
+              <span>{module.title}</span>
+              <StatusPill status={module.status} label={module.value} />
+            </div>
+            <p>{module.detail}</p>
+          </article>
+        ))}
+      </section>
+
       <main className="content-grid">
         <SectionCard
-          title="Platform Status"
-          subtitle="Quick read on the gateway entrypoint and frontend API wiring."
+          title="Platform Pulse"
+          subtitle="The frontend is intentionally focused on what is actually available today."
         >
-          <div className="health-grid">
+          <div className="health-grid soft-list">
             <div className="health-row">
               <span>Gateway service</span>
               <strong>{gatewayHealth?.service || 'api-gateway'}</strong>
@@ -160,15 +242,30 @@ export default function App() {
               />
             </div>
             <div className="health-row">
-              <span>Port</span>
-              <strong>{gatewayHealth?.port || '3000'}</strong>
+              <span>Public doctors</span>
+              <strong>{doctorDirectory.length}</strong>
             </div>
+            <div className="health-row">
+              <span>Latest AI status</span>
+              <strong>{topCondition?.name || 'Waiting for first analysis'}</strong>
+            </div>
+            <div className="health-row">
+              <span>Saved history</span>
+              <strong>{history.length}</strong>
+            </div>
+          </div>
+          <div className="foundation-callout">
+            <strong>Why this shape?</strong>
+            <p>
+              We’re building the experience around live backend capability first, so every
+              visible panel already maps to a working gateway-backed route instead of static mock content.
+            </p>
           </div>
         </SectionCard>
 
         <SectionCard
           title="Doctor Directory"
-          subtitle="Public doctor listing served from doctor-service through the gateway."
+          subtitle="Approved doctor profiles from doctor-service, presented as the first live discovery surface."
         >
           {directoryState === 'loading' ? <p className="empty-state">Loading doctors...</p> : null}
           {directoryState === 'error' ? (
@@ -180,13 +277,17 @@ export default function App() {
           <div className="doctor-list">
             {doctorDirectory.map((doctor) => (
               <article key={doctor.doctor_id} className="doctor-card">
+                <div className="doctor-topline">
+                  <StatusPill status="ok" label="Approved" />
+                  <span className="doctor-id">{doctor.doctor_id}</span>
+                </div>
                 <div>
                   <h3>{doctor.name || 'Doctor'}</h3>
                   <p>{doctor.specialization || 'General Practice'}</p>
                 </div>
                 <div className="doctor-meta">
-                  <span>Fee: {doctor.consultation_fee ?? 'N/A'}</span>
-                  <span>ID: {doctor.doctor_id}</span>
+                  <span>Consultation fee</span>
+                  <strong>{doctor.consultation_fee ?? 'N/A'}</strong>
                 </div>
               </article>
             ))}
@@ -194,8 +295,8 @@ export default function App() {
         </SectionCard>
 
         <SectionCard
-          title="AI Symptom Analyzer"
-          subtitle="Submit symptoms to the AI service through the gateway and review structured recommendations."
+          title="AI Triage Workspace"
+          subtitle="A clean foundation for symptom-driven triage while richer patient workflows are still on the way."
         >
           <form className="analysis-form" onSubmit={handleAnalyze}>
             <label>
@@ -252,6 +353,19 @@ export default function App() {
                 </div>
               ) : null}
 
+              {analysis.matchedDiseaseSymptoms?.length ? (
+                <div className="matched-symptoms">
+                  <span className="list-label">Matched disease symptom set</span>
+                  <div className="chip-group compact">
+                    {analysis.matchedDiseaseSymptoms.map((symptom) => (
+                      <span key={symptom} className="chip chip-muted">
+                        {symptom}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
               <div className="conditions-list">
                 {(analysis.possibleConditions || []).map((condition) => (
                   <div key={condition.name} className="condition-row">
@@ -265,8 +379,8 @@ export default function App() {
         </SectionCard>
 
         <SectionCard
-          title="Analysis History"
-          subtitle="Most recent persisted symptom analyses from PostgreSQL."
+          title="Analysis Timeline"
+          subtitle="Recent symptom analyses already saved by the AI service, ready to evolve into a patient journey view."
         >
           {historyLoading ? <p className="empty-state">Loading history...</p> : null}
           {!historyLoading && history.length === 0 ? (
@@ -292,6 +406,28 @@ export default function App() {
           </div>
         </SectionCard>
       </main>
+
+      <section className="roadmap-section">
+        <div className="roadmap-heading">
+          <p className="eyebrow">Next Surface Areas</p>
+          <h2>Planned frontend modules while the remaining services settle.</h2>
+          <p>
+            These cards keep the structure intentional now, so the next branches can slot in
+            without redesigning the whole app shell again.
+          </p>
+        </div>
+        <div className="roadmap-grid">
+          {roadmapCards.map((card) => (
+            <article key={card.title} className="roadmap-card panel">
+              <div className="roadmap-topline">
+                <h3>{card.title}</h3>
+                <StatusPill status="pending" label={card.label} />
+              </div>
+              <p>{card.description}</p>
+            </article>
+          ))}
+        </div>
+      </section>
     </div>
   )
 }

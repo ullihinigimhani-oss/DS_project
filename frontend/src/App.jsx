@@ -3,6 +3,7 @@ import LoginForm from './components/LoginForm'
 import RegisterForm from './components/RegisterForm'
 import SectionCard from './components/SectionCard'
 import StatusPill from './components/StatusPill'
+import PatientDashboard from './components/dashboards/PatientDashboard'
 import { loginUser, registerUser } from './utils/authService'
 import {
   analyzeSymptoms,
@@ -21,33 +22,51 @@ const sessionStorageKey = 'healthcare-auth-shell-session'
 const roleSummaries = {
   patient: {
     title: 'Patient workspace',
-    subtitle: 'Symptom checks, booking, prescriptions, and records will center here.',
+    subtitle: 'Symptom checks, care guidance, and doctor discovery are centered here now.',
   },
   doctor: {
     title: 'Doctor workspace',
-    subtitle: 'Schedule, verification, prescriptions, and profile editing will sit here.',
+    subtitle: 'Schedule, verification, prescriptions, and profile editing will sit here next.',
   },
   admin: {
     title: 'Admin workspace',
-    subtitle: 'Audit views, user management, and platform operations will plug in here.',
+    subtitle: 'Audit views, user management, and platform operations will plug in here later.',
   },
 }
 
 const previewCards = [
   {
     title: 'Appointments',
-    description: 'Will connect to booking and availability once the auth-protected patient flow is ready.',
+    description: 'Booking and availability will plug into the patient journey once the appointment UX branch begins.',
     status: 'Queued',
   },
   {
     title: 'Medical records',
-    description: 'Prepared for upload, listing, and document review after patient-service screens land.',
+    description: 'Upload, document review, and patient record surfacing are staged for the next pass.',
     status: 'Upcoming',
   },
   {
     title: 'Payments',
-    description: 'Checkout, receipts, and billing state will follow once the payment UX branch starts.',
+    description: 'Billing, receipts, and checkout state will land after the care flow is settled.',
     status: 'Queued',
+  },
+]
+
+const roadmapCards = [
+  {
+    title: 'Appointment booking',
+    description: 'Connect patient dashboard actions to real booking routes and time-slot discovery.',
+    label: 'Queued',
+  },
+  {
+    title: 'Medical records',
+    description: 'Bring upload and records browsing into the patient dashboard without breaking the current shell.',
+    label: 'Upcoming',
+  },
+  {
+    title: 'Payments and receipts',
+    description: 'Finish the patient journey from symptom insight to booking and payment confirmation.',
+    label: 'Planned',
   },
 ]
 
@@ -60,39 +79,6 @@ function createPreviewSession(base) {
     token: null,
   }
 }
-
-const roadmapCards = [
-  {
-    title: 'Auth journeys',
-    description: 'Login, registration, and role-aware navigation will plug in next.',
-    label: 'Queued',
-  },
-  {
-    title: 'Appointments',
-    description: 'Booking and availability flows will sit on top of doctor schedules.',
-    label: 'Queued',
-  },
-  {
-    title: 'Telemedicine',
-    description: 'Video sessions and live consult handoff will arrive after auth routes settle.',
-    label: 'Upcoming',
-  },
-  {
-    title: 'Payments',
-    description: 'Checkout, billing state, and receipts are waiting for final payment wiring.',
-    label: 'Upcoming',
-  },
-  {
-    title: 'Notifications',
-    description: 'Bell states, reminders, and patient nudges will connect once events stabilize.',
-    label: 'Queued',
-  },
-  {
-    title: 'Medical records',
-    description: 'Patient-owned records and uploads will land in the next frontend pass.',
-    label: 'Planned',
-  },
-]
 
 export default function App() {
   const [gatewayHealth, setGatewayHealth] = useState(null)
@@ -128,8 +114,6 @@ export default function App() {
   const roleSummary = roleSummaries[activeRole] || roleSummaries.patient
   const topCondition = analysis?.possibleConditions?.[0] || null
 
-  const topCondition = analysis?.possibleConditions?.[0] || null
-  const serviceHealthy = gatewayHealth?.status === 'running'
   const quickStats = useMemo(() => {
     return [
       {
@@ -148,45 +132,27 @@ export default function App() {
         label: 'Doctors loaded',
         value: String(doctorDirectory.length),
       },
-      {
-        label: 'Analysis records',
-        value: String(history.length),
-      },
-      {
-        label: 'Foundation mode',
-        value: 'Live integrations only',
-      },
     ]
-  }, [doctorDirectory.length, history.length])
+  }, [activeRole, doctorDirectory.length, session])
 
-  const liveModules = [
-    {
-      title: 'Gateway',
-      value: gatewayHealth?.status || 'checking',
-      detail: gatewayHealth?.timestamp || 'Waiting for gateway response',
-      status: serviceHealthy ? 'ok' : 'warn',
-    },
-    {
-      title: 'Doctor directory',
-      value: `${doctorDirectory.length} listed`,
-      detail: 'Public doctor profiles from doctor-service',
-      status: directoryState === 'success' ? 'ok' : directoryState === 'error' ? 'warn' : 'pending',
-    },
-    {
-      title: 'AI triage',
-      value: topCondition?.name || 'Ready',
-      detail: topCondition
-        ? `${topCondition.confidencePercent}% confidence from ai-symptom-service`
-        : 'Submit symptoms to generate a triage result',
-      status: analysis ? 'ok' : 'pending',
-    },
-    {
-      title: 'History sync',
-      value: `${history.length} saved`,
-      detail: 'Persisted symptom analyses from PostgreSQL',
-      status: history.length > 0 ? 'ok' : historyLoading ? 'pending' : 'warn',
-    },
-  ]
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(sessionStorageKey)
+      if (saved) {
+        setSession(JSON.parse(saved))
+      }
+    } catch {
+      // Ignore bad local data and continue with a clean session.
+    }
+  }, [])
+
+  useEffect(() => {
+    if (session) {
+      window.localStorage.setItem(sessionStorageKey, JSON.stringify(session))
+    } else {
+      window.localStorage.removeItem(sessionStorageKey)
+    }
+  }, [session])
 
   useEffect(() => {
     const loadGatewayHealth = async () => {
@@ -208,7 +174,7 @@ export default function App() {
         const data = await fetchPublicDoctors()
         setDoctorDirectory(Array.isArray(data.data) ? data.data : [])
         setDirectoryState('success')
-      } catch (error) {
+      } catch (_error) {
         setDirectoryState('error')
       }
     }
@@ -222,7 +188,7 @@ export default function App() {
     try {
       const data = await fetchAnalysisHistory(nextUserId)
       setHistory(Array.isArray(data.data) ? data.data : [])
-    } catch (error) {
+    } catch (_error) {
       setHistory([])
     } finally {
       setHistoryLoading(false)
@@ -336,29 +302,33 @@ export default function App() {
     <div className="app-shell">
       <header className="hero auth-hero">
         <div className="hero-copy">
-          <p className="eyebrow">Frontend Auth Shell</p>
-          <h1>Role-aware entry flow for the platform while full authentication is still being wired.</h1>
+          <p className="eyebrow">Frontend Patient Dashboard</p>
+          <h1>Patient-first care guidance with live doctor and AI modules already stitched into the shell.</h1>
           <p className="hero-text">
-            This branch adds login and registration shells, stores preview auth state locally,
-            and gives patient, doctor, and admin users a cleaner landing experience without
-            blocking the already live doctor and AI modules.
+            This branch reshapes the frontend around the patient experience while preserving the
+            auth shell and the live services that already work today. It gives us a cleaner care
+            journey now instead of waiting for every remaining screen to be ready.
           </p>
           <div className="hero-actions">
             <StatusPill
               status={serviceHealthy ? 'ok' : 'warn'}
               label={serviceHealthy ? 'Gateway online' : 'Gateway needs attention'}
             />
-            <StatusPill status="pending" label="Frontend foundation branch" />
+            <StatusPill
+              status={session ? 'ok' : 'warn'}
+              label={session ? `${activeRole} shell active` : 'No active session'}
+            />
             <span className="subtle-text">{apiBaseUrl}</span>
           </div>
           <div className="hero-note">
-            <strong>Current focus:</strong> polished shell, live doctor browsing, AI triage,
-            and clean placeholders for the next service waves.
+            <strong>Current focus:</strong> patient dashboard structure, live doctor browsing,
+            symptom triage, and saved AI history all in one calm care flow.
           </div>
         </div>
+
         <div className="stats-grid">
           {quickStats.map((item) => (
-            <div key={item.label} className="stat-card panel">
+            <div key={item.label} className="stat-card">
               <span>{item.label}</span>
               <strong>{item.value}</strong>
             </div>
@@ -411,7 +381,7 @@ export default function App() {
 
         <SectionCard
           title="Session Shell"
-          subtitle="A persisted frontend session so you can design role-specific spaces before the final backend auth flow arrives."
+          subtitle="A persisted frontend session so you can shape patient-first flows before the final backend auth journey lands."
         >
           {session ? (
             <div className="session-shell">
@@ -450,8 +420,8 @@ export default function App() {
             <div className="session-shell empty-shell">
               <strong>No active session yet</strong>
               <p>
-                Sign in or register to start a role preview. The UI will keep working even if the
-                auth service only returns placeholder responses for now.
+                Sign in or register to start a role preview. The patient dashboard becomes most
+                useful when the preview role is set to patient.
               </p>
             </div>
           )}
@@ -459,7 +429,7 @@ export default function App() {
 
         <SectionCard
           title="Role Readiness"
-          subtitle="This branch focuses on the auth entry shell and the role-specific frontend landing idea."
+          subtitle="Patient is the primary focus in this branch, while the remaining journeys stay clearly staged."
         >
           <div className="preview-grid">
             {previewCards.map((card) => (
@@ -475,9 +445,23 @@ export default function App() {
         </SectionCard>
 
         <SectionCard
+          className="full-span"
+          title="Patient Workspace"
+          subtitle="A patient-centered dashboard built on top of the services that are already live in your stack."
+        >
+          <PatientDashboard
+            activeRole={activeRole}
+            session={session}
+            history={history}
+            doctorDirectory={doctorDirectory}
+            gatewayHealth={gatewayHealth}
+            topCondition={topCondition}
+          />
+        </SectionCard>
+
+        <SectionCard
           title="Doctor Directory"
-          subtitle="Approved doctor profiles from doctor-service, presented as the first live discovery surface."
-          subtitle="Still live and available from the foundation branch, now sitting below the auth shell."
+          subtitle="Approved doctor profiles from doctor-service, presented as the live discovery surface for the patient journey."
         >
           {directoryState === 'loading' ? <p className="empty-state">Loading doctors...</p> : null}
           {directoryState === 'error' ? (
@@ -486,6 +470,7 @@ export default function App() {
           {directoryState === 'success' && doctorDirectory.length === 0 ? (
             <p className="empty-state">No approved doctors are available yet.</p>
           ) : null}
+
           <div className="doctor-list">
             {doctorDirectory.map((doctor) => (
               <article key={doctor.doctor_id} className="doctor-card">
@@ -507,8 +492,8 @@ export default function App() {
         </SectionCard>
 
         <SectionCard
-          title="AI Triage Workspace"
-          subtitle="A clean foundation for symptom-driven triage while richer patient workflows are still on the way."
+          title="AI Symptom Analyzer"
+          subtitle="A live symptom triage workspace that now feeds directly into the patient dashboard story."
         >
           <form className="analysis-form" onSubmit={handleAnalyze}>
             <label>
@@ -558,46 +543,36 @@ export default function App() {
                 ))}
               </div>
 
+              {(analysis.possibleConditions || []).length ? (
+                <div className="conditions-list">
+                  {analysis.possibleConditions.map((condition) => (
+                    <div key={condition.name} className="condition-row">
+                      <span>{condition.name}</span>
+                      <strong>{condition.confidencePercent}%</strong>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+
               {analysis.consultationAdvice ? (
                 <div className="consult-box">
                   <strong>{analysis.consultationAdvice.message}</strong>
                   <span>Risk score: {analysis.consultationAdvice.risk}</span>
                 </div>
               ) : null}
-
-              {analysis.matchedDiseaseSymptoms?.length ? (
-                <div className="matched-symptoms">
-                  <span className="list-label">Matched disease symptom set</span>
-                  <div className="chip-group compact">
-                    {analysis.matchedDiseaseSymptoms.map((symptom) => (
-                      <span key={symptom} className="chip chip-muted">
-                        {symptom}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="conditions-list">
-                {(analysis.possibleConditions || []).map((condition) => (
-                  <div key={condition.name} className="condition-row">
-                    <span>{condition.name}</span>
-                    <strong>{condition.confidencePercent}%</strong>
-                  </div>
-                ))}
-              </div>
             </div>
           ) : null}
         </SectionCard>
 
         <SectionCard
-          title="Analysis Timeline"
-          subtitle="Recent symptom analyses already saved by the AI service, ready to evolve into a patient journey view."
+          title="Analysis History"
+          subtitle="Recent AI analyses remain visible so the patient dashboard can become a fuller care timeline over time."
         >
           {historyLoading ? <p className="empty-state">Loading history...</p> : null}
           {!historyLoading && history.length === 0 ? (
             <p className="empty-state">No history for this user yet.</p>
           ) : null}
+
           <div className="history-list">
             {history.map((item) => (
               <article key={item.id} className="history-card">
@@ -622,15 +597,15 @@ export default function App() {
       <section className="roadmap-section">
         <div className="roadmap-heading">
           <p className="eyebrow">Next Surface Areas</p>
-          <h2>Planned frontend modules while the remaining services settle.</h2>
+          <h2>Planned patient-flow modules once the remaining services are ready.</h2>
           <p>
-            These cards keep the structure intentional now, so the next branches can slot in
-            without redesigning the whole app shell again.
+            These roadmap cards keep the UI intentional now, so the next frontend branches can
+            add depth without reshaping the whole shell again.
           </p>
         </div>
         <div className="roadmap-grid">
           {roadmapCards.map((card) => (
-            <article key={card.title} className="roadmap-card panel">
+            <article key={card.title} className="roadmap-card">
               <div className="roadmap-topline">
                 <h3>{card.title}</h3>
                 <StatusPill status="pending" label={card.label} />

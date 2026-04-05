@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
+import LoginForm from './components/LoginForm'
+import RegisterForm from './components/RegisterForm'
 import SectionCard from './components/SectionCard'
 import StatusPill from './components/StatusPill'
+import { loginUser, registerUser } from './utils/authService'
 import {
   analyzeSymptoms,
   apiBaseUrl,
@@ -13,6 +16,50 @@ import './App.css'
 
 const defaultSymptoms = 'I have fever, cough, headache and runny nose'
 const defaultUserId = 'patient-001'
+const sessionStorageKey = 'healthcare-auth-shell-session'
+
+const roleSummaries = {
+  patient: {
+    title: 'Patient workspace',
+    subtitle: 'Symptom checks, booking, prescriptions, and records will center here.',
+  },
+  doctor: {
+    title: 'Doctor workspace',
+    subtitle: 'Schedule, verification, prescriptions, and profile editing will sit here.',
+  },
+  admin: {
+    title: 'Admin workspace',
+    subtitle: 'Audit views, user management, and platform operations will plug in here.',
+  },
+}
+
+const previewCards = [
+  {
+    title: 'Appointments',
+    description: 'Will connect to booking and availability once the auth-protected patient flow is ready.',
+    status: 'Queued',
+  },
+  {
+    title: 'Medical records',
+    description: 'Prepared for upload, listing, and document review after patient-service screens land.',
+    status: 'Upcoming',
+  },
+  {
+    title: 'Payments',
+    description: 'Checkout, receipts, and billing state will follow once the payment UX branch starts.',
+    status: 'Queued',
+  },
+]
+
+function createPreviewSession(base) {
+  return {
+    name: base.name || base.email?.split('@')[0] || 'Preview user',
+    email: base.email || 'preview@health.local',
+    role: base.userType || base.role || 'patient',
+    mode: 'preview',
+    token: null,
+  }
+}
 
 const roadmapCards = [
   {
@@ -58,17 +105,47 @@ export default function App() {
   const [analysisError, setAnalysisError] = useState('')
   const [analysisLoading, setAnalysisLoading] = useState(false)
   const [historyLoading, setHistoryLoading] = useState(false)
+  const [authTab, setAuthTab] = useState('login')
+  const [authBusy, setAuthBusy] = useState(false)
+  const [authMessage, setAuthMessage] = useState('')
+  const [authError, setAuthError] = useState('')
+  const [session, setSession] = useState(null)
+  const [loginValues, setLoginValues] = useState({
+    email: 'patient@example.com',
+    password: 'password123',
+    role: 'patient',
+  })
+  const [registerValues, setRegisterValues] = useState({
+    name: 'New User',
+    email: 'newuser@example.com',
+    phone: '',
+    password: 'password123',
+    userType: 'patient',
+  })
+
+  const serviceHealthy = gatewayHealth?.status === 'running'
+  const activeRole = session?.role || loginValues.role
+  const roleSummary = roleSummaries[activeRole] || roleSummaries.patient
+  const topCondition = analysis?.possibleConditions?.[0] || null
 
   const topCondition = analysis?.possibleConditions?.[0] || null
   const serviceHealthy = gatewayHealth?.status === 'running'
   const quickStats = useMemo(() => {
     return [
       {
-        label: 'Live entrypoint',
+        label: 'Gateway base',
         value: gatewayBaseUrl.replace('http://', ''),
       },
       {
-        label: 'Connected doctors',
+        label: 'Auth mode',
+        value: session?.mode === 'preview' ? 'Preview shell' : session ? 'Connected' : 'Signed out',
+      },
+      {
+        label: 'Role focus',
+        value: activeRole,
+      },
+      {
+        label: 'Doctors loaded',
         value: String(doctorDirectory.length),
       },
       {
@@ -156,6 +233,77 @@ export default function App() {
     loadHistory(defaultUserId)
   }, [])
 
+  const handleLoginChange = (event) => {
+    const { name, value } = event.target
+    setLoginValues((current) => ({ ...current, [name]: value }))
+  }
+
+  const handleRegisterChange = (event) => {
+    const { name, value } = event.target
+    setRegisterValues((current) => ({ ...current, [name]: value }))
+  }
+
+  const handleLogin = async (event) => {
+    event.preventDefault()
+    setAuthBusy(true)
+    setAuthError('')
+    setAuthMessage('')
+
+    try {
+      const data = await loginUser(loginValues)
+
+      if (data?.success && data?.data?.token) {
+        setSession({
+          name: data.data.name || loginValues.email,
+          email: data.data.email || loginValues.email,
+          role: data.data.userType || loginValues.role,
+          mode: 'connected',
+          token: data.data.token,
+        })
+        setAuthMessage('Signed in successfully.')
+      } else {
+        const preview = createPreviewSession(loginValues)
+        setSession(preview)
+        setAuthMessage(data.message || 'Auth backend is still pending, so preview mode was enabled.')
+      }
+    } catch (error) {
+      const preview = createPreviewSession(loginValues)
+      setSession(preview)
+      setAuthError('Auth API is not fully ready yet. Preview mode was enabled instead.')
+      setAuthMessage(error.message)
+    } finally {
+      setAuthBusy(false)
+    }
+  }
+
+  const handleRegister = async (event) => {
+    event.preventDefault()
+    setAuthBusy(true)
+    setAuthError('')
+    setAuthMessage('')
+
+    try {
+      const data = await registerUser(registerValues)
+
+      if (data?.success && data?.data) {
+        const nextSession = createPreviewSession(registerValues)
+        setSession(nextSession)
+        setAuthMessage(data.message || 'Account shell created. Preview mode enabled.')
+      } else {
+        const preview = createPreviewSession(registerValues)
+        setSession(preview)
+        setAuthMessage(data.message || 'Registration shell saved in preview mode.')
+      }
+    } catch (error) {
+      const preview = createPreviewSession(registerValues)
+      setSession(preview)
+      setAuthError('Registration backend is not ready yet. Preview mode was enabled instead.')
+      setAuthMessage(error.message)
+    } finally {
+      setAuthBusy(false)
+    }
+  }
+
   const handleAnalyze = async (event) => {
     event.preventDefault()
     setAnalysisLoading(true)
@@ -178,16 +326,22 @@ export default function App() {
     }
   }
 
+  const handleSignOut = () => {
+    setSession(null)
+    setAuthMessage('You have left preview mode.')
+    setAuthError('')
+  }
+
   return (
     <div className="app-shell">
-      <header className="hero">
-        <div className="hero-copy panel panel-hero">
-          <p className="eyebrow">Frontend Foundation</p>
-          <h1>Warm, clear, and ready for the services already alive in your stack.</h1>
+      <header className="hero auth-hero">
+        <div className="hero-copy">
+          <p className="eyebrow">Frontend Auth Shell</p>
+          <h1>Role-aware entry flow for the platform while full authentication is still being wired.</h1>
           <p className="hero-text">
-            This foundation page is connected to the running gateway, doctor directory,
-            and AI symptom analyzer. The rest of the experience is staged neatly so we
-            can grow the frontend feature by feature without losing visual consistency.
+            This branch adds login and registration shells, stores preview auth state locally,
+            and gives patient, doctor, and admin users a cleaner landing experience without
+            blocking the already live doctor and AI modules.
           </p>
           <div className="hero-actions">
             <StatusPill
@@ -212,60 +366,118 @@ export default function App() {
         </div>
       </header>
 
-      <section className="module-strip">
-        {liveModules.map((module) => (
-          <article key={module.title} className="module-card panel">
-            <div className="module-header">
-              <span>{module.title}</span>
-              <StatusPill status={module.status} label={module.value} />
-            </div>
-            <p>{module.detail}</p>
-          </article>
-        ))}
-      </section>
-
-      <main className="content-grid">
+      <main className="content-grid auth-layout">
         <SectionCard
-          title="Platform Pulse"
-          subtitle="The frontend is intentionally focused on what is actually available today."
+          title="Access Portal"
+          subtitle="Connected to the gateway auth routes now, with preview mode standing in until full auth is ready."
         >
-          <div className="health-grid soft-list">
-            <div className="health-row">
-              <span>Gateway service</span>
-              <strong>{gatewayHealth?.service || 'api-gateway'}</strong>
-            </div>
-            <div className="health-row">
-              <span>Status</span>
-              <StatusPill
-                status={serviceHealthy ? 'ok' : 'warn'}
-                label={gatewayHealth?.status || 'checking'}
-              />
-            </div>
-            <div className="health-row">
-              <span>Public doctors</span>
-              <strong>{doctorDirectory.length}</strong>
-            </div>
-            <div className="health-row">
-              <span>Latest AI status</span>
-              <strong>{topCondition?.name || 'Waiting for first analysis'}</strong>
-            </div>
-            <div className="health-row">
-              <span>Saved history</span>
-              <strong>{history.length}</strong>
-            </div>
+          <div className="auth-tabs">
+            <button
+              type="button"
+              className={`tab-button ${authTab === 'login' ? 'active' : ''}`}
+              onClick={() => setAuthTab('login')}
+            >
+              Sign in
+            </button>
+            <button
+              type="button"
+              className={`tab-button ${authTab === 'register' ? 'active' : ''}`}
+              onClick={() => setAuthTab('register')}
+            >
+              Create account
+            </button>
           </div>
-          <div className="foundation-callout">
-            <strong>Why this shape?</strong>
-            <p>
-              We’re building the experience around live backend capability first, so every
-              visible panel already maps to a working gateway-backed route instead of static mock content.
-            </p>
+
+          {authTab === 'login' ? (
+            <LoginForm
+              values={loginValues}
+              onChange={handleLoginChange}
+              onSubmit={handleLogin}
+              loading={authBusy}
+              roleHint={loginValues.role}
+            />
+          ) : (
+            <RegisterForm
+              values={registerValues}
+              onChange={handleRegisterChange}
+              onSubmit={handleRegister}
+              loading={authBusy}
+            />
+          )}
+
+          {authError ? <p className="error-text">{authError}</p> : null}
+          {authMessage ? <p className="empty-state">{authMessage}</p> : null}
+        </SectionCard>
+
+        <SectionCard
+          title="Session Shell"
+          subtitle="A persisted frontend session so you can design role-specific spaces before the final backend auth flow arrives."
+        >
+          {session ? (
+            <div className="session-shell">
+              <div className="session-header">
+                <div>
+                  <h3>{session.name}</h3>
+                  <p>{session.email}</p>
+                </div>
+                <StatusPill
+                  status={session.mode === 'connected' ? 'ok' : 'warn'}
+                  label={session.mode === 'connected' ? 'Connected session' : 'Preview session'}
+                />
+              </div>
+
+              <div className="role-summary">
+                <strong>{roleSummary.title}</strong>
+                <p>{roleSummary.subtitle}</p>
+              </div>
+
+              <div className="role-chip-row">
+                {Object.keys(roleSummaries).map((role) => (
+                  <span
+                    key={role}
+                    className={`inline-role ${role === activeRole ? 'active' : ''}`}
+                  >
+                    {role}
+                  </span>
+                ))}
+              </div>
+
+              <button type="button" className="secondary-button" onClick={handleSignOut}>
+                Sign out
+              </button>
+            </div>
+          ) : (
+            <div className="session-shell empty-shell">
+              <strong>No active session yet</strong>
+              <p>
+                Sign in or register to start a role preview. The UI will keep working even if the
+                auth service only returns placeholder responses for now.
+              </p>
+            </div>
+          )}
+        </SectionCard>
+
+        <SectionCard
+          title="Role Readiness"
+          subtitle="This branch focuses on the auth entry shell and the role-specific frontend landing idea."
+        >
+          <div className="preview-grid">
+            {previewCards.map((card) => (
+              <article key={card.title} className="preview-card">
+                <div className="preview-card-top">
+                  <h3>{card.title}</h3>
+                  <StatusPill status="warn" label={card.status} />
+                </div>
+                <p>{card.description}</p>
+              </article>
+            ))}
           </div>
         </SectionCard>
 
         <SectionCard
           title="Doctor Directory"
           subtitle="Approved doctor profiles from doctor-service, presented as the first live discovery surface."
+          subtitle="Still live and available from the foundation branch, now sitting below the auth shell."
         >
           {directoryState === 'loading' ? <p className="empty-state">Loading doctors...</p> : null}
           {directoryState === 'error' ? (
@@ -331,7 +543,7 @@ export default function App() {
           {analysis ? (
             <div className="analysis-result">
               <div className="result-banner">
-                <strong>{analysis.possibleConditions?.[0]?.name || 'No diagnosis'}</strong>
+                <strong>{topCondition?.name || 'No diagnosis'}</strong>
                 <span>
                   Confidence: {analysis.confidence ? `${Math.round(analysis.confidence * 100)}%` : '0%'}
                 </span>

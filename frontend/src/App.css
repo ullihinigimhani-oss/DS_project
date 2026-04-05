@@ -175,6 +175,12 @@
   gap: 20px;
 }
 
+.auth-layout > :first-child,
+.auth-layout > :nth-child(2),
+.auth-layout > :nth-child(3) {
+  min-height: 100%;
+}
+
 .card {
   border-radius: 28px;
   padding: 24px;
@@ -318,6 +324,31 @@
   margin-top: 18px;
 }
 
+.tab-button,
+.role-chip {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 14px;
+  color: #34506f;
+  background: transparent;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.tab-button.active,
+.role-chip.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, #2f5c89, #497ba8);
+}
+
+.auth-form,
+.analysis-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.auth-form label,
 .analysis-form label {
   display: grid;
   gap: 8px;
@@ -325,6 +356,8 @@
   font-weight: 700;
 }
 
+.auth-form input,
+.auth-form select,
 .analysis-form input,
 .analysis-form textarea {
   width: 100%;
@@ -348,7 +381,11 @@
 .form-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 8px;
+}
+
+.role-picker.compact .role-chip {
+  padding: 9px 12px;
 }
 
 button {
@@ -376,14 +413,136 @@ button:disabled {
   color: #3c342d;
   background: linear-gradient(135deg, #dfd2c0, #efe5d8);
   box-shadow: none;
+  color: #29405e;
+  background: #dfeaf4;
+}
+
+.session-shell {
+  margin-top: 18px;
+  border-radius: 20px;
+  padding: 18px;
+}
+
+.session-header,
+.history-header,
+.doctor-meta,
+.preview-card-top,
+.health-row,
+.condition-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.session-header h3,
+.preview-card h3,
+.doctor-card h3 {
+  margin: 0;
+  color: #25354c;
+}
+
+.session-header p,
+.preview-card p,
+.doctor-card p,
+.history-card p,
+.role-summary p {
+  margin: 6px 0 0;
+  color: #607186;
+}
+
+.role-summary {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #f7f4ef;
+}
+
+.role-summary strong {
+  color: #2f4157;
+}
+
+.role-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 18px;
+}
+
+.inline-role {
+  border-radius: 999px;
+  padding: 7px 11px;
+  color: #57718d;
+  background: #edf3f8;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.inline-role.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, #2f5c89, #497ba8);
+}
+
+.empty-shell {
+  display: grid;
+  gap: 10px;
+}
+
+.preview-grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.preview-card {
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.doctor-list,
+.history-list,
+.health-grid,
+.conditions-list {
+  margin-top: 18px;
+}
+
+.doctor-card,
+.history-card {
+  border: 1px solid rgba(27, 47, 74, 0.08);
+  border-radius: 18px;
+  padding: 16px;
+  background: #f8fbfd;
+}
+
+.doctor-card + .doctor-card,
+.history-card + .history-card {
+  margin-top: 12px;
+}
+
+.doctor-meta {
+  margin-top: 14px;
+  color: #6d7c90;
+  font-size: 0.92rem;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+
 }
 
 .analysis-result {
   margin-top: 18px;
   padding: 18px;
+
   border-radius: 22px;
   background: linear-gradient(180deg, rgba(255, 244, 234, 0.9), rgba(255, 250, 244, 0.82));
   border: 1px solid rgba(200, 100, 68, 0.18);
+  border-radius: 20px;
+  background: linear-gradient(180deg, #f7fbff, #edf5fb);
+  border: 1px solid rgba(73, 123, 168, 0.16);
+
 }
 
 .result-banner,
@@ -444,9 +603,9 @@ button:disabled {
   background: #dde9de;
 }
 
-.conditions-list {
-  display: grid;
-  gap: 10px;
+.condition-row + .condition-row,
+.health-row + .health-row {
+  margin-top: 12px;
 }
 
 .condition-row {
@@ -537,8 +696,8 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
-  .health-row,
-  .condition-row,
+  .session-header,
+  .history-header,
   .doctor-meta,
   .history-header,
   .doctor-topline,

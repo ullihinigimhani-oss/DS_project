@@ -3,6 +3,7 @@ import LoginForm from './components/LoginForm'
 import RegisterForm from './components/RegisterForm'
 import SectionCard from './components/SectionCard'
 import StatusPill from './components/StatusPill'
+import PatientDashboard from './components/dashboards/PatientDashboard'
 import { loginUser, registerUser } from './utils/authService'
 import {
   analyzeSymptoms,
@@ -21,33 +22,60 @@ const sessionStorageKey = 'healthcare-auth-shell-session'
 const roleSummaries = {
   patient: {
     title: 'Patient workspace',
-    subtitle: 'Symptom checks, booking, prescriptions, and records will center here.',
+    subtitle: 'Symptom checks, care guidance, and doctor discovery are centered here now.',
   },
   doctor: {
     title: 'Doctor workspace',
-    subtitle: 'Schedule, verification, prescriptions, and profile editing will sit here.',
+    subtitle: 'Schedule, verification, prescriptions, and profile editing will sit here next.',
   },
   admin: {
     title: 'Admin workspace',
-    subtitle: 'Audit views, user management, and platform operations will plug in here.',
+    subtitle: 'Audit views, user management, and platform operations will plug in here later.',
   },
 }
+
+const roleLinks = [
+  { label: 'Home', path: '/' },
+  { label: 'Login', path: '/login' },
+  { label: 'Register', path: '/register' },
+  { label: 'Patient', path: '/patient' },
+  { label: 'Doctors', path: '/doctors' },
+  { label: 'AI Symptoms', path: '/ai-symptoms' },
+]
 
 const previewCards = [
   {
     title: 'Appointments',
-    description: 'Will connect to booking and availability once the auth-protected patient flow is ready.',
+    description: 'Booking and availability will plug into the patient journey once the appointment UX branch begins.',
     status: 'Queued',
   },
   {
     title: 'Medical records',
-    description: 'Prepared for upload, listing, and document review after patient-service screens land.',
+    description: 'Upload, document review, and patient record surfacing are staged for the next pass.',
     status: 'Upcoming',
   },
   {
     title: 'Payments',
-    description: 'Checkout, receipts, and billing state will follow once the payment UX branch starts.',
+    description: 'Billing, receipts, and checkout state will land after the care flow is settled.',
     status: 'Queued',
+  },
+]
+
+const roadmapCards = [
+  {
+    title: 'Appointment booking',
+    description: 'Connect patient dashboard actions to real booking routes and time-slot discovery.',
+    label: 'Queued',
+  },
+  {
+    title: 'Medical records',
+    description: 'Bring upload and records browsing into the patient dashboard without breaking the current shell.',
+    label: 'Upcoming',
+  },
+  {
+    title: 'Payments and receipts',
+    description: 'Finish the patient journey from symptom insight to booking and payment confirmation.',
+    label: 'Planned',
   },
 ]
 
@@ -61,40 +89,13 @@ function createPreviewSession(base) {
   }
 }
 
-const roadmapCards = [
-  {
-    title: 'Auth journeys',
-    description: 'Login, registration, and role-aware navigation will plug in next.',
-    label: 'Queued',
-  },
-  {
-    title: 'Appointments',
-    description: 'Booking and availability flows will sit on top of doctor schedules.',
-    label: 'Queued',
-  },
-  {
-    title: 'Telemedicine',
-    description: 'Video sessions and live consult handoff will arrive after auth routes settle.',
-    label: 'Upcoming',
-  },
-  {
-    title: 'Payments',
-    description: 'Checkout, billing state, and receipts are waiting for final payment wiring.',
-    label: 'Upcoming',
-  },
-  {
-    title: 'Notifications',
-    description: 'Bell states, reminders, and patient nudges will connect once events stabilize.',
-    label: 'Queued',
-  },
-  {
-    title: 'Medical records',
-    description: 'Patient-owned records and uploads will land in the next frontend pass.',
-    label: 'Planned',
-  },
-]
+function getInitialPath() {
+  const path = window.location.pathname || '/'
+  return path === '' ? '/' : path
+}
 
 export default function App() {
+  const [currentPath, setCurrentPath] = useState(getInitialPath)
   const [gatewayHealth, setGatewayHealth] = useState(null)
   const [doctorDirectory, setDoctorDirectory] = useState([])
   const [directoryState, setDirectoryState] = useState('idle')
@@ -105,7 +106,6 @@ export default function App() {
   const [analysisError, setAnalysisError] = useState('')
   const [analysisLoading, setAnalysisLoading] = useState(false)
   const [historyLoading, setHistoryLoading] = useState(false)
-  const [authTab, setAuthTab] = useState('login')
   const [authBusy, setAuthBusy] = useState(false)
   const [authMessage, setAuthMessage] = useState('')
   const [authError, setAuthError] = useState('')
@@ -128,8 +128,6 @@ export default function App() {
   const roleSummary = roleSummaries[activeRole] || roleSummaries.patient
   const topCondition = analysis?.possibleConditions?.[0] || null
 
-  const topCondition = analysis?.possibleConditions?.[0] || null
-  const serviceHealthy = gatewayHealth?.status === 'running'
   const quickStats = useMemo(() => {
     return [
       {
@@ -148,45 +146,36 @@ export default function App() {
         label: 'Doctors loaded',
         value: String(doctorDirectory.length),
       },
-      {
-        label: 'Analysis records',
-        value: String(history.length),
-      },
-      {
-        label: 'Foundation mode',
-        value: 'Live integrations only',
-      },
     ]
-  }, [doctorDirectory.length, history.length])
+  }, [activeRole, doctorDirectory.length, session])
 
-  const liveModules = [
-    {
-      title: 'Gateway',
-      value: gatewayHealth?.status || 'checking',
-      detail: gatewayHealth?.timestamp || 'Waiting for gateway response',
-      status: serviceHealthy ? 'ok' : 'warn',
-    },
-    {
-      title: 'Doctor directory',
-      value: `${doctorDirectory.length} listed`,
-      detail: 'Public doctor profiles from doctor-service',
-      status: directoryState === 'success' ? 'ok' : directoryState === 'error' ? 'warn' : 'pending',
-    },
-    {
-      title: 'AI triage',
-      value: topCondition?.name || 'Ready',
-      detail: topCondition
-        ? `${topCondition.confidencePercent}% confidence from ai-symptom-service`
-        : 'Submit symptoms to generate a triage result',
-      status: analysis ? 'ok' : 'pending',
-    },
-    {
-      title: 'History sync',
-      value: `${history.length} saved`,
-      detail: 'Persisted symptom analyses from PostgreSQL',
-      status: history.length > 0 ? 'ok' : historyLoading ? 'pending' : 'warn',
-    },
-  ]
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(getInitialPath())
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(sessionStorageKey)
+      if (saved) {
+        setSession(JSON.parse(saved))
+      }
+    } catch {
+      // Ignore bad local data and continue with a clean session.
+    }
+  }, [])
+
+  useEffect(() => {
+    if (session) {
+      window.localStorage.setItem(sessionStorageKey, JSON.stringify(session))
+    } else {
+      window.localStorage.removeItem(sessionStorageKey)
+    }
+  }, [session])
 
   useEffect(() => {
     const loadGatewayHealth = async () => {
@@ -208,7 +197,7 @@ export default function App() {
         const data = await fetchPublicDoctors()
         setDoctorDirectory(Array.isArray(data.data) ? data.data : [])
         setDirectoryState('success')
-      } catch (error) {
+      } catch (_error) {
         setDirectoryState('error')
       }
     }
@@ -222,7 +211,7 @@ export default function App() {
     try {
       const data = await fetchAnalysisHistory(nextUserId)
       setHistory(Array.isArray(data.data) ? data.data : [])
-    } catch (error) {
+    } catch (_error) {
       setHistory([])
     } finally {
       setHistoryLoading(false)
@@ -232,6 +221,12 @@ export default function App() {
   useEffect(() => {
     loadHistory(defaultUserId)
   }, [])
+
+  const navigateTo = (path) => {
+    if (path === currentPath) return
+    window.history.pushState({}, '', path)
+    setCurrentPath(path)
+  }
 
   const handleLoginChange = (event) => {
     const { name, value } = event.target
@@ -266,11 +261,14 @@ export default function App() {
         setSession(preview)
         setAuthMessage(data.message || 'Auth backend is still pending, so preview mode was enabled.')
       }
+
+      navigateTo('/patient')
     } catch (error) {
       const preview = createPreviewSession(loginValues)
       setSession(preview)
       setAuthError('Auth API is not fully ready yet. Preview mode was enabled instead.')
       setAuthMessage(error.message)
+      navigateTo('/patient')
     } finally {
       setAuthBusy(false)
     }
@@ -294,11 +292,14 @@ export default function App() {
         setSession(preview)
         setAuthMessage(data.message || 'Registration shell saved in preview mode.')
       }
+
+      navigateTo('/patient')
     } catch (error) {
       const preview = createPreviewSession(registerValues)
       setSession(preview)
       setAuthError('Registration backend is not ready yet. Preview mode was enabled instead.')
       setAuthMessage(error.message)
+      navigateTo('/patient')
     } finally {
       setAuthBusy(false)
     }
@@ -330,35 +331,40 @@ export default function App() {
     setSession(null)
     setAuthMessage('You have left preview mode.')
     setAuthError('')
+    navigateTo('/')
   }
 
-  return (
-    <div className="app-shell">
-      <header className="hero auth-hero">
+  const renderHomePage = () => (
+    <>
+      <header className="hero">
         <div className="hero-copy">
-          <p className="eyebrow">Frontend Auth Shell</p>
-          <h1>Role-aware entry flow for the platform while full authentication is still being wired.</h1>
+          <p className="eyebrow">Frontend Routing Shell</p>
+          <h1>Separate frontend screens for patient care, auth, doctors, and AI triage.</h1>
           <p className="hero-text">
-            This branch adds login and registration shells, stores preview auth state locally,
-            and gives patient, doctor, and admin users a cleaner landing experience without
-            blocking the already live doctor and AI modules.
+            The UI is now organized into proper routes instead of one long page. The connected
+            modules already working today stay available through focused screens, while the
+            remaining service journeys stay staged for later branches.
           </p>
           <div className="hero-actions">
             <StatusPill
               status={serviceHealthy ? 'ok' : 'warn'}
               label={serviceHealthy ? 'Gateway online' : 'Gateway needs attention'}
             />
-            <StatusPill status="pending" label="Frontend foundation branch" />
+            <StatusPill
+              status={session ? 'ok' : 'warn'}
+              label={session ? `${activeRole} shell active` : 'No active session'}
+            />
             <span className="subtle-text">{apiBaseUrl}</span>
           </div>
           <div className="hero-note">
-            <strong>Current focus:</strong> polished shell, live doctor browsing, AI triage,
-            and clean placeholders for the next service waves.
+            <strong>Current focus:</strong> separate pages, cleaner navigation, and a patient-first
+            route structure on top of the working backend integrations.
           </div>
         </div>
+
         <div className="stats-grid">
           {quickStats.map((item) => (
-            <div key={item.label} className="stat-card panel">
+            <div key={item.label} className="stat-card">
               <span>{item.label}</span>
               <strong>{item.value}</strong>
             </div>
@@ -366,272 +372,30 @@ export default function App() {
         </div>
       </header>
 
-      <main className="content-grid auth-layout">
-        <SectionCard
-          title="Access Portal"
-          subtitle="Connected to the gateway auth routes now, with preview mode standing in until full auth is ready."
-        >
-          <div className="auth-tabs">
+      <div className="route-grid">
+        {roleLinks
+          .filter((item) => item.path !== '/')
+          .map((item) => (
             <button
+              key={item.path}
               type="button"
-              className={`tab-button ${authTab === 'login' ? 'active' : ''}`}
-              onClick={() => setAuthTab('login')}
+              className="route-card"
+              onClick={() => navigateTo(item.path)}
             >
-              Sign in
+              <strong>{item.label}</strong>
+              <span>{item.path}</span>
             </button>
-            <button
-              type="button"
-              className={`tab-button ${authTab === 'register' ? 'active' : ''}`}
-              onClick={() => setAuthTab('register')}
-            >
-              Create account
-            </button>
-          </div>
+          ))}
+      </div>
 
-          {authTab === 'login' ? (
-            <LoginForm
-              values={loginValues}
-              onChange={handleLoginChange}
-              onSubmit={handleLogin}
-              loading={authBusy}
-              roleHint={loginValues.role}
-            />
-          ) : (
-            <RegisterForm
-              values={registerValues}
-              onChange={handleRegisterChange}
-              onSubmit={handleRegister}
-              loading={authBusy}
-            />
-          )}
-
-          {authError ? <p className="error-text">{authError}</p> : null}
-          {authMessage ? <p className="empty-state">{authMessage}</p> : null}
-        </SectionCard>
-
-        <SectionCard
-          title="Session Shell"
-          subtitle="A persisted frontend session so you can design role-specific spaces before the final backend auth flow arrives."
-        >
-          {session ? (
-            <div className="session-shell">
-              <div className="session-header">
-                <div>
-                  <h3>{session.name}</h3>
-                  <p>{session.email}</p>
-                </div>
-                <StatusPill
-                  status={session.mode === 'connected' ? 'ok' : 'warn'}
-                  label={session.mode === 'connected' ? 'Connected session' : 'Preview session'}
-                />
-              </div>
-
-              <div className="role-summary">
-                <strong>{roleSummary.title}</strong>
-                <p>{roleSummary.subtitle}</p>
-              </div>
-
-              <div className="role-chip-row">
-                {Object.keys(roleSummaries).map((role) => (
-                  <span
-                    key={role}
-                    className={`inline-role ${role === activeRole ? 'active' : ''}`}
-                  >
-                    {role}
-                  </span>
-                ))}
-              </div>
-
-              <button type="button" className="secondary-button" onClick={handleSignOut}>
-                Sign out
-              </button>
-            </div>
-          ) : (
-            <div className="session-shell empty-shell">
-              <strong>No active session yet</strong>
-              <p>
-                Sign in or register to start a role preview. The UI will keep working even if the
-                auth service only returns placeholder responses for now.
-              </p>
-            </div>
-          )}
-        </SectionCard>
-
-        <SectionCard
-          title="Role Readiness"
-          subtitle="This branch focuses on the auth entry shell and the role-specific frontend landing idea."
-        >
-          <div className="preview-grid">
-            {previewCards.map((card) => (
-              <article key={card.title} className="preview-card">
-                <div className="preview-card-top">
-                  <h3>{card.title}</h3>
-                  <StatusPill status="warn" label={card.status} />
-                </div>
-                <p>{card.description}</p>
-              </article>
-            ))}
-          </div>
-        </SectionCard>
-
-        <SectionCard
-          title="Doctor Directory"
-          subtitle="Approved doctor profiles from doctor-service, presented as the first live discovery surface."
-          subtitle="Still live and available from the foundation branch, now sitting below the auth shell."
-        >
-          {directoryState === 'loading' ? <p className="empty-state">Loading doctors...</p> : null}
-          {directoryState === 'error' ? (
-            <p className="empty-state">Doctor directory is not available yet.</p>
-          ) : null}
-          {directoryState === 'success' && doctorDirectory.length === 0 ? (
-            <p className="empty-state">No approved doctors are available yet.</p>
-          ) : null}
-          <div className="doctor-list">
-            {doctorDirectory.map((doctor) => (
-              <article key={doctor.doctor_id} className="doctor-card">
-                <div className="doctor-topline">
-                  <StatusPill status="ok" label="Approved" />
-                  <span className="doctor-id">{doctor.doctor_id}</span>
-                </div>
-                <div>
-                  <h3>{doctor.name || 'Doctor'}</h3>
-                  <p>{doctor.specialization || 'General Practice'}</p>
-                </div>
-                <div className="doctor-meta">
-                  <span>Consultation fee</span>
-                  <strong>{doctor.consultation_fee ?? 'N/A'}</strong>
-                </div>
-              </article>
-            ))}
-          </div>
-        </SectionCard>
-
-        <SectionCard
-          title="AI Triage Workspace"
-          subtitle="A clean foundation for symptom-driven triage while richer patient workflows are still on the way."
-        >
-          <form className="analysis-form" onSubmit={handleAnalyze}>
-            <label>
-              User ID
-              <input value={userId} onChange={(event) => setUserId(event.target.value)} />
-            </label>
-            <label>
-              Symptoms
-              <textarea
-                rows="5"
-                value={symptoms}
-                onChange={(event) => setSymptoms(event.target.value)}
-              />
-            </label>
-            <div className="form-actions">
-              <button type="submit" disabled={analysisLoading}>
-                {analysisLoading ? 'Analyzing...' : 'Analyze symptoms'}
-              </button>
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => loadHistory(userId)}
-                disabled={historyLoading}
-              >
-                {historyLoading ? 'Refreshing...' : 'Refresh history'}
-              </button>
-            </div>
-          </form>
-
-          {analysisError ? <p className="error-text">{analysisError}</p> : null}
-
-          {analysis ? (
-            <div className="analysis-result">
-              <div className="result-banner">
-                <strong>{topCondition?.name || 'No diagnosis'}</strong>
-                <span>
-                  Confidence: {analysis.confidence ? `${Math.round(analysis.confidence * 100)}%` : '0%'}
-                </span>
-              </div>
-              <p>{analysis.recommendation}</p>
-
-              <div className="chip-group">
-                {(analysis.detectedSymptoms || []).map((symptom) => (
-                  <span key={symptom} className="chip">
-                    {symptom}
-                  </span>
-                ))}
-              </div>
-
-              {analysis.consultationAdvice ? (
-                <div className="consult-box">
-                  <strong>{analysis.consultationAdvice.message}</strong>
-                  <span>Risk score: {analysis.consultationAdvice.risk}</span>
-                </div>
-              ) : null}
-
-              {analysis.matchedDiseaseSymptoms?.length ? (
-                <div className="matched-symptoms">
-                  <span className="list-label">Matched disease symptom set</span>
-                  <div className="chip-group compact">
-                    {analysis.matchedDiseaseSymptoms.map((symptom) => (
-                      <span key={symptom} className="chip chip-muted">
-                        {symptom}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="conditions-list">
-                {(analysis.possibleConditions || []).map((condition) => (
-                  <div key={condition.name} className="condition-row">
-                    <span>{condition.name}</span>
-                    <strong>{condition.confidencePercent}%</strong>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
-        </SectionCard>
-
-        <SectionCard
-          title="Analysis Timeline"
-          subtitle="Recent symptom analyses already saved by the AI service, ready to evolve into a patient journey view."
-        >
-          {historyLoading ? <p className="empty-state">Loading history...</p> : null}
-          {!historyLoading && history.length === 0 ? (
-            <p className="empty-state">No history for this user yet.</p>
-          ) : null}
-          <div className="history-list">
-            {history.map((item) => (
-              <article key={item.id} className="history-card">
-                <div className="history-header">
-                  <strong>{item.user_id}</strong>
-                  <span>{new Date(item.analyzed_at).toLocaleString()}</span>
-                </div>
-                <p>{item.symptoms}</p>
-                <div className="chip-group compact">
-                  {(item.detected_symptoms || []).map((symptom) => (
-                    <span key={symptom} className="chip">
-                      {symptom}
-                    </span>
-                  ))}
-                </div>
-              </article>
-            ))}
-          </div>
-        </SectionCard>
-      </main>
-
-      <section className="roadmap-section">
-        <div className="roadmap-heading">
-          <p className="eyebrow">Next Surface Areas</p>
-          <h2>Planned frontend modules while the remaining services settle.</h2>
-          <p>
-            These cards keep the structure intentional now, so the next branches can slot in
-            without redesigning the whole app shell again.
-          </p>
-        </div>
-        <div className="roadmap-grid">
+      <SectionCard
+        title="Next Surface Areas"
+        subtitle="These modules are staged cleanly now, so the next branches can deepen the experience without changing the routing shell."
+      >
+        <div className="preview-grid">
           {roadmapCards.map((card) => (
-            <article key={card.title} className="roadmap-card panel">
-              <div className="roadmap-topline">
+            <article key={card.title} className="preview-card">
+              <div className="preview-card-top">
                 <h3>{card.title}</h3>
                 <StatusPill status="pending" label={card.label} />
               </div>
@@ -639,7 +403,279 @@ export default function App() {
             </article>
           ))}
         </div>
-      </section>
+      </SectionCard>
+    </>
+  )
+
+  const renderLoginPage = () => (
+    <SectionCard
+      className="auth-page-card"
+      title="Sign In"
+      subtitle="Use preview auth to move into the patient route while backend auth keeps settling."
+    >
+      <LoginForm
+        values={loginValues}
+        onChange={handleLoginChange}
+        onSubmit={handleLogin}
+        loading={authBusy}
+        roleHint={loginValues.role}
+      />
+      {authError ? <p className="error-text">{authError}</p> : null}
+      {authMessage ? <p className="empty-state">{authMessage}</p> : null}
+    </SectionCard>
+  )
+
+  const renderRegisterPage = () => (
+    <SectionCard
+      className="auth-page-card"
+      title="Create Account"
+      subtitle="Register into preview mode so the separate patient flow can already be explored."
+    >
+      <RegisterForm
+        values={registerValues}
+        onChange={handleRegisterChange}
+        onSubmit={handleRegister}
+        loading={authBusy}
+      />
+      {authError ? <p className="error-text">{authError}</p> : null}
+      {authMessage ? <p className="empty-state">{authMessage}</p> : null}
+    </SectionCard>
+  )
+
+  const renderPatientPage = () => (
+    <div className="page-stack">
+      <SectionCard
+        title="Patient Dashboard"
+        subtitle="A patient-centered route built on top of the services already live in your stack."
+      >
+        <PatientDashboard
+          activeRole={activeRole}
+          session={session}
+          history={history}
+          doctorDirectory={doctorDirectory}
+          gatewayHealth={gatewayHealth}
+          topCondition={topCondition}
+        />
+      </SectionCard>
+
+      <SectionCard
+        title="Role Readiness"
+        subtitle="Patient is the primary focus here, while the remaining journeys are clearly staged."
+      >
+        <div className="preview-grid">
+          {previewCards.map((card) => (
+            <article key={card.title} className="preview-card">
+              <div className="preview-card-top">
+                <h3>{card.title}</h3>
+                <StatusPill status="warn" label={card.status} />
+              </div>
+              <p>{card.description}</p>
+            </article>
+          ))}
+        </div>
+      </SectionCard>
+    </div>
+  )
+
+  const renderDoctorsPage = () => (
+    <SectionCard
+      title="Doctor Directory"
+      subtitle="Approved doctor profiles from doctor-service, presented as the live discovery surface for the patient journey."
+    >
+      {directoryState === 'loading' ? <p className="empty-state">Loading doctors...</p> : null}
+      {directoryState === 'error' ? (
+        <p className="empty-state">Doctor directory is not available yet.</p>
+      ) : null}
+      {directoryState === 'success' && doctorDirectory.length === 0 ? (
+        <p className="empty-state">No approved doctors are available yet.</p>
+      ) : null}
+
+      <div className="doctor-list">
+        {doctorDirectory.map((doctor) => (
+          <article key={doctor.doctor_id} className="doctor-card">
+            <div className="doctor-topline">
+              <StatusPill status="ok" label="Approved" />
+              <span className="doctor-id">{doctor.doctor_id}</span>
+            </div>
+            <div>
+              <h3>{doctor.name || 'Doctor'}</h3>
+              <p>{doctor.specialization || 'General Practice'}</p>
+            </div>
+            <div className="doctor-meta">
+              <span>Consultation fee</span>
+              <strong>{doctor.consultation_fee ?? 'N/A'}</strong>
+            </div>
+          </article>
+        ))}
+      </div>
+    </SectionCard>
+  )
+
+  const renderAiPage = () => (
+    <div className="page-stack">
+      <SectionCard
+        title="AI Symptom Analyzer"
+        subtitle="A live symptom triage screen that feeds directly into the patient journey."
+      >
+        <form className="analysis-form" onSubmit={handleAnalyze}>
+          <label>
+            User ID
+            <input value={userId} onChange={(event) => setUserId(event.target.value)} />
+          </label>
+          <label>
+            Symptoms
+            <textarea
+              rows="5"
+              value={symptoms}
+              onChange={(event) => setSymptoms(event.target.value)}
+            />
+          </label>
+          <div className="form-actions">
+            <button type="submit" disabled={analysisLoading}>
+              {analysisLoading ? 'Analyzing...' : 'Analyze symptoms'}
+            </button>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => loadHistory(userId)}
+              disabled={historyLoading}
+            >
+              {historyLoading ? 'Refreshing...' : 'Refresh history'}
+            </button>
+          </div>
+        </form>
+
+        {analysisError ? <p className="error-text">{analysisError}</p> : null}
+
+        {analysis ? (
+          <div className="analysis-result">
+            <div className="result-banner">
+              <strong>{topCondition?.name || 'No diagnosis'}</strong>
+              <span>
+                Confidence: {analysis.confidence ? `${Math.round(analysis.confidence * 100)}%` : '0%'}
+              </span>
+            </div>
+            <p>{analysis.recommendation}</p>
+
+            <div className="chip-group">
+              {(analysis.detectedSymptoms || []).map((symptom) => (
+                <span key={symptom} className="chip">
+                  {symptom}
+                </span>
+              ))}
+            </div>
+
+            {(analysis.possibleConditions || []).length ? (
+              <div className="conditions-list">
+                {analysis.possibleConditions.map((condition) => (
+                  <div key={condition.name} className="condition-row">
+                    <span>{condition.name}</span>
+                    <strong>{condition.confidencePercent}%</strong>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            {analysis.consultationAdvice ? (
+              <div className="consult-box">
+                <strong>{analysis.consultationAdvice.message}</strong>
+                <span>Risk score: {analysis.consultationAdvice.risk}</span>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </SectionCard>
+
+      <SectionCard
+        title="Analysis History"
+        subtitle="Recent AI analyses stay visible so this route can evolve into a fuller care timeline."
+      >
+        {historyLoading ? <p className="empty-state">Loading history...</p> : null}
+        {!historyLoading && history.length === 0 ? (
+          <p className="empty-state">No history for this user yet.</p>
+        ) : null}
+
+        <div className="history-list">
+          {history.map((item) => (
+            <article key={item.id} className="history-card">
+              <div className="history-header">
+                <strong>{item.user_id}</strong>
+                <span>{new Date(item.analyzed_at).toLocaleString()}</span>
+              </div>
+              <p>{item.symptoms}</p>
+              <div className="chip-group compact">
+                {(item.detected_symptoms || []).map((symptom) => (
+                  <span key={symptom} className="chip">
+                    {symptom}
+                  </span>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
+      </SectionCard>
+    </div>
+  )
+
+  const renderPlaceholderPage = () => (
+    <SectionCard
+      title={`${activeRole.charAt(0).toUpperCase() + activeRole.slice(1)} Route Preview`}
+      subtitle="This route is reserved so the next role-based frontend branches can land cleanly."
+    >
+      <div className="placeholder-page">
+        <strong>{roleSummary.title}</strong>
+        <p>{roleSummary.subtitle}</p>
+      </div>
+    </SectionCard>
+  )
+
+  const renderCurrentPage = () => {
+    switch (currentPath) {
+      case '/login':
+        return renderLoginPage()
+      case '/register':
+        return renderRegisterPage()
+      case '/patient':
+        return renderPatientPage()
+      case '/doctors':
+        return renderDoctorsPage()
+      case '/ai-symptoms':
+        return renderAiPage()
+      case '/doctor':
+      case '/admin':
+        return renderPlaceholderPage()
+      case '/':
+      default:
+        return renderHomePage()
+    }
+  }
+
+  return (
+    <div className="app-shell">
+      <nav className="top-nav">
+        <button type="button" className="brand-link" onClick={() => navigateTo('/')}>
+          SmartCare Frontend
+        </button>
+        <div className="nav-links">
+          {roleLinks.map((item) => (
+            <button
+              key={item.path}
+              type="button"
+              className={`nav-link ${currentPath === item.path ? 'active' : ''}`}
+              onClick={() => navigateTo(item.path)}
+            >
+              {item.label}
+            </button>
+          ))}
+          {session ? (
+            <button type="button" className="nav-link" onClick={handleSignOut}>
+              Sign out
+            </button>
+          ) : null}
+        </div>
+      </nav>
+
+      {renderCurrentPage()}
     </div>
   )
 }

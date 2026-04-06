@@ -3,11 +3,12 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const morgan = require('morgan');
 const client = require('prom-client');
+
+dotenv.config();
+
 const { initializeDatabase } = require('./config/postgres');
 const { initializeConsumer, disconnectConsumer } = require('./config/kafka');
 const notificationRoutes = require('./routes/notificationRoutes');
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3007;

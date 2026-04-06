@@ -405,7 +405,14 @@ button:disabled {
   margin-top: 18px;
 }
 
+.doctor-dashboard {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
 .patient-overview-card,
+.doctor-overview-card,
 .patient-journey-card,
 .preview-card,
 .roadmap-card {
@@ -424,6 +431,51 @@ button:disabled {
   margin-top: 8px;
   color: #25354c;
   font-size: 1.08rem;
+}
+
+.doctor-overview-grid,
+.doctor-workbench-grid,
+.doctor-preview-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.doctor-overview-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.doctor-preview-grid,
+.doctor-workbench-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.doctor-overview-card,
+.doctor-panel {
+  border: 1px solid rgba(46, 56, 74, 0.1);
+  background: rgba(255, 252, 248, 0.84);
+  box-shadow: 0 20px 60px rgba(38, 47, 61, 0.1);
+  backdrop-filter: blur(14px);
+  border-radius: 22px;
+  padding: 20px;
+}
+
+.doctor-overview-card span {
+  display: block;
+  color: #748398;
+  font-size: 0.9rem;
+}
+
+.doctor-overview-card strong {
+  display: block;
+  margin-top: 8px;
+  color: #25354c;
+  font-size: 1.08rem;
+}
+
+.doctor-overview-card p,
+.doctor-panel p {
+  margin: 6px 0 0;
+  color: #617287;
 }
 
 .session-header,
@@ -470,10 +522,44 @@ button:disabled {
 }
 
 .patient-dashboard-placeholder,
+.doctor-dashboard-placeholder,
 .placeholder-page {
   display: grid;
   gap: 10px;
   margin-top: 18px;
+}
+
+.doctor-callout {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(224, 234, 245, 0.68);
+  border: 1px solid rgba(93, 132, 166, 0.16);
+  color: #33455c;
+}
+
+.doctor-help {
+  color: #617287;
+}
+
+.doctor-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.doctor-slot-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.mini-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .dashboard-badge {
@@ -630,7 +716,11 @@ button:disabled {
   .preview-grid,
   .patient-overview-grid,
   .patient-journey-grid,
-  .roadmap-grid {
+  .roadmap-grid,
+  .doctor-overview-grid,
+  .doctor-preview-grid,
+  .doctor-workbench-grid,
+  .mini-form-grid {
     grid-template-columns: 1fr;
   }
 

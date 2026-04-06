@@ -11,7 +11,6 @@ export default function PatientDashboard({
       <div className="patient-dashboard patient-dashboard-placeholder">
         <strong>Patient dashboard preview is waiting for the patient role.</strong>
         <p>
-          Switch the preview role to <strong>patient</strong> from the access shell to see the
           Switch the preview role to <strong>patient</strong> from the login page to see the
           patient-specific workspace with care insights, doctor suggestions, and symptom follow-up.
         </p>
@@ -84,7 +83,6 @@ export default function PatientDashboard({
           <p className="patient-callout">
             {topCondition
               ? `Your latest symptom analysis points toward ${topCondition.name}. Review the doctor list below if you want to turn that triage result into a consult flow next.`
-              : 'Start with the symptom analyzer below, then use the doctor directory to move from triage into care discovery.'}
               : 'Start with the symptom analyzer route, then use the doctor directory to move from triage into care discovery.'}
           </p>
         </div>

@@ -44,8 +44,8 @@
   padding: 10px 14px;
   color: #35506d;
   cursor: pointer;
-  transition: 0.2s ease;
   box-shadow: none;
+  transition: 0.2s ease;
 }
 
 .nav-link.active {
@@ -90,18 +90,18 @@
 }
 
 .hero-copy::before {
-  width: 240px;
-  height: 240px;
   top: -78px;
   right: -40px;
+  width: 240px;
+  height: 240px;
   background: radial-gradient(circle, rgba(211, 126, 93, 0.2), transparent 68%);
 }
 
 .hero-copy::after {
-  width: 180px;
-  height: 180px;
   bottom: -48px;
   left: -24px;
+  width: 180px;
+  height: 180px;
   background: radial-gradient(circle, rgba(117, 151, 132, 0.2), transparent 70%);
 }
 
@@ -207,13 +207,16 @@
 
 .route-grid,
 .preview-grid,
-.patient-journey-grid,
 .roadmap-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .patient-overview-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.patient-journey-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .route-card {
@@ -242,6 +245,8 @@
 
 .full-span {
   grid-column: 1 / -1;
+}
+
 .auth-page-card {
   max-width: 760px;
 }
@@ -286,32 +291,6 @@
 .status-pill.pending {
   color: #7b6230;
   background: #f2e1b8;
-}
-
-.auth-tabs {
-  display: inline-flex;
-  gap: 8px;
-  padding: 6px;
-  border-radius: 999px;
-  background: #edf2f6;
-  margin-top: 18px;
-}
-
-.tab-button,
-.role-chip {
-  border: none;
-  border-radius: 999px;
-  padding: 10px 14px;
-  color: #35506d;
-  background: transparent;
-  cursor: pointer;
-  transition: 0.2s ease;
-}
-
-.tab-button.active,
-.role-chip.active {
-  color: #ffffff;
-  background: linear-gradient(135deg, #3f607f, #5d84a6);
 }
 
 .auth-form,
@@ -366,7 +345,6 @@
 
 .role-picker,
 .form-actions,
-.role-chip-row,
 .chip-group,
 .action-chip-row {
   display: flex;
@@ -375,13 +353,14 @@
 }
 
 .role-chip {
+  border: none;
   border-radius: 999px;
   padding: 10px 14px;
   color: #35506d;
   background: transparent;
   cursor: pointer;
-  transition: 0.2s ease;
   box-shadow: none;
+  transition: 0.2s ease;
 }
 
 .role-chip.active {
@@ -426,182 +405,9 @@ button:disabled {
   margin-top: 18px;
 }
 
-.session-header,
-.history-header,
-.doctor-meta,
-.doctor-topline,
-.preview-card-top,
-.health-row,
-.condition-row,
-.result-banner,
-.consult-box,
-.roadmap-topline,
-.journey-card-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.session-header h3,
-.preview-card h3,
-.doctor-card h3,
-.roadmap-card h3,
-.journey-card-header h3 {
-  margin: 0;
 .patient-overview-card,
 .patient-journey-card,
-.preview-card {
-  border-radius: 22px;
-  padding: 20px;
-}
-
-.patient-overview-card span {
-  display: block;
-  color: #748398;
-  font-size: 0.9rem;
-}
-
-.patient-overview-card strong {
-  display: block;
-  margin-top: 8px;
-  color: #25354c;
-  font-size: 1.08rem;
-}
-
-.session-header p,
-.preview-card p,
-.doctor-card p,
-.history-card p,
-.role-summary p,
-.patient-overview-card p,
-.patient-journey-card p,
-.roadmap-card p {
-  margin: 6px 0 0;
-  color: #617287;
-}
-
-.role-summary {
-  margin-top: 16px;
-  padding: 14px 16px;
-  border-radius: 16px;
-  background: #f7f3ee;
-}
-
-.role-summary strong {
-  color: #304157;
-}
-
-.inline-role {
-  border-radius: 999px;
-  padding: 7px 11px;
-  color: #5b738f;
-  background: #edf3f8;
-  font-size: 0.85rem;
-  font-weight: 700;
-  text-transform: capitalize;
-}
-
-.inline-role.active {
-  color: #ffffff;
-  background: linear-gradient(135deg, #3f607f, #5d84a6);
-}
-
-.empty-shell {
-.patient-dashboard-placeholder,
-.placeholder-page {
-  display: grid;
-  gap: 10px;
-  margin-top: 18px;
-}
-
-.preview-card {
-  border-radius: 20px;
-  padding: 16px;
-.dashboard-badge {
-  border-radius: 999px;
-  padding: 6px 10px;
-  color: #2b4b67;
-  background: #e5eff7;
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-
-.dashboard-badge.muted {
-  color: #755e32;
-  background: #f4e6bf;
-}
-
-.action-chip {
-  border-radius: 999px;
-  padding: 7px 11px;
-  color: #35516e;
-  background: #dfedf8;
-  font-size: 0.84rem;
-  font-weight: 700;
-}
-
-.patient-callout {
-  padding: 14px 16px;
-  border-radius: 16px;
-  background: rgba(245, 234, 225, 0.72);
-  border: 1px solid rgba(191, 104, 72, 0.12);
-}
-
-.dashboard-list {
-  display: grid;
-  gap: 10px;
-  margin-top: 16px;
-}
-
-.dashboard-list-item {
-  border-radius: 16px;
-  padding: 14px 16px;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(46, 56, 74, 0.08);
-}
-
-.dashboard-list-item strong {
-  color: #2e4056;
-}
-
-.dashboard-badge {
-  border-radius: 999px;
-  padding: 6px 10px;
-  color: #2b4b67;
-  background: #e5eff7;
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-
-.dashboard-badge.muted {
-  color: #755e32;
-  background: #f4e6bf;
-}
-
-.patient-dashboard {
-  display: grid;
-  gap: 16px;
-  margin-top: 18px;
-}
-
-.patient-overview-grid,
-.patient-journey-grid,
-.roadmap-grid {
-  display: grid;
-  gap: 16px;
-}
-
-.patient-overview-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.patient-journey-grid,
-.roadmap-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.patient-overview-card,
-.patient-journey-card,
+.preview-card,
 .roadmap-card {
   border-radius: 22px;
   padding: 20px;
@@ -620,8 +426,71 @@ button:disabled {
   font-size: 1.08rem;
 }
 
-.patient-dashboard-placeholder {
-  padding: 6px 0;
+.session-header,
+.history-header,
+.doctor-meta,
+.doctor-topline,
+.preview-card-top,
+.condition-row,
+.result-banner,
+.consult-box,
+.roadmap-topline,
+.journey-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.preview-card-top,
+.doctor-topline,
+.result-banner,
+.consult-box,
+.roadmap-topline,
+.journey-card-header {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.preview-card h3,
+.doctor-card h3,
+.journey-card-header h3,
+.roadmap-card h3 {
+  margin: 0;
+  color: #25354c;
+}
+
+.preview-card p,
+.doctor-card p,
+.history-card p,
+.patient-overview-card p,
+.patient-journey-card p,
+.roadmap-card p {
+  margin: 6px 0 0;
+  color: #617287;
+}
+
+.patient-dashboard-placeholder,
+.placeholder-page {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.dashboard-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: #2b4b67;
+  background: #e5eff7;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.dashboard-badge.muted {
+  color: #755e32;
+  background: #f4e6bf;
 }
 
 .action-chip {
@@ -634,6 +503,7 @@ button:disabled {
 }
 
 .patient-callout {
+  margin: 0;
   padding: 14px 16px;
   border-radius: 16px;
   background: rgba(245, 234, 225, 0.72);
@@ -686,49 +556,6 @@ button:disabled {
   align-items: baseline;
 }
 
-.doctor-meta,
-.doctor-topline,
-.preview-card-top,
-.history-header,
-.condition-row,
-.result-banner,
-.consult-box,
-.journey-card-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.doctor-topline,
-.preview-card-top,
-.result-banner,
-.consult-box,
-.journey-card-header {
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.doctor-card h3,
-.preview-card h3,
-.journey-card-header h3 {
-  margin: 0;
-  color: #25354c;
-}
-
-.doctor-card p,
-.history-card p,
-.preview-card p,
-.patient-overview-card p,
-.patient-journey-card p {
-  margin: 6px 0 0;
-  color: #617287;
-}
-
-.doctor-meta {
-  margin-top: 14px;
-  align-items: baseline;
-}
-
 .doctor-meta span,
 .condition-row span,
 .history-header span {
@@ -747,14 +574,6 @@ button:disabled {
   border-radius: 22px;
   background: linear-gradient(180deg, rgba(247, 251, 255, 0.96), rgba(255, 249, 244, 0.9));
   border: 1px solid rgba(93, 132, 166, 0.16);
-}
-
-.result-banner,
-.consult-box,
-.roadmap-topline,
-.journey-card-header {
-  align-items: center;
-  flex-wrap: wrap;
 }
 
 .result-banner strong {
@@ -786,29 +605,13 @@ button:disabled {
   font-weight: 700;
 }
 
-.condition-row + .condition-row,
-.health-row + .health-row {
+.condition-row + .condition-row {
   margin-top: 12px;
 }
 
 .condition-row {
   padding-top: 10px;
   border-top: 1px solid rgba(46, 56, 74, 0.08);
-}
-
-.roadmap-section {
-  margin-top: 26px;
-}
-
-.roadmap-heading h2 {
-  margin: 0;
-  color: #2f2924;
-  font-size: clamp(1.6rem, 3vw, 2.4rem);
-}
-
-.roadmap-heading p:last-child {
-  max-width: 65ch;
-  color: #75695f;
 }
 
 .empty-state,
@@ -823,7 +626,6 @@ button:disabled {
 
 @media (max-width: 1080px) {
   .hero,
-  .content-grid,
   .route-grid,
   .preview-grid,
   .patient-overview-grid,
@@ -854,7 +656,8 @@ button:disabled {
   .patient-overview-card,
   .patient-journey-card,
   .preview-card,
-  .route-card {
+  .route-card,
+  .roadmap-card {
     padding: 18px;
   }
 
@@ -865,15 +668,11 @@ button:disabled {
   .doctor-meta,
   .doctor-topline,
   .preview-card-top,
-  .health-row,
-  .condition-row,
-  .result-banner,
-  .consult-box,
-  .roadmap-topline,
   .history-header,
   .condition-row,
   .result-banner,
   .consult-box,
+  .roadmap-topline,
   .journey-card-header {
     flex-direction: column;
     align-items: flex-start;

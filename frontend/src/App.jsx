@@ -3,6 +3,7 @@ import LoginForm from './components/LoginForm'
 import RegisterForm from './components/RegisterForm'
 import SectionCard from './components/SectionCard'
 import StatusPill from './components/StatusPill'
+import DoctorDashboard from './components/dashboards/DoctorDashboard'
 import PatientDashboard from './components/dashboards/PatientDashboard'
 import { loginUser, registerUser } from './utils/authService'
 import {
@@ -39,6 +40,7 @@ const roleLinks = [
   { label: 'Login', path: '/login' },
   { label: 'Register', path: '/register' },
   { label: 'Patient', path: '/patient' },
+  { label: 'Doctor', path: '/doctor' },
   { label: 'Doctors', path: '/doctors' },
   { label: 'AI Symptoms', path: '/ai-symptoms' },
 ]
@@ -81,6 +83,7 @@ const roadmapCards = [
 
 function createPreviewSession(base) {
   return {
+    userId: base.id || base.userId || base.user?.id || base.email?.split('@')[0] || null,
     name: base.name || base.email?.split('@')[0] || 'Preview user',
     email: base.email || 'preview@health.local',
     role: base.userType || base.role || 'patient',
@@ -92,6 +95,18 @@ function createPreviewSession(base) {
 function getInitialPath() {
   const path = window.location.pathname || '/'
   return path === '' ? '/' : path
+}
+
+function getRouteForRole(role) {
+  switch (role) {
+    case 'doctor':
+      return '/doctor'
+    case 'admin':
+      return '/admin'
+    case 'patient':
+    default:
+      return '/patient'
+  }
 }
 
 export default function App() {
@@ -247,13 +262,15 @@ export default function App() {
     try {
       const data = await loginUser(loginValues)
 
-      if (data?.success && data?.data?.token) {
+      if (data?.success && data?.data?.accessToken) {
+        const user = data.data.user || {}
         setSession({
-          name: data.data.name || loginValues.email,
-          email: data.data.email || loginValues.email,
-          role: data.data.userType || loginValues.role,
+          userId: user.id || null,
+          name: user.name || loginValues.email,
+          email: user.email || loginValues.email,
+          role: user.userType || loginValues.role,
           mode: 'connected',
-          token: data.data.token,
+          token: data.data.accessToken,
         })
         setAuthMessage('Signed in successfully.')
       } else {
@@ -262,13 +279,13 @@ export default function App() {
         setAuthMessage(data.message || 'Auth backend is still pending, so preview mode was enabled.')
       }
 
-      navigateTo('/patient')
+      navigateTo(getRouteForRole(loginValues.role))
     } catch (error) {
       const preview = createPreviewSession(loginValues)
       setSession(preview)
       setAuthError('Auth API is not fully ready yet. Preview mode was enabled instead.')
       setAuthMessage(error.message)
-      navigateTo('/patient')
+      navigateTo(getRouteForRole(loginValues.role))
     } finally {
       setAuthBusy(false)
     }
@@ -283,23 +300,31 @@ export default function App() {
     try {
       const data = await registerUser(registerValues)
 
-      if (data?.success && data?.data) {
-        const nextSession = createPreviewSession(registerValues)
+      if (data?.success && data?.data?.accessToken) {
+        const user = data.data.user || {}
+        const nextSession = {
+          userId: user.id || null,
+          name: user.name || registerValues.name,
+          email: user.email || registerValues.email,
+          role: user.userType || registerValues.userType,
+          mode: 'connected',
+          token: data.data.accessToken,
+        }
         setSession(nextSession)
-        setAuthMessage(data.message || 'Account shell created. Preview mode enabled.')
+        setAuthMessage(data.message || 'Account created and signed in successfully.')
       } else {
         const preview = createPreviewSession(registerValues)
         setSession(preview)
         setAuthMessage(data.message || 'Registration shell saved in preview mode.')
       }
 
-      navigateTo('/patient')
+      navigateTo(getRouteForRole(registerValues.userType))
     } catch (error) {
       const preview = createPreviewSession(registerValues)
       setSession(preview)
       setAuthError('Registration backend is not ready yet. Preview mode was enabled instead.')
       setAuthMessage(error.message)
-      navigateTo('/patient')
+      navigateTo(getRouteForRole(registerValues.userType))
     } finally {
       setAuthBusy(false)
     }
@@ -477,6 +502,46 @@ export default function App() {
     </div>
   )
 
+  const renderDoctorPage = () => (
+    <div className="page-stack">
+      <SectionCard
+        title="Doctor Workspace"
+        subtitle="A doctor-centered route for profile, schedule, verification, and prescription work."
+      >
+        <DoctorDashboard activeRole={activeRole} session={session} />
+      </SectionCard>
+
+      <SectionCard
+        title="Doctor Readiness"
+        subtitle="This branch focuses on the doctor side of the platform while keeping preview mode useful."
+      >
+        <div className="preview-grid">
+          <article className="preview-card">
+            <div className="preview-card-top">
+              <h3>Profile and visibility</h3>
+              <StatusPill status="ok" label="Connected" />
+            </div>
+            <p>Doctors can now shape their public profile and consultation setup from one route.</p>
+          </article>
+          <article className="preview-card">
+            <div className="preview-card-top">
+              <h3>Schedule and slots</h3>
+              <StatusPill status="ok" label="Connected" />
+            </div>
+            <p>Recurring or reset schedules, slot creation, and availability toggles are wired in.</p>
+          </article>
+          <article className="preview-card">
+            <div className="preview-card-top">
+              <h3>Verification and prescriptions</h3>
+              <StatusPill status="ok" label="Connected" />
+            </div>
+            <p>Doctors can track verification state and issue prescriptions from the same workspace.</p>
+          </article>
+        </div>
+      </SectionCard>
+    </div>
+  )
+
   const renderDoctorsPage = () => (
     <SectionCard
       title="Doctor Directory"
@@ -637,11 +702,12 @@ export default function App() {
         return renderRegisterPage()
       case '/patient':
         return renderPatientPage()
+      case '/doctor':
+        return renderDoctorPage()
       case '/doctors':
         return renderDoctorsPage()
       case '/ai-symptoms':
         return renderAiPage()
-      case '/doctor':
       case '/admin':
         return renderPlaceholderPage()
       case '/':

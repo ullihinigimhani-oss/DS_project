@@ -1,9 +1,12 @@
 import js from '@eslint/js'
 
 export default [
-  js.configs.recommended,
+  {
+    ignores: ['dist/**', 'node_modules/**'],
+  },
   {
     files: ['src/**/*.{js,jsx}'],
+    ...js.configs.recommended,
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -17,10 +20,20 @@ export default [
         document: 'readonly',
         fetch: 'readonly',
         console: 'readonly',
+        history: 'readonly',
+        location: 'readonly',
+        localStorage: 'readonly',
       },
     },
     rules: {
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+          varsIgnorePattern: '^[A-Z_]',
+        },
+      ],
     },
   },
 ]

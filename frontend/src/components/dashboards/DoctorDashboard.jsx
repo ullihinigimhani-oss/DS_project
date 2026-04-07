@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import StatusPill from '../StatusPill'
+import VideoRoom from '../VideoRoom'
 import {
   addDoctorScheduleSlot,
   deleteDoctorScheduleSlot,
@@ -36,6 +37,8 @@ export default function DoctorDashboard({ activeRole, session }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const [activeCallSessionId, setActiveCallSessionId] = useState(null)
+  const [joinSessionId, setJoinSessionId] = useState('')
 
   const [profileValues, setProfileValues] = useState({
     name: session?.name || '',
@@ -105,6 +108,16 @@ export default function DoctorDashboard({ activeRole, session }) {
   useEffect(() => {
     loadDoctorWorkspace()
   }, [doctorId, isConnected, session?.token])
+
+  if (activeCallSessionId) {
+    return (
+      <VideoRoom 
+        sessionId={activeCallSessionId} 
+        peerName="Active Patient Consultation" 
+        onEndRedirect={() => setActiveCallSessionId(null)} 
+      />
+    )
+  }
 
   if (!isDoctor) {
     return (
@@ -606,6 +619,39 @@ export default function DoctorDashboard({ activeRole, session }) {
             )}
           </div>
         </section>
+
+        {/* Video Consultation Integration */}
+        <section className="doctor-panel">
+          <div className="journey-card-header">
+            <h3>Video Consultation Room</h3>
+            <StatusPill status="ok" label="Telemedicine API" />
+          </div>
+          <p className="doctor-help">
+            Enter the active telemedicine session ID to join the call room with the patient.
+          </p>
+          <form 
+            className="analysis-form" 
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (joinSessionId) setActiveCallSessionId(joinSessionId);
+            }}
+          >
+            <label>
+              Session ID
+              <input 
+                name="sessionId" 
+                value={joinSessionId} 
+                onChange={(e) => setJoinSessionId(e.target.value)} 
+                placeholder="e.g. session-786"
+                required
+              />
+            </label>
+            <div className="form-actions">
+              <button type="submit" disabled={!isConnected || !joinSessionId}>Join Video Call</button>
+            </div>
+          </form>
+        </section>
+
       </div>
     </div>
   )

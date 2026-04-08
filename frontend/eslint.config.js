@@ -20,6 +20,8 @@ export default [
         document: 'readonly',
         fetch: 'readonly',
         console: 'readonly',
+        history: 'readonly',
+        location: 'readonly',
         localStorage: 'readonly',
       },
     },

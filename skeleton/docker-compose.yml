@@ -216,11 +216,17 @@ services:
     environment:
       PORT: 3007
       NODE_ENV: development
+      DB_HOST: postgres-notification
+      DB_PORT: 5432
+      DB_NAME: notification_db
+      DB_USER: admin
+      DB_PASSWORD: password
       KAFKA_BROKER: kafka:9092
       ENABLE_SMS: "${ENABLE_SMS:-true}"
       SMSAPI_TOKEN: "367|2SaoowtSbq3Z5QnK4111TghRLMRaQZ0fgM7ZJyBF"
       SMSAPI_SENDER_ID: "SMSAPI Demo"
     depends_on:
+      - postgres-notification
       - kafka
     networks:
       - healthcare-network
@@ -317,6 +323,19 @@ services:
     networks:
       - healthcare-network
 
+  postgres-notification:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: notification_db
+    ports:
+      - "5407:5432"
+    volumes:
+      - notification_db_data:/var/lib/postgresql/data
+    networks:
+      - healthcare-network
+
   # Kafka
   kafka:
     image: confluentinc/cp-kafka:7.4.0
@@ -352,6 +371,7 @@ volumes:
   appointment_db_data:
   telemedicine_db_data:
   payment_db_data:
+  notification_db_data:
 
 networks:
   healthcare-network:

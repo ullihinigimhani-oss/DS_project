@@ -11,9 +11,60 @@
  * @param {function} props.onEndRedirect - Callback to redirect the user to a thank-you page.
  */
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
-import AgoraRTC from 'agora-rtc-sdk-ng';
-import { Mic, MicOff, Video, VideoOff, PhoneOff, Loader2 } from 'lucide-react';
+
+const iconProps = {
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.8,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+};
+
+const MicIcon = ({ className = '' }) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...iconProps}>
+    <path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z" />
+    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+    <path d="M12 19v3" />
+  </svg>
+);
+
+const MicOffIcon = ({ className = '' }) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...iconProps}>
+    <path d="m4 4 16 16" />
+    <path d="M9.2 9.2V12a2.8 2.8 0 0 0 4.78 1.98" />
+    <path d="M15 9.34V6a3 3 0 0 0-5.12-2.12" />
+    <path d="M19 10v2a7 7 0 0 1-11.08 5.74" />
+    <path d="M12 19v3" />
+  </svg>
+);
+
+const VideoIcon = ({ className = '' }) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...iconProps}>
+    <rect x="3" y="6" width="13" height="12" rx="2" />
+    <path d="m16 10 5-3v10l-5-3" />
+  </svg>
+);
+
+const VideoOffIcon = ({ className = '' }) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...iconProps}>
+    <path d="m4 4 16 16" />
+    <path d="M10 6H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h11" />
+    <path d="m16 10 5-3v10l-5-3" />
+  </svg>
+);
+
+const PhoneOffIcon = ({ className = '' }) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...iconProps}>
+    <path d="m4 4 16 16" />
+    <path d="M16.72 13.06a10.94 10.94 0 0 0 3.11-.52 1 1 0 0 1 1.1.36l1.74 2.38a1 1 0 0 1-.24 1.45A19 19 0 0 1 3.27 4.31a1 1 0 0 1 1.45-.24L7.1 5.8a1 1 0 0 1 .36 1.1 10.94 10.94 0 0 0-.52 3.11" />
+  </svg>
+);
+
+const LoaderIcon = ({ className = '' }) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...iconProps}>
+    <path d="M21 12a9 9 0 1 1-6.22-8.56" />
+  </svg>
+);
 
 const VideoRoom = ({ sessionId, peerName = 'Doctor/Patient', onEndRedirect }) => {
   const [status, setStatus] = useState('connecting'); // connecting, live, ended
@@ -26,6 +77,22 @@ const VideoRoom = ({ sessionId, peerName = 'Doctor/Patient', onEndRedirect }) =>
   const localPlayerRef = useRef(null);
   const remotePlayerRef = useRef(null);
   const clientRef = useRef(null);
+
+  const requestJson = async (url, options = {}) => {
+    const response = await fetch(url, options);
+
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+
+    return response.status === 204 ? null : response.json();
+  };
+
+  const loadAgoraRtc = async () => {
+    const moduleName = 'agora-rtc-sdk-ng';
+    const agoraModule = await import(/* @vite-ignore */ moduleName);
+    return agoraModule.default || agoraModule;
+  };
 
   // Handle call timer
   useEffect(() => {
@@ -44,11 +111,12 @@ const VideoRoom = ({ sessionId, peerName = 'Doctor/Patient', onEndRedirect }) =>
         const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
 
         // Fetch Agora Token and Channel Name
-        const response = await axios.get(`${baseUrl}/sessions/${sessionId}`, {
-          headers: { Authorization: `Bearer ${token}` }
+        const AgoraRTC = await loadAgoraRtc();
+        const data = await requestJson(`${baseUrl}/sessions/${sessionId}`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-        
-        const { channelName, agoraToken, appId } = response.data;
+
+        const { channelName, agoraToken, appId } = data;
 
         const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
         clientRef.current = client;
@@ -100,8 +168,9 @@ const VideoRoom = ({ sessionId, peerName = 'Doctor/Patient', onEndRedirect }) =>
       const token = localStorage.getItem('token');
       const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
 
-      await axios.post(`${baseUrl}/sessions/${sessionId}/end`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
+      await requestJson(`${baseUrl}/sessions/${sessionId}/end`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
       });
     } catch (error) {
       console.error('Error ending session:', error);
@@ -140,6 +209,19 @@ const VideoRoom = ({ sessionId, peerName = 'Doctor/Patient', onEndRedirect }) =>
     );
   }
 
+  if (status === 'error') {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-gray-100 px-6 text-center">
+        <div>
+          <p className="text-xl font-semibold text-gray-700">Video room is unavailable</p>
+          <p className="mt-2 text-sm text-gray-500">
+            The telemedicine client could not be initialized in this environment.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative h-screen w-full bg-gray-900 overflow-hidden flex flex-col">
       {/* Top Session Info Bar */}
@@ -148,7 +230,7 @@ const VideoRoom = ({ sessionId, peerName = 'Doctor/Patient', onEndRedirect }) =>
           <h2 className="text-lg font-semibold">{peerName}</h2>
           <div className="flex items-center gap-2 text-sm text-gray-300">
             {status === 'connecting' ? (
-              <span className="flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin"/> Connecting...</span>
+              <span className="flex items-center gap-1"><LoaderIcon className="w-3 h-3 animate-spin"/> Connecting...</span>
             ) : (
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> Live</span>
             )}
@@ -163,7 +245,7 @@ const VideoRoom = ({ sessionId, peerName = 'Doctor/Patient', onEndRedirect }) =>
       <div className="flex-1 w-full bg-gray-900" ref={remotePlayerRef}>
         {status === 'connecting' && (
           <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
-            <Loader2 className="w-8 h-8 animate-spin mb-4" />
+            <LoaderIcon className="w-8 h-8 animate-spin mb-4" />
             <p>Waiting for connection...</p>
           </div>
         )}
@@ -176,7 +258,7 @@ const VideoRoom = ({ sessionId, peerName = 'Doctor/Patient', onEndRedirect }) =>
       >
         {isVideoOff && (
           <div className="w-full h-full flex items-center justify-center bg-gray-800 text-gray-500">
-            <VideoOff className="w-8 h-8" />
+            <VideoOffIcon className="w-8 h-8" />
           </div>
         )}
       </div>
@@ -188,7 +270,7 @@ const VideoRoom = ({ sessionId, peerName = 'Doctor/Patient', onEndRedirect }) =>
           className={`p-4 rounded-full transition-colors ${isMuted ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-gray-100 text-gray-800 hover:bg-white/90'}`}
           title={isMuted ? "Unmute Microphone" : "Mute Microphone"}
         >
-          {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+          {isMuted ? <MicOffIcon className="w-6 h-6" /> : <MicIcon className="w-6 h-6" />}
         </button>
 
         <button 
@@ -196,7 +278,7 @@ const VideoRoom = ({ sessionId, peerName = 'Doctor/Patient', onEndRedirect }) =>
           className="p-5 rounded-full bg-red-500 text-white shadow-lg hover:bg-red-600 transition-colors"
           title="End Call"
         >
-          <PhoneOff className="w-8 h-8" />
+          <PhoneOffIcon className="w-8 h-8" />
         </button>
 
         <button 
@@ -204,7 +286,7 @@ const VideoRoom = ({ sessionId, peerName = 'Doctor/Patient', onEndRedirect }) =>
           className={`p-4 rounded-full transition-colors ${isVideoOff ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-gray-100 text-gray-800 hover:bg-white/90'}`}
           title={isVideoOff ? "Turn On Camera" : "Turn Off Camera"}
         >
-          {isVideoOff ? <VideoOff className="w-6 h-6" /> : <Video className="w-6 h-6" />}
+          {isVideoOff ? <VideoOffIcon className="w-6 h-6" /> : <VideoIcon className="w-6 h-6" />}
         </button>
       </div>
     </div>

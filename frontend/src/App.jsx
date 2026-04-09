@@ -75,6 +75,26 @@ function getRouteForRole(role) {
   }
 }
 
+function clearPersistedAuth() {
+  window.localStorage.removeItem(sessionStorageKey)
+  window.localStorage.removeItem(authTokenStorageKey)
+}
+
+function persistSession(nextSession) {
+  if (!nextSession) {
+    clearPersistedAuth()
+    return
+  }
+
+  window.localStorage.setItem(sessionStorageKey, JSON.stringify(nextSession))
+
+  if (nextSession.token) {
+    window.localStorage.setItem(authTokenStorageKey, nextSession.token)
+  } else {
+    window.localStorage.removeItem(authTokenStorageKey)
+  }
+}
+
 export default function App() {
   const [currentPath, setCurrentPath] = useState(getInitialPath)
   const [gatewayHealth, setGatewayHealth] = useState(null)
@@ -145,23 +165,30 @@ export default function App() {
     try {
       const saved = window.localStorage.getItem(sessionStorageKey)
       if (saved) {
-        setSession(JSON.parse(saved))
+        const parsed = JSON.parse(saved)
+
+        if (parsed?.mode === 'connected' && !parsed?.token) {
+          clearPersistedAuth()
+          setSession(null)
+          return
+        }
+
+        if (parsed?.token) {
+          window.localStorage.setItem(authTokenStorageKey, parsed.token)
+        } else {
+          window.localStorage.removeItem(authTokenStorageKey)
+        }
+
+        setSession(parsed)
       }
     } catch {
       // Ignore bad local data and continue with a clean session.
+      clearPersistedAuth()
     }
   }, [])
 
   useEffect(() => {
-    if (session) {
-      window.localStorage.setItem(sessionStorageKey, JSON.stringify(session))
-      if (session.token) {
-        window.localStorage.setItem(authTokenStorageKey, session.token)
-      }
-    } else {
-      window.localStorage.removeItem(sessionStorageKey)
-      window.localStorage.removeItem(authTokenStorageKey)
-    }
+    persistSession(session)
   }, [session])
 
   useEffect(() => {
@@ -243,15 +270,19 @@ export default function App() {
     setAuthBusy(true)
     setAuthError('')
     setAuthMessage('')
+    clearPersistedAuth()
 
     try {
       const data = await loginUser(loginValues)
 
       if (data?.success && data?.data?.accessToken) {
-        setSession(createConnectedSession(data, loginValues))
+        const nextSession = createConnectedSession(data, loginValues)
+        persistSession(nextSession)
+        setSession(nextSession)
         setAuthMessage('Signed in successfully.')
       } else {
         const preview = createPreviewSession(loginValues)
+        persistSession(preview)
         setSession(preview)
         setAuthMessage(data.message || 'Auth backend is still pending, so preview mode was enabled.')
       }
@@ -259,6 +290,7 @@ export default function App() {
       navigateTo(getRouteForRole(loginValues.role))
     } catch (error) {
       const preview = createPreviewSession(loginValues)
+      persistSession(preview)
       setSession(preview)
       setAuthError('Auth API is not fully ready yet. Preview mode was enabled instead.')
       setAuthMessage(error.message)
@@ -273,15 +305,19 @@ export default function App() {
     setAuthBusy(true)
     setAuthError('')
     setAuthMessage('')
+    clearPersistedAuth()
 
     try {
       const data = await registerUser(registerValues)
 
       if (data?.success && data?.data?.accessToken) {
-        setSession(createConnectedSession(data, registerValues))
+        const nextSession = createConnectedSession(data, registerValues)
+        persistSession(nextSession)
+        setSession(nextSession)
         setAuthMessage(data.message || 'Account created and signed in successfully.')
       } else {
         const preview = createPreviewSession(registerValues)
+        persistSession(preview)
         setSession(preview)
         setAuthMessage(data.message || 'Registration shell saved in preview mode.')
       }
@@ -289,6 +325,7 @@ export default function App() {
       navigateTo(getRouteForRole(registerValues.userType))
     } catch (error) {
       const preview = createPreviewSession(registerValues)
+      persistSession(preview)
       setSession(preview)
       setAuthError('Registration backend is not ready yet. Preview mode was enabled instead.')
       setAuthMessage(error.message)
@@ -322,6 +359,7 @@ export default function App() {
 
   const handleSignOut = () => {
     const wasDoctor = session?.role === 'doctor'
+    clearPersistedAuth()
     setSession(null)
     setAuthMessage(wasDoctor ? 'Doctor session signed out.' : 'You have left preview mode.')
     setAuthError('')

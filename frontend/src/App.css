@@ -1588,6 +1588,56 @@ button:disabled {
   background: #dfeaf4;
 }
 
+.doctor-section-support {
+  margin: 8px 0 0;
+  color: #698094;
+}
+
+.doctor-appointment-highlight-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.doctor-appointment-highlight {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  text-align: left;
+  border: 1px solid rgba(20, 52, 82, 0.08);
+  background: linear-gradient(180deg, rgba(247, 251, 255, 0.96), rgba(255, 249, 244, 0.9));
+  box-shadow: 0 14px 28px rgba(22, 43, 65, 0.06);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.doctor-appointment-highlight:hover,
+.doctor-appointment-highlight.active {
+  transform: translateY(-1px);
+  border-color: rgba(43, 88, 122, 0.16);
+  box-shadow: 0 18px 32px rgba(22, 43, 65, 0.09);
+}
+
+.doctor-appointment-highlight span {
+  color: #6e8395;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.doctor-appointment-highlight strong {
+  color: #16324d;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.doctor-appointment-highlight p {
+  margin: 0;
+  color: #61778c;
+}
+
 .doctor-detail-list,
 .doctor-list-stack {
   display: grid;
@@ -1654,6 +1704,25 @@ button:disabled {
   border-color: rgba(43, 88, 122, 0.18);
 }
 
+.doctor-empty-panel {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(247, 251, 255, 0.96), rgba(255, 249, 244, 0.9));
+  border: 1px solid rgba(20, 52, 82, 0.08);
+}
+
+.doctor-empty-panel strong {
+  color: #16324d;
+}
+
+.doctor-empty-panel p {
+  margin: 0;
+  color: #677f94;
+}
+
 .doctor-appointment-list {
   display: grid;
   gap: 12px;
@@ -1683,6 +1752,33 @@ button:disabled {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(238, 245, 250, 0.92));
 }
 
+.doctor-appointment-patient {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.doctor-appointment-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ffe6bf, #f4c97d);
+  color: #234565;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.doctor-appointment-avatar.large {
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+  font-size: 1.1rem;
+}
+
 .doctor-appointment-card-top,
 .doctor-appointment-meta {
   display: flex;
@@ -1700,6 +1796,38 @@ button:disabled {
   color: #72859a;
   font-size: 0.9rem;
   flex-wrap: wrap;
+}
+
+.doctor-appointment-reason {
+  margin: 0;
+  color: #4b6279;
+}
+
+.doctor-appointment-reason.muted {
+  color: #8697a8;
+}
+
+.doctor-appointment-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.doctor-appointment-id {
+  color: #7e90a1;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.doctor-appointment-summary-card {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(247, 251, 255, 0.98), rgba(255, 249, 244, 0.92));
+  border: 1px solid rgba(20, 52, 82, 0.08);
 }
 
 .doctor-appointment-summary {
@@ -1730,6 +1858,18 @@ button:disabled {
 }
 
 .doctor-note-panel p {
+  margin: 8px 0 0;
+}
+
+.doctor-appointment-callout {
+  margin-top: 18px;
+}
+
+.doctor-appointment-callout strong {
+  color: #24425d;
+}
+
+.doctor-appointment-callout p {
   margin: 8px 0 0;
 }
 
@@ -2136,6 +2276,10 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .doctor-appointment-highlight-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2172,8 +2316,10 @@ button:disabled {
   .patient-booking-topline,
   .patient-booking-meta,
   .patient-directory-topline,
+  .doctor-appointment-patient,
   .doctor-appointment-card-top,
-  .doctor-appointment-meta {
+  .doctor-appointment-meta,
+  .doctor-appointment-footer {
     flex-direction: column;
     align-items: flex-start;
   }
@@ -2227,6 +2373,10 @@ button:disabled {
 
   .home-route-card {
     min-height: 0;
+  }
+
+  .doctor-appointment-highlight-grid {
+    grid-template-columns: 1fr;
   }
 
   .doctor-meta,

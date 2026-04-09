@@ -105,6 +105,7 @@ app.use('/api/v1/prescriptions', trackGatewayRequest('/api/v1/prescriptions'), c
 app.use('/api/v1/public', trackGatewayRequest('/api/v1/public'), createProxy(services.doctor));
 app.use('/api/v1/schedule', trackGatewayRequest('/api/v1/schedule'), createProxy(services.doctor));
 app.use('/api/v1/verification', trackGatewayRequest('/api/v1/verification'), createProxy(services.doctor));
+app.use('/api/v1/appointments', trackGatewayRequest('/api/v1/appointments'), createProxy(services.appointment));
 app.use('/api/appointments', trackGatewayRequest('/api/appointments'), createProxy(services.appointment));
 app.use('/api/telemedicine', trackGatewayRequest('/api/telemedicine'), createProxy(services.telemedicine));
 app.use('/api/payments', trackGatewayRequest('/api/payments'), createProxy(services.payment));

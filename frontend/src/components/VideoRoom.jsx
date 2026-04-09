@@ -13,7 +13,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import AgoraRTC from 'agora-rtc-sdk-ng';
-import { Mic, MicOff, Video, VideoOff, PhoneOff, Loader2 } from 'lucide-react';
 
 const VideoRoom = ({ sessionId, peerName = 'Doctor/Patient', onEndRedirect }) => {
   const [status, setStatus] = useState('connecting'); // connecting, live, ended
@@ -148,7 +147,7 @@ const VideoRoom = ({ sessionId, peerName = 'Doctor/Patient', onEndRedirect }) =>
           <h2 className="text-lg font-semibold">{peerName}</h2>
           <div className="flex items-center gap-2 text-sm text-gray-300">
             {status === 'connecting' ? (
-              <span className="flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin"/> Connecting...</span>
+              <span className="flex items-center gap-1"><span className="text-xs">...</span> Connecting...</span>
             ) : (
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> Live</span>
             )}
@@ -163,7 +162,7 @@ const VideoRoom = ({ sessionId, peerName = 'Doctor/Patient', onEndRedirect }) =>
       <div className="flex-1 w-full bg-gray-900" ref={remotePlayerRef}>
         {status === 'connecting' && (
           <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
-            <Loader2 className="w-8 h-8 animate-spin mb-4" />
+            <span className="mb-4 text-sm uppercase tracking-[0.3em]">Loading</span>
             <p>Waiting for connection...</p>
           </div>
         )}
@@ -176,7 +175,7 @@ const VideoRoom = ({ sessionId, peerName = 'Doctor/Patient', onEndRedirect }) =>
       >
         {isVideoOff && (
           <div className="w-full h-full flex items-center justify-center bg-gray-800 text-gray-500">
-            <VideoOff className="w-8 h-8" />
+            <span className="text-sm font-semibold uppercase tracking-[0.2em]">Video Off</span>
           </div>
         )}
       </div>
@@ -188,7 +187,7 @@ const VideoRoom = ({ sessionId, peerName = 'Doctor/Patient', onEndRedirect }) =>
           className={`p-4 rounded-full transition-colors ${isMuted ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-gray-100 text-gray-800 hover:bg-white/90'}`}
           title={isMuted ? "Unmute Microphone" : "Mute Microphone"}
         >
-          {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+          <span className="text-sm font-semibold uppercase">{isMuted ? 'Muted' : 'Mic'}</span>
         </button>
 
         <button 
@@ -196,7 +195,7 @@ const VideoRoom = ({ sessionId, peerName = 'Doctor/Patient', onEndRedirect }) =>
           className="p-5 rounded-full bg-red-500 text-white shadow-lg hover:bg-red-600 transition-colors"
           title="End Call"
         >
-          <PhoneOff className="w-8 h-8" />
+          <span className="text-sm font-semibold uppercase">End</span>
         </button>
 
         <button 
@@ -204,7 +203,7 @@ const VideoRoom = ({ sessionId, peerName = 'Doctor/Patient', onEndRedirect }) =>
           className={`p-4 rounded-full transition-colors ${isVideoOff ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-gray-100 text-gray-800 hover:bg-white/90'}`}
           title={isVideoOff ? "Turn On Camera" : "Turn Off Camera"}
         >
-          {isVideoOff ? <VideoOff className="w-6 h-6" /> : <Video className="w-6 h-6" />}
+          <span className="text-sm font-semibold uppercase">{isVideoOff ? 'Camera Off' : 'Camera'}</span>
         </button>
       </div>
     </div>

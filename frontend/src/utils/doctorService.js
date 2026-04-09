@@ -95,6 +95,18 @@ export async function deleteDoctorScheduleSlot(token, slotId) {
   return readJson(response)
 }
 
+export async function resetDoctorScheduleWeek(token, weekStart) {
+  const response = await fetch(`${doctorApiBase}/schedule/reset-week`, {
+    method: 'POST',
+    headers: getAuthHeaders(token, {
+      'Content-Type': 'application/json',
+    }),
+    body: JSON.stringify({ weekStart }),
+  })
+
+  return readJson(response)
+}
+
 export async function fetchDoctorVerificationStatus(token, doctorId) {
   const response = await fetch(`${doctorApiBase}/verification/status/${doctorId}`, {
     headers: getAuthHeaders(token),

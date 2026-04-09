@@ -141,7 +141,6 @@ export default function DoctorDashboard({ session, onSignOut, onRequireLogin }) 
   const activeSectionLabel =
     sidebarItems.find((item) => item.id === activeSection)?.label || 'Overview'
 
-  if (!isConnectedDoctor) {
   if (activeCallSessionId) {
     return (
       <VideoRoom 
@@ -152,7 +151,7 @@ export default function DoctorDashboard({ session, onSignOut, onRequireLogin }) 
     )
   }
 
-  if (!isDoctor) {
+  if (!isConnectedDoctor) {
     return (
       <div className="doctor-portal-guard">
         <div className="doctor-portal-guard-card">
@@ -818,8 +817,6 @@ export default function DoctorDashboard({ session, onSignOut, onRequireLogin }) 
         {message ? <p className="doctor-success">{message}</p> : null}
 
         {renderActiveSection()}
-      </section>
-        </section>
 
         {/* Video Consultation Integration */}
         <section className="doctor-panel">
@@ -852,8 +849,8 @@ export default function DoctorDashboard({ session, onSignOut, onRequireLogin }) 
             </div>
           </form>
         </section>
+      </section>
 
-      </div>
     </div>
   )
 }

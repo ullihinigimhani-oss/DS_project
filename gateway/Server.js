@@ -67,6 +67,32 @@ const createProxy = (serviceUrl) => proxy(serviceUrl, {
   proxyReqPathResolver(req) {
     return req.originalUrl;
   },
+  proxyReqOptDecorator(proxyReqOpts, srcReq) {
+    proxyReqOpts.headers = proxyReqOpts.headers || {};
+
+    if (srcReq.headers.authorization) {
+      proxyReqOpts.headers.authorization = srcReq.headers.authorization;
+    }
+
+    if (srcReq.headers['content-type']) {
+      proxyReqOpts.headers['content-type'] = srcReq.headers['content-type'];
+    }
+
+    return proxyReqOpts;
+  },
+  proxyReqBodyDecorator(bodyContent, srcReq) {
+    const contentType = srcReq.headers['content-type'] || '';
+
+    if (
+      contentType.includes('application/json') &&
+      srcReq.body &&
+      Object.keys(srcReq.body).length > 0
+    ) {
+      return JSON.stringify(srcReq.body);
+    }
+
+    return bodyContent;
+  },
   proxyErrorHandler(err, res) {
     console.error('Gateway proxy error:', err.message);
     res.status(502).json({

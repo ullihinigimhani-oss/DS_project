@@ -1638,6 +1638,41 @@ button:disabled {
   color: #61778c;
 }
 
+.doctor-schedule-highlight-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.doctor-schedule-highlight {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(20, 52, 82, 0.08);
+  background: linear-gradient(180deg, rgba(247, 251, 255, 0.96), rgba(255, 249, 244, 0.9));
+}
+
+.doctor-schedule-highlight span {
+  color: #6e8395;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.doctor-schedule-highlight strong {
+  color: #16324d;
+  font-size: 1.55rem;
+  line-height: 1.1;
+}
+
+.doctor-schedule-highlight p {
+  margin: 0;
+  color: #61778c;
+}
+
 .doctor-detail-list,
 .doctor-list-stack {
   display: grid;
@@ -1674,6 +1709,84 @@ button:disabled {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
   gap: 18px;
+}
+
+.doctor-schedule-mode-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.doctor-schedule-mode-button {
+  border: 1px solid rgba(20, 52, 82, 0.1);
+  border-radius: 999px;
+  padding: 10px 14px;
+  color: #47647f;
+  background: #f3f7fb;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease,
+    background 180ms ease;
+}
+
+.doctor-schedule-mode-button:hover,
+.doctor-schedule-mode-button.active {
+  color: #1c425f;
+  background: #e4eef7;
+  border-color: rgba(43, 88, 122, 0.18);
+}
+
+.doctor-schedule-day-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.doctor-schedule-day-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: #f7fafc;
+  border: 1px solid rgba(20, 52, 82, 0.08);
+}
+
+.doctor-schedule-day-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.doctor-schedule-day-header strong {
+  color: #17324d;
+}
+
+.doctor-schedule-slot-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.doctor-schedule-slot-pill {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(20, 52, 82, 0.08);
+}
+
+.doctor-schedule-slot-pill span {
+  color: #33485f;
+  font-weight: 700;
+}
+
+.doctor-schedule-slot-card {
+  display: grid;
+  gap: 14px;
 }
 
 .doctor-filter-row {
@@ -2280,6 +2393,11 @@ button:disabled {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .doctor-schedule-highlight-grid,
+  .doctor-schedule-day-grid {
+    grid-template-columns: 1fr;
+  }
+
   .stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2319,7 +2437,10 @@ button:disabled {
   .doctor-appointment-patient,
   .doctor-appointment-card-top,
   .doctor-appointment-meta,
-  .doctor-appointment-footer {
+  .doctor-appointment-footer,
+  .doctor-schedule-day-header,
+  .doctor-schedule-slot-pill,
+  .doctor-slot-topline {
     flex-direction: column;
     align-items: flex-start;
   }
@@ -2376,6 +2497,10 @@ button:disabled {
   }
 
   .doctor-appointment-highlight-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .doctor-schedule-highlight-grid {
     grid-template-columns: 1fr;
   }
 

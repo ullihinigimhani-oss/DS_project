@@ -2,6 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import StatusPill from '../StatusPill'
 import VideoRoom from '../VideoRoom'
 import {
+  approveDoctorAppointment,
+  fetchDoctorAppointments,
+  rejectDoctorAppointment,
+} from '../../utils/appointmentService'
+import {
   addDoctorScheduleSlot,
   deleteDoctorScheduleSlot,
   fetchDoctorDocuments,
@@ -30,9 +35,33 @@ const sidebarItems = [
   { id: 'profile', label: 'Profile' },
 ]
 
+const appointmentFilters = [
+  { id: 'all', label: 'All' },
+  { id: 'today', label: 'Today' },
+  { id: 'upcoming', label: 'Upcoming' },
+  { id: 'pending', label: 'Pending' },
+  { id: 'confirmed', label: 'Confirmed' },
+]
+
 function formatTime(value) {
   if (!value) return 'Time not set'
   return String(value).slice(0, 5)
+}
+
+function formatDate(value) {
+  if (!value) return 'Date not set'
+
+  return new Date(`${value}T00:00:00`).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+function getAppointmentStatusTone(status) {
+  if (status === 'confirmed') return 'ok'
+  if (status === 'pending') return 'pending'
+  return 'warn'
 }
 
 function getInitials(name) {
@@ -54,11 +83,17 @@ export default function DoctorDashboard({ session, onSignOut, onRequireLogin }) 
   const [verification, setVerification] = useState(null)
   const [documents, setDocuments] = useState([])
   const [prescriptions, setPrescriptions] = useState([])
+  const [appointments, setAppointments] = useState([])
   const [loading, setLoading] = useState(false)
+  const [appointmentLoading, setAppointmentLoading] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [activeCallSessionId, setActiveCallSessionId] = useState(null)
   const [joinSessionId, setJoinSessionId] = useState('')
+  const [appointmentFilter, setAppointmentFilter] = useState('all')
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState('')
+  const [appointmentActionId, setAppointmentActionId] = useState('')
+  const [rejectReason, setRejectReason] = useState('')
 
   const [profileValues, setProfileValues] = useState({
     name: '',
@@ -122,21 +157,98 @@ export default function DoctorDashboard({ session, onSignOut, onRequireLogin }) 
     }
   }
 
+  const loadAppointments = async () => {
+    if (!isConnectedDoctor || !doctorId) return
+
+    setAppointmentLoading(true)
+
+    try {
+      const appointmentData = await fetchDoctorAppointments(session.token)
+      const nextAppointments = Array.isArray(appointmentData.data) ? appointmentData.data : []
+
+      setAppointments(nextAppointments)
+      setSelectedAppointmentId((current) =>
+        nextAppointments.some((appointment) => appointment.id === current)
+          ? current
+          : nextAppointments[0]?.id || '',
+      )
+    } catch (loadError) {
+      setAppointments([])
+      setSelectedAppointmentId('')
+      setError(loadError.message)
+    } finally {
+      setAppointmentLoading(false)
+    }
+  }
+
   useEffect(() => {
     loadDoctorWorkspace()
+    loadAppointments()
   }, [doctorId, isConnectedDoctor, session?.token])
 
   const patientCount = useMemo(() => {
     const uniquePatients = new Set(
-      prescriptions.map((prescription) => prescription.patient_id || prescription.patient_name).filter(Boolean),
+      [
+        ...appointments.map((appointment) => appointment.patient_id || appointment.patient_name),
+        ...prescriptions.map((prescription) => prescription.patient_id || prescription.patient_name),
+      ].filter(Boolean),
     )
     return uniquePatients.size
-  }, [prescriptions])
+  }, [appointments, prescriptions])
 
   const availableSlots = useMemo(
     () => (schedule?.slots || []).filter((slot) => slot.is_available),
     [schedule?.slots],
   )
+
+  const appointmentSummary = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0]
+
+    return {
+      today: appointments.filter((appointment) => appointment.appointment_date === today).length,
+      pending: appointments.filter((appointment) => appointment.status === 'pending').length,
+      confirmed: appointments.filter((appointment) => appointment.status === 'confirmed').length,
+      telemedicine: appointments.filter(
+        (appointment) => appointment.is_telemedicine && appointment.status === 'confirmed',
+      ).length,
+    }
+  }, [appointments])
+
+  const filteredAppointments = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0]
+
+    switch (appointmentFilter) {
+      case 'today':
+        return appointments.filter((appointment) => appointment.appointment_date === today)
+      case 'upcoming':
+        return appointments.filter((appointment) => appointment.appointment_date >= today)
+      case 'pending':
+        return appointments.filter((appointment) => appointment.status === 'pending')
+      case 'confirmed':
+        return appointments.filter((appointment) => appointment.status === 'confirmed')
+      case 'all':
+      default:
+        return appointments
+    }
+  }, [appointmentFilter, appointments])
+
+  const selectedAppointment =
+    filteredAppointments.find((appointment) => appointment.id === selectedAppointmentId) ||
+    appointments.find((appointment) => appointment.id === selectedAppointmentId) ||
+    null
+
+  useEffect(() => {
+    if (filteredAppointments.length === 0) {
+      if (selectedAppointmentId) {
+        setSelectedAppointmentId('')
+      }
+      return
+    }
+
+    if (!filteredAppointments.some((appointment) => appointment.id === selectedAppointmentId)) {
+      setSelectedAppointmentId(filteredAppointments[0].id)
+    }
+  }, [filteredAppointments, selectedAppointmentId])
 
   const activeSectionLabel =
     sidebarItems.find((item) => item.id === activeSection)?.label || 'Overview'
@@ -177,18 +289,22 @@ export default function DoctorDashboard({ session, onSignOut, onRequireLogin }) 
   const overviewCards = [
     {
       label: "Today's appointments",
-      value: '0',
-      detail: 'Appointment feed will connect next.',
+      value: String(appointmentSummary.today),
+      detail: appointmentSummary.pending
+        ? `${appointmentSummary.pending} waiting for your response.`
+        : 'No pending actions right now.',
     },
     {
       label: 'Total patients',
       value: String(patientCount),
-      detail: patientCount ? 'Patients with prescription records.' : 'No patients yet.',
+      detail: patientCount ? 'Unique patients across appointments and prescriptions.' : 'No patients yet.',
     },
     {
       label: 'Consultations',
-      value: '0',
-      detail: 'Teleconsultation workflow is still pending.',
+      value: String(appointmentSummary.telemedicine),
+      detail: appointmentSummary.telemedicine
+        ? 'Confirmed telemedicine sessions are ready.'
+        : 'No confirmed telemedicine sessions yet.',
     },
   ]
 
@@ -355,6 +471,39 @@ export default function DoctorDashboard({ session, onSignOut, onRequireLogin }) 
     }
   }
 
+  const handleApproveAppointment = async (appointmentId) => {
+    setMessage('')
+    setError('')
+    setAppointmentActionId(appointmentId)
+
+    try {
+      await approveDoctorAppointment(session.token, appointmentId)
+      await loadAppointments()
+      setMessage('Appointment approved successfully.')
+    } catch (appointmentError) {
+      setError(appointmentError.message)
+    } finally {
+      setAppointmentActionId('')
+    }
+  }
+
+  const handleRejectAppointment = async (appointmentId) => {
+    setMessage('')
+    setError('')
+    setAppointmentActionId(appointmentId)
+
+    try {
+      await rejectDoctorAppointment(session.token, appointmentId, rejectReason)
+      setRejectReason('')
+      await loadAppointments()
+      setMessage('Appointment request rejected.')
+    } catch (appointmentError) {
+      setError(appointmentError.message)
+    } finally {
+      setAppointmentActionId('')
+    }
+  }
+
   const renderOverview = () => (
     <div className="doctor-page-stack">
       <section className="doctor-welcome-panel">
@@ -418,23 +567,175 @@ export default function DoctorDashboard({ session, onSignOut, onRequireLogin }) 
       <section className="doctor-surface-card">
         <div className="doctor-card-topline">
           <h3>Appointments</h3>
-          <span className="doctor-mini-badge">Upcoming integration</span>
+          <span className="doctor-mini-badge">{appointments.length} total</span>
         </div>
         <p>
-          The final appointment feed will connect here from the appointment service. For now, your
-          availability and booking readiness are driven by the schedule section.
+          Review booking requests, confirm upcoming visits, and keep track of who needs a response
+          next.
         </p>
-        <div className="doctor-detail-list">
-          <div className="doctor-detail-row">
-            <span>Schedule type</span>
-            <strong>{schedule?.schedule_type || 'Not configured'}</strong>
-          </div>
-          <div className="doctor-detail-row">
-            <span>Configured slots</span>
-            <strong>{schedule?.slots?.length || 0}</strong>
-          </div>
+        <div className="doctor-chip-row">
+          <span className="doctor-chip">{appointmentSummary.pending} pending</span>
+          <span className="doctor-chip">{appointmentSummary.confirmed} confirmed</span>
+          <span className="doctor-chip">{appointmentSummary.today} today</span>
+          <span className="doctor-chip">{schedule?.slots?.length || 0} slots configured</span>
         </div>
       </section>
+
+      <div className="doctor-appointments-layout">
+        <section className="doctor-surface-card">
+          <div className="doctor-card-topline">
+            <h3>Appointment feed</h3>
+            <div className="doctor-filter-row">
+              {appointmentFilters.map((filter) => (
+                <button
+                  key={filter.id}
+                  type="button"
+                  className={`doctor-filter-button ${appointmentFilter === filter.id ? 'active' : ''}`}
+                  onClick={() => setAppointmentFilter(filter.id)}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {appointmentLoading ? <p className="empty-state">Loading appointments...</p> : null}
+
+          {!appointmentLoading && filteredAppointments.length === 0 ? (
+            <p className="empty-state">
+              No appointments match this filter yet. Once patients start booking, requests will
+              appear here automatically.
+            </p>
+          ) : null}
+
+          <div className="doctor-appointment-list">
+            {filteredAppointments.map((appointment) => (
+              <button
+                key={appointment.id}
+                type="button"
+                className={`doctor-appointment-card ${
+                  selectedAppointmentId === appointment.id ? 'active' : ''
+                }`}
+                onClick={() => setSelectedAppointmentId(appointment.id)}
+              >
+                <div className="doctor-appointment-card-top">
+                  <div>
+                    <strong>{appointment.patient_name || 'Patient'}</strong>
+                    <p>
+                      {formatDate(appointment.appointment_date)} | {formatTime(appointment.start_time)} -{' '}
+                      {formatTime(appointment.end_time)}
+                    </p>
+                  </div>
+                  <StatusPill
+                    status={getAppointmentStatusTone(appointment.status)}
+                    label={appointment.status}
+                  />
+                </div>
+
+                <div className="doctor-appointment-meta">
+                  <span>{appointment.patient_email || appointment.patient_id}</span>
+                  <span>{appointment.is_telemedicine ? 'Telemedicine' : 'Clinic visit'}</span>
+                </div>
+
+                {appointment.reason ? <p>{appointment.reason}</p> : null}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="doctor-surface-card">
+          <div className="doctor-card-topline">
+            <h3>Appointment details</h3>
+            {selectedAppointment ? (
+              <StatusPill
+                status={getAppointmentStatusTone(selectedAppointment.status)}
+                label={selectedAppointment.status}
+              />
+            ) : null}
+          </div>
+
+          {!selectedAppointment ? (
+            <p className="empty-state">Select an appointment to review patient details and actions.</p>
+          ) : (
+            <>
+              <div className="doctor-appointment-summary">
+                <h4>{selectedAppointment.patient_name || 'Patient'}</h4>
+                <p>
+                  {formatDate(selectedAppointment.appointment_date)} |{' '}
+                  {formatTime(selectedAppointment.start_time)} - {formatTime(selectedAppointment.end_time)}
+                </p>
+              </div>
+
+              <div className="doctor-detail-list">
+                <div className="doctor-detail-row">
+                  <span>Patient email</span>
+                  <strong>{selectedAppointment.patient_email || 'Not available'}</strong>
+                </div>
+                <div className="doctor-detail-row">
+                  <span>Patient phone</span>
+                  <strong>{selectedAppointment.patient_phone || 'Not available'}</strong>
+                </div>
+                <div className="doctor-detail-row">
+                  <span>Visit type</span>
+                  <strong>{selectedAppointment.is_telemedicine ? 'Telemedicine' : 'Clinic visit'}</strong>
+                </div>
+                <div className="doctor-detail-row">
+                  <span>Appointment ID</span>
+                  <strong>{selectedAppointment.id}</strong>
+                </div>
+              </div>
+
+              {selectedAppointment.reason ? (
+                <div className="doctor-note-panel">
+                  <strong>Visit reason</strong>
+                  <p>{selectedAppointment.reason}</p>
+                </div>
+              ) : null}
+
+              {selectedAppointment.status === 'pending' ? (
+                <div className="doctor-action-stack">
+                  <label className="doctor-compact-field">
+                    Rejection note (optional)
+                    <textarea
+                      rows="3"
+                      value={rejectReason}
+                      onChange={(event) => setRejectReason(event.target.value)}
+                      placeholder="Share a short note if this request needs to be declined."
+                    />
+                  </label>
+                  <div className="doctor-toolbar">
+                    <button
+                      type="button"
+                      disabled={appointmentActionId === selectedAppointment.id}
+                      onClick={() => handleApproveAppointment(selectedAppointment.id)}
+                    >
+                      {appointmentActionId === selectedAppointment.id
+                        ? 'Saving...'
+                        : 'Approve appointment'}
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      disabled={appointmentActionId === selectedAppointment.id}
+                      onClick={() => handleRejectAppointment(selectedAppointment.id)}
+                    >
+                      {appointmentActionId === selectedAppointment.id
+                        ? 'Saving...'
+                        : 'Reject appointment'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="empty-state">
+                  {selectedAppointment.status === 'confirmed'
+                    ? 'This appointment is already confirmed and ready for the care flow.'
+                    : 'This appointment is no longer awaiting doctor action.'}
+                </p>
+              )}
+            </>
+          )}
+        </section>
+      </div>
     </div>
   )
 

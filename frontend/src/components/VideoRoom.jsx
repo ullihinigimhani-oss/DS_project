@@ -11,6 +11,8 @@
  * @param {function} props.onEndRedirect - Callback to redirect the user to a thank-you page.
  */
 import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
+import AgoraRTC from 'agora-rtc-sdk-ng';
 
 const iconProps = {
   fill: 'none',
@@ -245,6 +247,7 @@ const VideoRoom = ({ sessionId, peerName = 'Doctor/Patient', onEndRedirect }) =>
       <div className="flex-1 w-full bg-gray-900" ref={remotePlayerRef}>
         {status === 'connecting' && (
           <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+            <span className="mb-4 text-sm uppercase tracking-[0.3em]">Loading</span>
             <LoaderIcon className="w-8 h-8 animate-spin mb-4" />
             <p>Waiting for connection...</p>
           </div>

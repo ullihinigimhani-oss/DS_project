@@ -8,9 +8,45 @@
  * @param {string} props.userId - The ID of the logged-in user whose notifications should be fetched.
  */
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { formatDistanceToNow } from 'date-fns';
-import { Bell, Calendar, CreditCard, Stethoscope } from 'lucide-react';
+
+const iconProps = {
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.8,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+};
+
+const BellIcon = ({ className = '' }) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...iconProps}>
+    <path d="M10.27 21a2 2 0 0 0 3.46 0" />
+    <path d="M3.26 15a1 1 0 0 0 .74 1.71h16a1 1 0 0 0 .74-1.71C19.41 13.55 18 11.24 18 8a6 6 0 1 0-12 0c0 3.24-1.41 5.55-2.74 7Z" />
+  </svg>
+);
+
+const CalendarIcon = ({ className = '' }) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...iconProps}>
+    <rect x="3" y="4" width="18" height="18" rx="2" />
+    <path d="M16 2v4M8 2v4M3 10h18" />
+  </svg>
+);
+
+const CreditCardIcon = ({ className = '' }) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...iconProps}>
+    <rect x="2" y="5" width="20" height="14" rx="2" />
+    <path d="M2 10h20M6 15h2" />
+  </svg>
+);
+
+const StethoscopeIcon = ({ className = '' }) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...iconProps}>
+    <path d="M6 3v5a4 4 0 0 0 8 0V3" />
+    <path d="M6 3H4M14 3h2" />
+    <path d="M12 12v3a4 4 0 1 0 8 0v-1" />
+    <circle cx="20" cy="13" r="2" />
+  </svg>
+);
 
 const NotificationHistory = ({ userId }) => {
   const [notifications, setNotifications] = useState([]);
@@ -24,12 +60,18 @@ const NotificationHistory = ({ userId }) => {
         const token = localStorage.getItem('token');
         const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
 
-        const response = await axios.get(`${baseUrl}/notifications/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` }
+        const response = await fetch(`${baseUrl}/notifications/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-        
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch notifications: ${response.status}`);
+        }
+
+        const data = await response.json();
+
         // Ensure it handles returning response.data or response.data.notifications
-        setNotifications(response.data?.notifications || response.data || []);
+        setNotifications(data?.notifications || data || []);
       } catch (error) {
         console.error('Failed to fetch notifications:', error);
       } finally {
@@ -51,10 +93,10 @@ const NotificationHistory = ({ userId }) => {
 
   const getIconForType = (type) => {
     switch (type) {
-      case 'Appointment': return <Calendar className="w-5 h-5 text-blue-600" />;
-      case 'Payment': return <CreditCard className="w-5 h-5 text-green-600" />;
-      case 'Consultation': return <Stethoscope className="w-5 h-5 text-purple-600" />;
-      default: return <Bell className="w-5 h-5 text-gray-600" />;
+      case 'Appointment': return <CalendarIcon className="w-5 h-5 text-blue-600" />;
+      case 'Payment': return <CreditCardIcon className="w-5 h-5 text-green-600" />;
+      case 'Consultation': return <StethoscopeIcon className="w-5 h-5 text-purple-600" />;
+      default: return <BellIcon className="w-5 h-5 text-gray-600" />;
     }
   };
 
@@ -71,7 +113,7 @@ const NotificationHistory = ({ userId }) => {
     <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 bg-white min-h-screen">
       <div className="flex flex-col mb-8">
         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-          <Bell className="w-8 h-8 text-blue-600" />
+          <BellIcon className="w-8 h-8 text-blue-600" />
           Notification History
         </h1>
         <p className="text-gray-500 mt-2">Manage and view your past alerts, appointments, and activity.</p>
@@ -111,7 +153,7 @@ const NotificationHistory = ({ userId }) => {
         ) : filteredNotifications.length === 0 ? (
           // Empty State
           <div className="flex flex-col items-center justify-center p-12 text-center rounded-2xl bg-gray-50 border border-dashed border-gray-200 mt-4">
-            <Bell className="w-16 h-16 text-gray-300 mb-4" />
+            <BellIcon className="w-16 h-16 text-gray-300 mb-4" />
             <h3 className="text-lg font-semibold text-gray-900">No notifications yet</h3>
             <p className="text-gray-500 mt-2 max-w-sm">
               We'll let you know when you have new appointments, messages, or updates regarding your consultations.

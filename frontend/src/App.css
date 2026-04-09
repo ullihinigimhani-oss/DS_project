@@ -66,6 +66,15 @@
   margin-bottom: 24px;
 }
 
+.home-page {
+  display: grid;
+  gap: 22px;
+}
+
+.home-hero {
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.95fr);
+}
+
 .hero-copy,
 .stat-card,
 .card,
@@ -84,6 +93,14 @@
   overflow: hidden;
   border-radius: 30px;
   padding: 34px;
+}
+
+.home-hero-copy {
+  background:
+    radial-gradient(circle at top right, rgba(255, 206, 150, 0.22), transparent 28%),
+    radial-gradient(circle at bottom left, rgba(112, 162, 133, 0.16), transparent 28%),
+    linear-gradient(145deg, rgba(255, 250, 244, 0.96), rgba(249, 242, 232, 0.88));
+  animation: homeReveal 0.72s ease both;
 }
 
 .hero-copy::before,
@@ -140,6 +157,15 @@
   font-size: 1rem;
 }
 
+.home-hero-actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+
 .hero-actions {
   position: relative;
   z-index: 1;
@@ -148,6 +174,186 @@
   align-items: center;
   gap: 12px;
   margin-top: 26px;
+}
+
+.home-trust-row {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.home-trust-card,
+.home-spotlight-card,
+.home-orbit-card,
+.home-feature-card,
+.home-journey-card,
+.home-route-card {
+  border: 1px solid rgba(46, 56, 74, 0.1);
+  box-shadow: 0 20px 52px rgba(38, 47, 61, 0.08);
+}
+
+.home-trust-card {
+  padding: 16px 18px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px);
+}
+
+.home-trust-card span,
+.home-panel-label,
+.home-feature-card span,
+.home-journey-card span,
+.route-card-kicker {
+  display: block;
+  color: #c06a4a;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.home-trust-card strong {
+  display: block;
+  margin-top: 10px;
+  color: #2a384b;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.home-hero-panel {
+  display: grid;
+  gap: 16px;
+  animation: homeReveal 0.78s ease both;
+}
+
+.home-spotlight-card,
+.home-orbit-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+  padding: 24px;
+  background: rgba(255, 252, 248, 0.88);
+  backdrop-filter: blur(14px);
+}
+
+.home-spotlight-card::after,
+.home-orbit-card::after {
+  content: '';
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.home-spotlight-card::after {
+  top: -64px;
+  right: -34px;
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(223, 146, 100, 0.16), transparent 68%);
+}
+
+.home-orbit-card::after {
+  bottom: -82px;
+  right: -42px;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(112, 162, 133, 0.16), transparent 70%);
+}
+
+.home-spotlight-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.home-spotlight-header h2,
+.home-orbit-card h3,
+.home-feature-card h3,
+.home-journey-card h3 {
+  margin: 8px 0 0;
+  color: #23354a;
+}
+
+.home-spotlight-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.home-spotlight-stat {
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(46, 56, 74, 0.08);
+}
+
+.home-spotlight-stat span {
+  display: block;
+  color: #7b8897;
+  font-size: 0.84rem;
+}
+
+.home-spotlight-stat strong {
+  display: block;
+  margin-top: 10px;
+  color: #21364d;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.home-orbit-card {
+  background:
+    radial-gradient(circle at top left, rgba(255, 225, 187, 0.42), transparent 30%),
+    linear-gradient(150deg, rgba(56, 83, 74, 0.96), rgba(32, 55, 47, 0.96));
+  color: #f7f1e8;
+}
+
+.home-orbit-card .home-panel-label,
+.home-orbit-card h3,
+.home-orbit-card p {
+  position: relative;
+  z-index: 1;
+}
+
+.home-orbit-card .home-panel-label {
+  color: rgba(255, 211, 158, 0.92);
+}
+
+.home-orbit-card h3 {
+  color: #fff9f1;
+}
+
+.home-orbit-card p {
+  margin: 12px 0 0;
+  color: rgba(246, 239, 229, 0.82);
+}
+
+.home-orbit-tags {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.home-orbit-tags span {
+  padding: 8px 12px;
+  border-radius: 999px;
+  color: #fff7ee;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 234, 208, 0.16);
 }
 
 .hero-note {
@@ -243,9 +449,122 @@
   color: #6b7b8f;
 }
 
+.route-card p {
+  margin: 0;
+  color: #5f7085;
+  line-height: 1.5;
+}
+
+.home-route-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.home-route-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 220px;
+  align-content: start;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(249, 243, 234, 0.88));
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.home-route-card::after {
+  content: '';
+  position: absolute;
+  inset: auto -36px -48px auto;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(208, 126, 88, 0.14), transparent 70%);
+}
+
+.home-route-card:hover,
+.home-feature-card:hover,
+.home-journey-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 48px rgba(38, 47, 61, 0.12);
+}
+
+.route-card-kicker {
+  position: relative;
+  z-index: 1;
+}
+
+.route-card-path {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+  color: #8a7d70;
+  font-size: 0.9rem;
+}
+
 .page-stack {
   display: grid;
   gap: 20px;
+}
+
+.home-story-section {
+  background:
+    radial-gradient(circle at top right, rgba(255, 220, 177, 0.22), transparent 30%),
+    rgba(255, 252, 248, 0.86);
+}
+
+.home-feature-grid,
+.home-journey-grid {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.home-feature-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.home-journey-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.home-feature-card,
+.home-journey-card {
+  position: relative;
+  overflow: hidden;
+  padding: 22px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(12px);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.home-feature-card::after,
+.home-journey-card::after {
+  content: '';
+  position: absolute;
+  top: -36px;
+  right: -20px;
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(116, 154, 136, 0.14), transparent 70%);
+}
+
+.home-feature-card p,
+.home-journey-card p {
+  position: relative;
+  z-index: 1;
+  margin: 12px 0 0;
+  color: #627287;
+}
+
+.home-journey-card span {
+  position: relative;
+  z-index: 1;
+}
+
+.home-journey-card h3 {
+  position: relative;
+  z-index: 1;
+  margin-top: 12px;
 }
 
 .doctor-auth-grid {
@@ -1218,6 +1537,18 @@ button:disabled {
   color: #b15438;
 }
 
+@keyframes homeReveal {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 1280px) {
   .app-shell.doctor-route-shell {
     width: min(100% - 20px, 1500px);
@@ -1236,6 +1567,8 @@ button:disabled {
   .patient-overview-grid,
   .patient-journey-grid,
   .roadmap-grid,
+  .home-feature-grid,
+  .home-journey-grid,
   .doctor-overview-grid,
   .doctor-preview-grid,
   .doctor-workbench-grid,
@@ -1249,6 +1582,11 @@ button:disabled {
 
   .stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-trust-row,
+  .home-spotlight-grid {
+    grid-template-columns: 1fr;
   }
 
   .doctor-portal {
@@ -1294,6 +1632,11 @@ button:disabled {
     align-items: flex-start;
   }
 
+  .home-hero-actions,
+  .hero-actions {
+    width: 100%;
+  }
+
   .hero-copy,
   .card,
   .stat-card,
@@ -1309,9 +1652,14 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .home-route-card {
+    min-height: 0;
+  }
+
   .doctor-meta,
   .doctor-topline,
   .preview-card-top,
+  .home-spotlight-header,
   .history-header,
   .condition-row,
   .result-banner,

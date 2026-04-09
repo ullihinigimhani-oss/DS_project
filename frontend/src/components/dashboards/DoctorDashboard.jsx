@@ -141,18 +141,17 @@ export default function DoctorDashboard({ session, onSignOut, onRequireLogin }) 
   const activeSectionLabel =
     sidebarItems.find((item) => item.id === activeSection)?.label || 'Overview'
 
-  if (!isConnectedDoctor) {
   if (activeCallSessionId) {
     return (
-      <VideoRoom 
-        sessionId={activeCallSessionId} 
-        peerName="Active Patient Consultation" 
-        onEndRedirect={() => setActiveCallSessionId(null)} 
+      <VideoRoom
+        sessionId={activeCallSessionId}
+        peerName="Active Patient Consultation"
+        onEndRedirect={() => setActiveCallSessionId(null)}
       />
     )
   }
 
-  if (!isDoctor) {
+  if (!isConnectedDoctor) {
     return (
       <div className="doctor-portal-guard">
         <div className="doctor-portal-guard-card">
@@ -559,12 +558,37 @@ export default function DoctorDashboard({ session, onSignOut, onRequireLogin }) 
       <section className="doctor-surface-card">
         <div className="doctor-card-topline">
           <h3>Consultations</h3>
-          <span className="doctor-mini-badge">Pending</span>
+          <span className="doctor-mini-badge">Telemedicine</span>
         </div>
         <p>
-          Live consultation controls will be connected when the telemedicine workflow is finalized.
-          This section is reserved so the doctor portal layout stays consistent.
+          Join an active telemedicine session using its session ID. This keeps the doctor workflow
+          ready while the wider consultation flow is still evolving.
         </p>
+        <form
+          className="analysis-form"
+          onSubmit={(event) => {
+            event.preventDefault()
+            if (joinSessionId) {
+              setActiveCallSessionId(joinSessionId)
+            }
+          }}
+        >
+          <label>
+            Session ID
+            <input
+              name="sessionId"
+              value={joinSessionId}
+              onChange={(event) => setJoinSessionId(event.target.value)}
+              placeholder="e.g. session-786"
+              required
+            />
+          </label>
+          <div className="doctor-toolbar">
+            <button type="submit" disabled={!isConnectedDoctor || !joinSessionId}>
+              Join video call
+            </button>
+          </div>
+        </form>
       </section>
     </div>
   )
@@ -819,41 +843,6 @@ export default function DoctorDashboard({ session, onSignOut, onRequireLogin }) 
 
         {renderActiveSection()}
       </section>
-        </section>
-
-        {/* Video Consultation Integration */}
-        <section className="doctor-panel">
-          <div className="journey-card-header">
-            <h3>Video Consultation Room</h3>
-            <StatusPill status="ok" label="Telemedicine API" />
-          </div>
-          <p className="doctor-help">
-            Enter the active telemedicine session ID to join the call room with the patient.
-          </p>
-          <form 
-            className="analysis-form" 
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (joinSessionId) setActiveCallSessionId(joinSessionId);
-            }}
-          >
-            <label>
-              Session ID
-              <input 
-                name="sessionId" 
-                value={joinSessionId} 
-                onChange={(e) => setJoinSessionId(e.target.value)} 
-                placeholder="e.g. session-786"
-                required
-              />
-            </label>
-            <div className="form-actions">
-              <button type="submit" disabled={!isConnected || !joinSessionId}>Join Video Call</button>
-            </div>
-          </form>
-        </section>
-
       </div>
-    </div>
   )
 }

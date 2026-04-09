@@ -47,24 +47,6 @@ const roleLinks = [
   { label: 'AI Symptoms', path: '/ai-symptoms' },
 ]
 
-const previewCards = [
-  {
-    title: 'Appointments',
-    description: 'Booking and availability will plug into the patient journey once the appointment UX branch begins.',
-    status: 'Queued',
-  },
-  {
-    title: 'Medical records',
-    description: 'Upload, document review, and patient record surfacing are staged for the next pass.',
-    status: 'Upcoming',
-  },
-  {
-    title: 'Payments',
-    description: 'Billing, receipts, and checkout state will land after the care flow is settled.',
-    status: 'Queued',
-  },
-]
-
 function createPreviewSession(base) {
   return {
     userId: base.id || base.userId || base.user?.id || base.email?.split('@')[0] || null,
@@ -124,6 +106,7 @@ export default function App() {
 
   const serviceHealthy = gatewayHealth?.status === 'running'
   const isDoctorPortalRoute = currentPath === '/doctor/dashboard'
+  const isPatientPortalRoute = currentPath === '/patient'
   const activeRole = session?.role || loginValues.role
   const roleSummary = roleSummaries[activeRole] || roleSummaries.patient
   const topCondition = analysis?.possibleConditions?.[0] || null
@@ -381,38 +364,16 @@ export default function App() {
   )
 
   const renderPatientPage = () => (
-    <div className="page-stack">
-      <SectionCard
-        title="Patient Dashboard"
-        subtitle="A patient-centered route built on top of the services already live in your stack."
-      >
-        <PatientDashboard
-          activeRole={activeRole}
-          session={session}
-          history={history}
-          doctorDirectory={doctorDirectory}
-          gatewayHealth={gatewayHealth}
-          topCondition={topCondition}
-        />
-      </SectionCard>
-
-      <SectionCard
-        title="Role Readiness"
-        subtitle="Patient is the primary focus here, while the remaining journeys are clearly staged."
-      >
-        <div className="preview-grid">
-          {previewCards.map((card) => (
-            <article key={card.title} className="preview-card">
-              <div className="preview-card-top">
-                <h3>{card.title}</h3>
-                <StatusPill status="warn" label={card.status} />
-              </div>
-              <p>{card.description}</p>
-            </article>
-          ))}
-        </div>
-      </SectionCard>
-    </div>
+    <PatientDashboard
+      activeRole={activeRole}
+      session={session}
+      history={history}
+      doctorDirectory={doctorDirectory}
+      gatewayHealth={gatewayHealth}
+      topCondition={topCondition}
+      onSignOut={handleSignOut}
+      onRequireLogin={navigateTo}
+    />
   )
 
   const renderDoctorDashboardPage = () => (
@@ -613,8 +574,12 @@ export default function App() {
   }
 
   return (
-    <div className={`app-shell ${isDoctorPortalRoute ? 'doctor-route-shell' : ''}`.trim()}>
-      {!isDoctorPortalRoute ? (
+    <div
+      className={`app-shell ${isDoctorPortalRoute ? 'doctor-route-shell' : ''} ${
+        isPatientPortalRoute ? 'patient-route-shell' : ''
+      }`.trim()}
+    >
+      {!isDoctorPortalRoute && !isPatientPortalRoute ? (
         <nav className="top-nav">
           <button type="button" className="brand-link" onClick={() => navigateTo('/')}>
             Arogya

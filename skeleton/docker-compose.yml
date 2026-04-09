@@ -51,6 +51,8 @@ services:
     environment:
       PORT: 3001
       NODE_ENV: development
+      JWT_SECRET: SyOudFfvRbmoURg4Mq2N34wq
+      REFRESH_TOKEN_SECRET: SyOudFfvRbmoURg4Mq2N34wq_refresh
       DB_HOST: postgres-auth
       DB_PORT: 5432
       DB_NAME: auth_db

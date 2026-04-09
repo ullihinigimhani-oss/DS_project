@@ -143,10 +143,10 @@ export default function DoctorDashboard({ session, onSignOut, onRequireLogin }) 
 
   if (activeCallSessionId) {
     return (
-      <VideoRoom 
-        sessionId={activeCallSessionId} 
-        peerName="Active Patient Consultation" 
-        onEndRedirect={() => setActiveCallSessionId(null)} 
+      <VideoRoom
+        sessionId={activeCallSessionId}
+        peerName="Active Patient Consultation"
+        onEndRedirect={() => setActiveCallSessionId(null)}
       />
     )
   }
@@ -558,12 +558,37 @@ export default function DoctorDashboard({ session, onSignOut, onRequireLogin }) 
       <section className="doctor-surface-card">
         <div className="doctor-card-topline">
           <h3>Consultations</h3>
-          <span className="doctor-mini-badge">Pending</span>
+          <span className="doctor-mini-badge">Telemedicine</span>
         </div>
         <p>
-          Live consultation controls will be connected when the telemedicine workflow is finalized.
-          This section is reserved so the doctor portal layout stays consistent.
+          Join an active telemedicine session using its session ID. This keeps the doctor workflow
+          ready while the wider consultation flow is still evolving.
         </p>
+        <form
+          className="analysis-form"
+          onSubmit={(event) => {
+            event.preventDefault()
+            if (joinSessionId) {
+              setActiveCallSessionId(joinSessionId)
+            }
+          }}
+        >
+          <label>
+            Session ID
+            <input
+              name="sessionId"
+              value={joinSessionId}
+              onChange={(event) => setJoinSessionId(event.target.value)}
+              placeholder="e.g. session-786"
+              required
+            />
+          </label>
+          <div className="doctor-toolbar">
+            <button type="submit" disabled={!isConnectedDoctor || !joinSessionId}>
+              Join video call
+            </button>
+          </div>
+        </form>
       </section>
     </div>
   )
@@ -817,6 +842,8 @@ export default function DoctorDashboard({ session, onSignOut, onRequireLogin }) 
         {message ? <p className="doctor-success">{message}</p> : null}
 
         {renderActiveSection()}
+      </section>
+      </div>
 
         {/* Video Consultation Integration */}
         <section className="doctor-panel">

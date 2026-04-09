@@ -49,3 +49,47 @@ export async function rejectDoctorAppointment(token, appointmentId, reason) {
 
   return readJson(response)
 }
+
+export async function fetchDoctorAvailability(doctorId, weekStart) {
+  const search = new URLSearchParams()
+  if (weekStart) search.set('weekStart', weekStart)
+
+  const response = await fetch(
+    `${appointmentApiBase}/doctors/${doctorId}/slots?${search.toString()}`,
+  )
+
+  return readJson(response)
+}
+
+export async function createPatientBooking(token, payload) {
+  const response = await fetch(`${appointmentApiBase}`, {
+    method: 'POST',
+    headers: getAuthHeaders(token, {
+      'Content-Type': 'application/json',
+    }),
+    body: JSON.stringify(payload),
+  })
+
+  return readJson(response)
+}
+
+export async function fetchPatientBookings(token, status) {
+  const search = new URLSearchParams()
+  if (status) search.set('status', status)
+
+  const query = search.toString()
+  const response = await fetch(`${appointmentApiBase}${query ? `?${query}` : ''}`, {
+    headers: getAuthHeaders(token),
+  })
+
+  return readJson(response)
+}
+
+export async function cancelPatientBooking(token, appointmentId) {
+  const response = await fetch(`${appointmentApiBase}/${appointmentId}/cancel`, {
+    method: 'PUT',
+    headers: getAuthHeaders(token),
+  })
+
+  return readJson(response)
+}

@@ -1144,41 +1144,6 @@ export default function DoctorDashboard({ session, onSignOut, onRequireLogin }) 
 
         {renderActiveSection()}
       </section>
-      </div>
-
-        {/* Video Consultation Integration */}
-        <section className="doctor-panel">
-          <div className="journey-card-header">
-            <h3>Video Consultation Room</h3>
-            <StatusPill status="ok" label="Telemedicine API" />
-          </div>
-          <p className="doctor-help">
-            Enter the active telemedicine session ID to join the call room with the patient.
-          </p>
-          <form 
-            className="analysis-form" 
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (joinSessionId) setActiveCallSessionId(joinSessionId);
-            }}
-          >
-            <label>
-              Session ID
-              <input 
-                name="sessionId" 
-                value={joinSessionId} 
-                onChange={(e) => setJoinSessionId(e.target.value)} 
-                placeholder="e.g. session-786"
-                required
-              />
-            </label>
-            <div className="form-actions">
-              <button type="submit" disabled={!isConnected || !joinSessionId}>Join Video Call</button>
-            </div>
-          </form>
-        </section>
-      </section>
-
     </div>
   )
 }

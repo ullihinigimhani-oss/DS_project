@@ -11,7 +11,6 @@
  * @param {function} props.onEndRedirect - Callback to redirect the user to a thank-you page.
  */
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
 import AgoraRTC from 'agora-rtc-sdk-ng';
 
 const iconProps = {

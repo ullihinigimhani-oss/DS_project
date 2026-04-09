@@ -3,6 +3,7 @@ import LoginForm from './components/LoginForm'
 import RegisterForm from './components/RegisterForm'
 import SectionCard from './components/SectionCard'
 import StatusPill from './components/StatusPill'
+import Home from './components/Home'
 import DoctorDashboard from './components/dashboards/DoctorDashboard'
 import PatientDashboard from './components/dashboards/PatientDashboard'
 import { loginUser, registerUser } from './utils/authService'
@@ -61,24 +62,6 @@ const previewCards = [
     title: 'Payments',
     description: 'Billing, receipts, and checkout state will land after the care flow is settled.',
     status: 'Queued',
-  },
-]
-
-const roadmapCards = [
-  {
-    title: 'Appointment booking',
-    description: 'Connect patient dashboard actions to real booking routes and time-slot discovery.',
-    label: 'Queued',
-  },
-  {
-    title: 'Medical records',
-    description: 'Bring upload and records browsing into the patient dashboard without breaking the current shell.',
-    label: 'Upcoming',
-  },
-  {
-    title: 'Payments and receipts',
-    description: 'Finish the patient journey from symptom insight to booking and payment confirmation.',
-    label: 'Planned',
   },
 ]
 
@@ -362,79 +345,6 @@ export default function App() {
     navigateTo(wasDoctor ? '/login' : '/')
   }
 
-  const renderHomePage = () => (
-    <>
-      <header className="hero">
-        <div className="hero-copy">
-          <p className="eyebrow">Frontend Routing Shell</p>
-          <h1>Separate frontend screens for patient care, auth, doctors, and AI triage.</h1>
-          <p className="hero-text">
-            The UI is now organized into proper routes instead of one long page. The connected
-            modules already working today stay available through focused screens, while the
-            remaining service journeys stay staged for later branches.
-          </p>
-          <div className="hero-actions">
-            <StatusPill
-              status={serviceHealthy ? 'ok' : 'warn'}
-              label={serviceHealthy ? 'Gateway online' : 'Gateway needs attention'}
-            />
-            <StatusPill
-              status={session ? 'ok' : 'warn'}
-              label={session ? `${activeRole} shell active` : 'No active session'}
-            />
-            <span className="subtle-text">{apiBaseUrl}</span>
-          </div>
-          <div className="hero-note">
-            <strong>Current focus:</strong> separate pages, cleaner navigation, and a patient-first
-            route structure on top of the working backend integrations.
-          </div>
-        </div>
-
-        <div className="stats-grid">
-          {quickStats.map((item) => (
-            <div key={item.label} className="stat-card">
-              <span>{item.label}</span>
-              <strong>{item.value}</strong>
-            </div>
-          ))}
-        </div>
-      </header>
-
-      <div className="route-grid">
-        {roleLinks
-          .filter((item) => item.path !== '/')
-          .map((item) => (
-            <button
-              key={item.path}
-              type="button"
-              className="route-card"
-              onClick={() => navigateTo(item.path)}
-            >
-              <strong>{item.label}</strong>
-              <span>{item.path}</span>
-            </button>
-          ))}
-      </div>
-
-      <SectionCard
-        title="Next Surface Areas"
-        subtitle="These modules are staged cleanly now, so the next branches can deepen the experience without changing the routing shell."
-      >
-        <div className="preview-grid">
-          {roadmapCards.map((card) => (
-            <article key={card.title} className="preview-card">
-              <div className="preview-card-top">
-                <h3>{card.title}</h3>
-                <StatusPill status="pending" label={card.label} />
-              </div>
-              <p>{card.description}</p>
-            </article>
-          ))}
-        </div>
-      </SectionCard>
-    </>
-  )
-
   const renderLoginPage = () => (
     <SectionCard
       className="auth-page-card"
@@ -683,9 +593,22 @@ export default function App() {
         return renderAiPage()
       case '/admin':
         return renderPlaceholderPage()
+      case '/Home':
       case '/':
       default:
-        return renderHomePage()
+        return (
+          <Home
+            session={session}
+            activeRole={activeRole}
+            apiBaseUrl={apiBaseUrl}
+            gatewayHealth={gatewayHealth}
+            serviceHealthy={serviceHealthy}
+            quickStats={quickStats}
+            doctorDirectory={doctorDirectory}
+            navigateTo={navigateTo}
+            getRouteForRole={getRouteForRole}
+          />
+        )
     }
   }
 

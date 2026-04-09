@@ -19,6 +19,7 @@ import './App.css'
 const defaultSymptoms = 'I have fever, cough, headache and runny nose'
 const defaultUserId = 'patient-001'
 const sessionStorageKey = 'healthcare-auth-shell-session'
+const authTokenStorageKey = 'token'
 
 const roleSummaries = {
   patient: {
@@ -39,8 +40,8 @@ const roleLinks = [
   { label: 'Home', path: '/' },
   { label: 'Login', path: '/login' },
   { label: 'Register', path: '/register' },
+  { label: 'Doctor Dashboard', path: '/doctor/dashboard' },
   { label: 'Patient', path: '/patient' },
-  { label: 'Doctor', path: '/doctor' },
   { label: 'Doctors', path: '/doctors' },
   { label: 'AI Symptoms', path: '/ai-symptoms' },
 ]
@@ -100,7 +101,7 @@ function getInitialPath() {
 function getRouteForRole(role) {
   switch (role) {
     case 'doctor':
-      return '/doctor'
+      return '/doctor/dashboard'
     case 'admin':
       return '/admin'
     case 'patient':
@@ -139,6 +140,7 @@ export default function App() {
   })
 
   const serviceHealthy = gatewayHealth?.status === 'running'
+  const isDoctorPortalRoute = currentPath === '/doctor/dashboard'
   const activeRole = session?.role || loginValues.role
   const roleSummary = roleSummaries[activeRole] || roleSummaries.patient
   const topCondition = analysis?.possibleConditions?.[0] || null
@@ -187,8 +189,12 @@ export default function App() {
   useEffect(() => {
     if (session) {
       window.localStorage.setItem(sessionStorageKey, JSON.stringify(session))
+      if (session.token) {
+        window.localStorage.setItem(authTokenStorageKey, session.token)
+      }
     } else {
       window.localStorage.removeItem(sessionStorageKey)
+      window.localStorage.removeItem(authTokenStorageKey)
     }
   }, [session])
 
@@ -253,6 +259,19 @@ export default function App() {
     setRegisterValues((current) => ({ ...current, [name]: value }))
   }
 
+  const createConnectedSession = (authData, fallback) => {
+    const user = authData?.data?.user || {}
+
+    return {
+      userId: user.id || null,
+      name: user.name || fallback.name || fallback.email,
+      email: user.email || fallback.email,
+      role: user.userType || fallback.role || fallback.userType || 'patient',
+      mode: 'connected',
+      token: authData.data.accessToken,
+    }
+  }
+
   const handleLogin = async (event) => {
     event.preventDefault()
     setAuthBusy(true)
@@ -263,15 +282,7 @@ export default function App() {
       const data = await loginUser(loginValues)
 
       if (data?.success && data?.data?.accessToken) {
-        const user = data.data.user || {}
-        setSession({
-          userId: user.id || null,
-          name: user.name || loginValues.email,
-          email: user.email || loginValues.email,
-          role: user.userType || loginValues.role,
-          mode: 'connected',
-          token: data.data.accessToken,
-        })
+        setSession(createConnectedSession(data, loginValues))
         setAuthMessage('Signed in successfully.')
       } else {
         const preview = createPreviewSession(loginValues)
@@ -301,16 +312,7 @@ export default function App() {
       const data = await registerUser(registerValues)
 
       if (data?.success && data?.data?.accessToken) {
-        const user = data.data.user || {}
-        const nextSession = {
-          userId: user.id || null,
-          name: user.name || registerValues.name,
-          email: user.email || registerValues.email,
-          role: user.userType || registerValues.userType,
-          mode: 'connected',
-          token: data.data.accessToken,
-        }
-        setSession(nextSession)
+        setSession(createConnectedSession(data, registerValues))
         setAuthMessage(data.message || 'Account created and signed in successfully.')
       } else {
         const preview = createPreviewSession(registerValues)
@@ -353,10 +355,11 @@ export default function App() {
   }
 
   const handleSignOut = () => {
+    const wasDoctor = session?.role === 'doctor'
     setSession(null)
-    setAuthMessage('You have left preview mode.')
+    setAuthMessage(wasDoctor ? 'Doctor session signed out.' : 'You have left preview mode.')
     setAuthError('')
-    navigateTo('/')
+    navigateTo(wasDoctor ? '/login' : '/')
   }
 
   const renderHomePage = () => (
@@ -502,44 +505,12 @@ export default function App() {
     </div>
   )
 
-  const renderDoctorPage = () => (
-    <div className="page-stack">
-      <SectionCard
-        title="Doctor Workspace"
-        subtitle="A doctor-centered route for profile, schedule, verification, and prescription work."
-      >
-        <DoctorDashboard activeRole={activeRole} session={session} />
-      </SectionCard>
-
-      <SectionCard
-        title="Doctor Readiness"
-        subtitle="This branch focuses on the doctor side of the platform while keeping preview mode useful."
-      >
-        <div className="preview-grid">
-          <article className="preview-card">
-            <div className="preview-card-top">
-              <h3>Profile and visibility</h3>
-              <StatusPill status="ok" label="Connected" />
-            </div>
-            <p>Doctors can now shape their public profile and consultation setup from one route.</p>
-          </article>
-          <article className="preview-card">
-            <div className="preview-card-top">
-              <h3>Schedule and slots</h3>
-              <StatusPill status="ok" label="Connected" />
-            </div>
-            <p>Recurring or reset schedules, slot creation, and availability toggles are wired in.</p>
-          </article>
-          <article className="preview-card">
-            <div className="preview-card-top">
-              <h3>Verification and prescriptions</h3>
-              <StatusPill status="ok" label="Connected" />
-            </div>
-            <p>Doctors can track verification state and issue prescriptions from the same workspace.</p>
-          </article>
-        </div>
-      </SectionCard>
-    </div>
+  const renderDoctorDashboardPage = () => (
+    <DoctorDashboard
+      session={session}
+      onSignOut={handleSignOut}
+      onRequireLogin={navigateTo}
+    />
   )
 
   const renderDoctorsPage = () => (
@@ -700,10 +671,12 @@ export default function App() {
         return renderLoginPage()
       case '/register':
         return renderRegisterPage()
+      case '/doctor/dashboard':
+        return renderDoctorDashboardPage()
       case '/patient':
         return renderPatientPage()
       case '/doctor':
-        return renderDoctorPage()
+        return session?.role === 'doctor' ? renderDoctorDashboardPage() : renderLoginPage()
       case '/doctors':
         return renderDoctorsPage()
       case '/ai-symptoms':
@@ -717,29 +690,31 @@ export default function App() {
   }
 
   return (
-    <div className="app-shell">
-      <nav className="top-nav">
-        <button type="button" className="brand-link" onClick={() => navigateTo('/')}>
-          SmartCare Frontend
-        </button>
-        <div className="nav-links">
-          {roleLinks.map((item) => (
-            <button
-              key={item.path}
-              type="button"
-              className={`nav-link ${currentPath === item.path ? 'active' : ''}`}
-              onClick={() => navigateTo(item.path)}
-            >
-              {item.label}
-            </button>
-          ))}
-          {session ? (
-            <button type="button" className="nav-link" onClick={handleSignOut}>
-              Sign out
-            </button>
-          ) : null}
-        </div>
-      </nav>
+    <div className={`app-shell ${isDoctorPortalRoute ? 'doctor-route-shell' : ''}`.trim()}>
+      {!isDoctorPortalRoute ? (
+        <nav className="top-nav">
+          <button type="button" className="brand-link" onClick={() => navigateTo('/')}>
+            Arogya
+          </button>
+          <div className="nav-links">
+            {roleLinks.map((item) => (
+              <button
+                key={item.path}
+                type="button"
+                className={`nav-link ${currentPath === item.path ? 'active' : ''}`}
+                onClick={() => navigateTo(item.path)}
+              >
+                {item.label}
+              </button>
+            ))}
+            {session ? (
+              <button type="button" className="nav-link" onClick={handleSignOut}>
+                Sign out
+              </button>
+            ) : null}
+          </div>
+        </nav>
+      ) : null}
 
       {renderCurrentPage()}
     </div>

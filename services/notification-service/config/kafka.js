@@ -53,7 +53,7 @@ let consumerStarted = false;
 
 const initializeConsumer = async () => {
   if (consumerStarted) {
-    return;
+    return true;
   }
 
   try {
@@ -80,9 +80,10 @@ const initializeConsumer = async () => {
 
     consumerStarted = true;
     console.log('[Kafka] Consumer running');
+    return true;
   } catch (error) {
     console.error('[Kafka] Failed to initialize consumer:', error.message);
-    throw error;
+    return false;
   }
 };
 

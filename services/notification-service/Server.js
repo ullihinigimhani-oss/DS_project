@@ -95,7 +95,10 @@ const server = app.listen(PORT, async () => {
   console.log(`SMS enabled: ${smsEnabled}`);
   try {
     await initializeDatabase();
-    await initializeConsumer();
+    const kafkaReady = await initializeConsumer();
+    if (!kafkaReady) {
+      console.warn('Notification service will continue without Kafka consumer connectivity');
+    }
   } catch (error) {
     console.error('Failed to start notification service:', error.message);
     process.exit(1);

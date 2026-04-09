@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import StatusPill from '../StatusPill'
 import VideoRoom from '../VideoRoom'
 import {
@@ -19,16 +19,36 @@ import {
 
 const dayLabels = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
+const sidebarItems = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'appointments', label: 'Appointments' },
+  { id: 'schedule', label: 'Schedule' },
+  { id: 'patients', label: 'Patients' },
+  { id: 'consultations', label: 'Consultations' },
+  { id: 'prescriptions', label: 'Prescriptions' },
+  { id: 'verification', label: 'Verification' },
+  { id: 'profile', label: 'Profile' },
+]
+
 function formatTime(value) {
   if (!value) return 'Time not set'
   return String(value).slice(0, 5)
 }
 
-export default function DoctorDashboard({ activeRole, session }) {
-  const isDoctor = activeRole === 'doctor'
-  const isConnected = session?.mode === 'connected' && session?.token
+function getInitials(name) {
+  return String(name || 'Doctor')
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+}
+
+export default function DoctorDashboard({ session, onSignOut, onRequireLogin }) {
+  const isConnectedDoctor = session?.role === 'doctor' && session?.mode === 'connected' && session?.token
   const doctorId = session?.userId
 
+  const [activeSection, setActiveSection] = useState('overview')
   const [profile, setProfile] = useState(null)
   const [schedule, setSchedule] = useState(null)
   const [verification, setVerification] = useState(null)
@@ -41,7 +61,7 @@ export default function DoctorDashboard({ activeRole, session }) {
   const [joinSessionId, setJoinSessionId] = useState('')
 
   const [profileValues, setProfileValues] = useState({
-    name: session?.name || '',
+    name: '',
     specialization: '',
     consultationFee: '',
     bio: '',
@@ -68,7 +88,7 @@ export default function DoctorDashboard({ activeRole, session }) {
   })
 
   const loadDoctorWorkspace = async () => {
-    if (!isConnected || !doctorId) return
+    if (!isConnectedDoctor || !doctorId) return
 
     setLoading(true)
     setError('')
@@ -89,15 +109,12 @@ export default function DoctorDashboard({ activeRole, session }) {
       setVerification(verificationData.data)
       setDocuments(Array.isArray(documentsData.data) ? documentsData.data : [])
       setPrescriptions(Array.isArray(prescriptionsData.data) ? prescriptionsData.data : [])
-
-      if (nextProfile) {
-        setProfileValues({
-          name: nextProfile.name || session?.name || '',
-          specialization: nextProfile.specialization || '',
-          consultationFee: nextProfile.consultation_fee ? String(nextProfile.consultation_fee) : '',
-          bio: nextProfile.bio || '',
-        })
-      }
+      setProfileValues({
+        name: nextProfile?.name || session?.name || '',
+        specialization: nextProfile?.specialization || '',
+        consultationFee: nextProfile?.consultation_fee ? String(nextProfile.consultation_fee) : '',
+        bio: nextProfile?.bio || '',
+      })
     } catch (loadError) {
       setError(loadError.message)
     } finally {
@@ -107,8 +124,24 @@ export default function DoctorDashboard({ activeRole, session }) {
 
   useEffect(() => {
     loadDoctorWorkspace()
-  }, [doctorId, isConnected, session?.token])
+  }, [doctorId, isConnectedDoctor, session?.token])
 
+  const patientCount = useMemo(() => {
+    const uniquePatients = new Set(
+      prescriptions.map((prescription) => prescription.patient_id || prescription.patient_name).filter(Boolean),
+    )
+    return uniquePatients.size
+  }, [prescriptions])
+
+  const availableSlots = useMemo(
+    () => (schedule?.slots || []).filter((slot) => slot.is_available),
+    [schedule?.slots],
+  )
+
+  const activeSectionLabel =
+    sidebarItems.find((item) => item.id === activeSection)?.label || 'Overview'
+
+  if (!isConnectedDoctor) {
   if (activeCallSessionId) {
     return (
       <VideoRoom 
@@ -121,40 +154,42 @@ export default function DoctorDashboard({ activeRole, session }) {
 
   if (!isDoctor) {
     return (
-      <div className="doctor-dashboard doctor-dashboard-placeholder">
-        <strong>Doctor workspace preview is waiting for the doctor role.</strong>
-        <p>
-          Choose <strong>doctor</strong> on the login screen to see the doctor dashboard with
-          profile, schedule, verification, and prescription tools.
-        </p>
+      <div className="doctor-portal-guard">
+        <div className="doctor-portal-guard-card">
+          <p className="doctor-sidebar-kicker">Arogya Doctor Portal</p>
+          <h2>Doctor login is required before the dashboard can open.</h2>
+          <p>
+            Use the shared login or registration page, choose the doctor role, and the app will
+            redirect you into this dashboard automatically.
+          </p>
+          <div className="doctor-toolbar">
+            <button type="button" onClick={() => onRequireLogin('/login')}>
+              Go to login
+            </button>
+            <button type="button" className="secondary-button" onClick={() => onRequireLogin('/register')}>
+              Create account
+            </button>
+          </div>
+        </div>
       </div>
     )
   }
 
   const overviewCards = [
     {
-      label: 'Session mode',
-      value: isConnected ? 'Connected doctor' : 'Preview doctor',
-      detail: session?.email || 'doctor@example.com',
+      label: "Today's appointments",
+      value: '0',
+      detail: 'Appointment feed will connect next.',
     },
     {
-      label: 'Verification',
-      value: verification?.status || 'Pending',
-      detail: verification
-        ? `${verification.documentsSubmitted}/${verification.totalRequired} documents tracked`
-        : 'Upload and submit documents when connected',
+      label: 'Total patients',
+      value: String(patientCount),
+      detail: patientCount ? 'Patients with prescription records.' : 'No patients yet.',
     },
     {
-      label: 'Schedule type',
-      value: schedule?.schedule_type || 'Not set',
-      detail: schedule?.slots?.length
-        ? `${schedule.slots.length} slots configured`
-        : 'No slots configured yet',
-    },
-    {
-      label: 'Prescriptions',
-      value: String(prescriptions.length),
-      detail: prescriptions.length ? 'Issued by this doctor account' : 'No prescriptions issued yet',
+      label: 'Consultations',
+      value: '0',
+      detail: 'Teleconsultation workflow is still pending.',
     },
   ]
 
@@ -175,11 +210,6 @@ export default function DoctorDashboard({ activeRole, session }) {
 
   const handleProfileSubmit = async (event) => {
     event.preventDefault()
-    if (!isConnected) {
-      setMessage('Preview mode is active. Sign in with a real doctor account to save profile changes.')
-      return
-    }
-
     setMessage('')
     setError('')
 
@@ -193,11 +223,6 @@ export default function DoctorDashboard({ activeRole, session }) {
   }
 
   const handleScheduleType = async (scheduleType) => {
-    if (!isConnected) {
-      setMessage('Preview mode is active. Connected doctor auth is required to change schedule type.')
-      return
-    }
-
     setMessage('')
     setError('')
 
@@ -212,11 +237,6 @@ export default function DoctorDashboard({ activeRole, session }) {
 
   const handleAddSlot = async (event) => {
     event.preventDefault()
-    if (!isConnected) {
-      setMessage('Preview mode is active. Connected doctor auth is required to add slots.')
-      return
-    }
-
     setMessage('')
     setError('')
 
@@ -235,8 +255,6 @@ export default function DoctorDashboard({ activeRole, session }) {
   }
 
   const handleToggleSlot = async (slotId, isAvailable) => {
-    if (!isConnected) return
-
     setError('')
 
     try {
@@ -248,8 +266,6 @@ export default function DoctorDashboard({ activeRole, session }) {
   }
 
   const handleDeleteSlot = async (slotId) => {
-    if (!isConnected) return
-
     setError('')
 
     try {
@@ -260,22 +276,17 @@ export default function DoctorDashboard({ activeRole, session }) {
     }
   }
 
+  const handleVerificationType = (event) => {
+    setVerificationValues((current) => ({ ...current, documentType: event.target.value }))
+  }
+
   const handleVerificationFile = (event) => {
     const file = event.target.files?.[0] || null
     setVerificationValues((current) => ({ ...current, file }))
   }
 
-  const handleVerificationType = (event) => {
-    setVerificationValues((current) => ({ ...current, documentType: event.target.value }))
-  }
-
   const handleUploadDocument = async (event) => {
     event.preventDefault()
-    if (!isConnected) {
-      setMessage('Preview mode is active. Connected doctor auth is required to upload documents.')
-      return
-    }
-
     if (!verificationValues.file) {
       setError('Please choose a PDF document first.')
       return
@@ -295,11 +306,6 @@ export default function DoctorDashboard({ activeRole, session }) {
   }
 
   const handleSubmitVerification = async () => {
-    if (!isConnected) {
-      setMessage('Preview mode is active. Connected doctor auth is required to submit verification.')
-      return
-    }
-
     setMessage('')
     setError('')
 
@@ -314,11 +320,6 @@ export default function DoctorDashboard({ activeRole, session }) {
 
   const handleIssuePrescription = async (event) => {
     event.preventDefault()
-    if (!isConnected) {
-      setMessage('Preview mode is active. Connected doctor auth is required to issue prescriptions.')
-      return
-    }
-
     const medications = prescriptionValues.medications
       .split('\n')
       .map((item) => item.trim())
@@ -355,11 +356,16 @@ export default function DoctorDashboard({ activeRole, session }) {
     }
   }
 
-  return (
-    <div className="doctor-dashboard">
-      <div className="doctor-overview-grid">
+  const renderOverview = () => (
+    <div className="doctor-page-stack">
+      <section className="doctor-welcome-panel">
+        <h2>Welcome, Dr. {profile?.name || session?.name || 'Doctor'}</h2>
+        <p>Here&apos;s a summary of your current doctor workspace and the integrations already live.</p>
+      </section>
+
+      <div className="doctor-metric-grid">
         {overviewCards.map((card) => (
-          <article key={card.label} className="doctor-overview-card">
+          <article key={card.label} className="doctor-metric-card">
             <span>{card.label}</span>
             <strong>{card.value}</strong>
             <p>{card.detail}</p>
@@ -367,257 +373,452 @@ export default function DoctorDashboard({ activeRole, session }) {
         ))}
       </div>
 
-      <div className="doctor-callout">
-        <strong>Doctor module focus:</strong> profile management, schedule setup, verification
-        readiness, and prescription issuing all sit in one workspace now.
-      </div>
-
-      {loading ? <p className="empty-state">Loading doctor workspace...</p> : null}
-      {error ? <p className="error-text">{error}</p> : null}
-      {message ? <p className="empty-state">{message}</p> : null}
-
-      {!isConnected ? (
-        <div className="doctor-preview-grid">
-          <article className="doctor-panel">
-            <div className="journey-card-header">
-              <h3>Preview mode</h3>
-              <StatusPill status="warn" label="No live token" />
-            </div>
-            <p>
-              Sign in with a real doctor account to load your saved doctor profile, schedule,
-              prescriptions, and verification records from the backend.
-            </p>
-          </article>
-
-          <article className="doctor-panel">
-            <div className="journey-card-header">
-              <h3>What this route already covers</h3>
-              <span className="dashboard-badge">Doctor shell</span>
-            </div>
-            <div className="action-chip-row">
-              <span className="action-chip">Profile editing</span>
-              <span className="action-chip">Schedule setup</span>
-              <span className="action-chip">Verification uploads</span>
-              <span className="action-chip">Prescription issuing</span>
-            </div>
-          </article>
-        </div>
-      ) : null}
-
-      <div className="doctor-workbench-grid">
-        <section className="doctor-panel">
-          <div className="journey-card-header">
-            <h3>Public profile</h3>
-            <StatusPill status={profile ? 'ok' : 'pending'} label={profile ? 'Loaded' : 'New profile'} />
-          </div>
-          <form className="analysis-form" onSubmit={handleProfileSubmit}>
-            <label>
-              Name
-              <input name="name" value={profileValues.name} onChange={handleProfileChange} />
-            </label>
-            <label>
-              Specialization
-              <input
-                name="specialization"
-                value={profileValues.specialization}
-                onChange={handleProfileChange}
-              />
-            </label>
-            <label>
-              Consultation fee
-              <input
-                name="consultationFee"
-                type="number"
-                min="0"
-                step="0.01"
-                value={profileValues.consultationFee}
-                onChange={handleProfileChange}
-              />
-            </label>
-            <label>
-              Bio
-              <textarea name="bio" rows="4" value={profileValues.bio} onChange={handleProfileChange} />
-            </label>
-            <div className="form-actions">
-              <button type="submit">Save profile</button>
-            </div>
-          </form>
-        </section>
-
-        <section className="doctor-panel">
-          <div className="journey-card-header">
-            <h3>Schedule manager</h3>
-            <StatusPill
-              status={schedule?.slots?.length ? 'ok' : 'pending'}
-              label={schedule?.schedule_type || 'Not configured'}
-            />
-          </div>
-          <div className="doctor-action-row">
-            <button type="button" className="secondary-button" onClick={() => handleScheduleType('recurring')}>
-              Recurring
-            </button>
-            <button type="button" className="secondary-button" onClick={() => handleScheduleType('reset')}>
-              Reset weekly
-            </button>
-          </div>
-          <form className="analysis-form" onSubmit={handleAddSlot}>
-            <div className="mini-form-grid">
-              <label>
-                Day
-                <select name="dayOfWeek" value={slotValues.dayOfWeek} onChange={handleSlotChange}>
-                  {dayLabels.map((label, index) => (
-                    <option key={label} value={index}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Start
-                <input name="startTime" type="time" value={slotValues.startTime} onChange={handleSlotChange} />
-              </label>
-              <label>
-                End
-                <input name="endTime" type="time" value={slotValues.endTime} onChange={handleSlotChange} />
-              </label>
-            </div>
-            <label>
-              Week start
-              <input name="weekStart" type="date" value={slotValues.weekStart} onChange={handleSlotChange} />
-            </label>
-            <div className="form-actions">
-              <button type="submit">Add slot</button>
-            </div>
-          </form>
-
-          <div className="dashboard-list">
-            {(schedule?.slots || []).length ? (
-              schedule.slots.map((slot) => (
-                <article key={slot.id} className="dashboard-list-item">
-                  <div className="doctor-slot-topline">
-                    <strong>{dayLabels[slot.day_of_week] || `Day ${slot.day_of_week}`}</strong>
-                    <StatusPill status={slot.is_available ? 'ok' : 'warn'} label={slot.is_available ? 'Available' : 'Unavailable'} />
-                  </div>
-                  <p>
-                    {formatTime(slot.start_time)} to {formatTime(slot.end_time)}
-                    {slot.week_start ? ` • week of ${slot.week_start}` : ''}
-                  </p>
-                  <div className="doctor-action-row">
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={() => handleToggleSlot(slot.id, slot.is_available)}
-                    >
-                      {slot.is_available ? 'Mark unavailable' : 'Mark available'}
-                    </button>
-                    <button type="button" className="secondary-button" onClick={() => handleDeleteSlot(slot.id)}>
-                      Delete
-                    </button>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <p className="empty-state">No doctor schedule slots yet.</p>
-            )}
-          </div>
-        </section>
-
-        <section className="doctor-panel">
-          <div className="journey-card-header">
-            <h3>Verification</h3>
+      <div className="doctor-content-grid">
+        <article className="doctor-surface-card">
+          <div className="doctor-card-topline">
+            <h3>Workspace status</h3>
             <StatusPill
               status={verification?.status === 'approved' ? 'ok' : verification ? 'warn' : 'pending'}
               label={verification?.status || 'Pending'}
             />
           </div>
-          <p className="doctor-help">
-            Documents submitted: {verification?.documentsSubmitted || 0} / {verification?.totalRequired || 4}
-          </p>
-          <form className="analysis-form" onSubmit={handleUploadDocument}>
+          <div className="doctor-detail-list">
+            <div className="doctor-detail-row">
+              <span>Available schedule slots</span>
+              <strong>{availableSlots.length}</strong>
+            </div>
+            <div className="doctor-detail-row">
+              <span>Uploaded documents</span>
+              <strong>{documents.length}</strong>
+            </div>
+            <div className="doctor-detail-row">
+              <span>Issued prescriptions</span>
+              <strong>{prescriptions.length}</strong>
+            </div>
+          </div>
+        </article>
+
+        <article className="doctor-surface-card">
+          <div className="doctor-card-topline">
+            <h3>Quick actions</h3>
+            <span className="doctor-mini-badge">Doctor tools</span>
+          </div>
+          <div className="doctor-chip-row">
+            <span className="doctor-chip">Review appointments</span>
+            <span className="doctor-chip">Update schedule</span>
+            <span className="doctor-chip">Verify profile</span>
+            <span className="doctor-chip">Issue prescription</span>
+          </div>
+        </article>
+      </div>
+    </div>
+  )
+
+  const renderAppointments = () => (
+    <div className="doctor-page-stack">
+      <section className="doctor-surface-card">
+        <div className="doctor-card-topline">
+          <h3>Appointments</h3>
+          <span className="doctor-mini-badge">Upcoming integration</span>
+        </div>
+        <p>
+          The final appointment feed will connect here from the appointment service. For now, your
+          availability and booking readiness are driven by the schedule section.
+        </p>
+        <div className="doctor-detail-list">
+          <div className="doctor-detail-row">
+            <span>Schedule type</span>
+            <strong>{schedule?.schedule_type || 'Not configured'}</strong>
+          </div>
+          <div className="doctor-detail-row">
+            <span>Configured slots</span>
+            <strong>{schedule?.slots?.length || 0}</strong>
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+
+  const renderSchedule = () => (
+    <div className="doctor-content-grid">
+      <section className="doctor-surface-card">
+        <div className="doctor-card-topline">
+          <h3>Schedule Setup</h3>
+          <StatusPill
+            status={schedule?.slots?.length ? 'ok' : 'pending'}
+            label={schedule?.schedule_type || 'Not configured'}
+          />
+        </div>
+        <p>Manage the time slots that patients will later book against.</p>
+        <div className="doctor-toolbar">
+          <button type="button" className="secondary-button" onClick={() => handleScheduleType('recurring')}>
+            Set recurring
+          </button>
+          <button type="button" className="secondary-button" onClick={() => handleScheduleType('reset')}>
+            Reset weekly
+          </button>
+        </div>
+        <form className="analysis-form" onSubmit={handleAddSlot}>
+          <div className="doctor-inline-grid">
             <label>
-              Document type
-              <select value={verificationValues.documentType} onChange={handleVerificationType}>
-                <option value="license">License</option>
-                <option value="government_id">Government ID</option>
-                <option value="credentials">Credentials</option>
-                <option value="insurance">Insurance</option>
+              Day
+              <select name="dayOfWeek" value={slotValues.dayOfWeek} onChange={handleSlotChange}>
+                {dayLabels.map((label, index) => (
+                  <option key={label} value={index}>
+                    {label}
+                  </option>
+                ))}
               </select>
             </label>
             <label>
-              PDF document
-              <input type="file" accept="application/pdf,.pdf" onChange={handleVerificationFile} />
+              Start
+              <input name="startTime" type="time" value={slotValues.startTime} onChange={handleSlotChange} />
             </label>
-            <div className="form-actions">
-              <button type="submit">Upload document</button>
-              <button type="button" className="secondary-button" onClick={handleSubmitVerification}>
-                Submit for review
-              </button>
+            <label>
+              End
+              <input name="endTime" type="time" value={slotValues.endTime} onChange={handleSlotChange} />
+            </label>
+          </div>
+          <label>
+            Week start
+            <input name="weekStart" type="date" value={slotValues.weekStart} onChange={handleSlotChange} />
+          </label>
+          <div className="doctor-toolbar">
+            <button type="submit">Add slot</button>
+          </div>
+        </form>
+      </section>
+
+      <section className="doctor-surface-card">
+        <div className="doctor-card-topline">
+          <h3>Current Slots</h3>
+          <span className="doctor-mini-badge">{schedule?.slots?.length || 0} slots</span>
+        </div>
+        <div className="doctor-list-stack">
+          {(schedule?.slots || []).length ? (
+            schedule.slots.map((slot) => (
+              <article key={slot.id} className="doctor-list-card">
+                <div className="doctor-card-topline">
+                  <strong>{dayLabels[slot.day_of_week] || `Day ${slot.day_of_week}`}</strong>
+                  <StatusPill
+                    status={slot.is_available ? 'ok' : 'warn'}
+                    label={slot.is_available ? 'Available' : 'Unavailable'}
+                  />
+                </div>
+                <p>
+                  {formatTime(slot.start_time)} to {formatTime(slot.end_time)}
+                  {slot.week_start ? ` | week of ${slot.week_start}` : ''}
+                </p>
+                <div className="doctor-toolbar">
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => handleToggleSlot(slot.id, slot.is_available)}
+                  >
+                    {slot.is_available ? 'Mark unavailable' : 'Mark available'}
+                  </button>
+                  <button type="button" className="secondary-button" onClick={() => handleDeleteSlot(slot.id)}>
+                    Delete
+                  </button>
+                </div>
+              </article>
+            ))
+          ) : (
+            <p className="empty-state">No schedule slots have been added yet.</p>
+          )}
+        </div>
+      </section>
+    </div>
+  )
+
+  const renderPatients = () => (
+    <div className="doctor-page-stack">
+      <section className="doctor-surface-card">
+        <div className="doctor-card-topline">
+          <h3>Patients</h3>
+          <span className="doctor-mini-badge">{patientCount} tracked</span>
+        </div>
+        <div className="doctor-list-stack">
+          {prescriptions.length ? (
+            prescriptions.map((prescription) => (
+              <article key={prescription.id} className="doctor-list-card">
+                <strong>{prescription.patient_name || prescription.patient_id}</strong>
+                <p>{new Date(prescription.created_at).toLocaleString()}</p>
+              </article>
+            ))
+          ) : (
+            <p className="empty-state">Patient records will appear here after prescriptions are issued.</p>
+          )}
+        </div>
+      </section>
+    </div>
+  )
+
+  const renderConsultations = () => (
+    <div className="doctor-page-stack">
+      <section className="doctor-surface-card">
+        <div className="doctor-card-topline">
+          <h3>Consultations</h3>
+          <span className="doctor-mini-badge">Pending</span>
+        </div>
+        <p>
+          Live consultation controls will be connected when the telemedicine workflow is finalized.
+          This section is reserved so the doctor portal layout stays consistent.
+        </p>
+      </section>
+    </div>
+  )
+
+  const renderPrescriptions = () => (
+    <div className="doctor-content-grid">
+      <section className="doctor-surface-card">
+        <div className="doctor-card-topline">
+          <h3>Issue Prescription</h3>
+          <span className="doctor-mini-badge">Prescriptions</span>
+        </div>
+        <form className="analysis-form" onSubmit={handleIssuePrescription}>
+          <label>
+            Patient ID
+            <input name="patientId" value={prescriptionValues.patientId} onChange={handlePrescriptionChange} />
+          </label>
+          <label>
+            Appointment ID
+            <input
+              name="appointmentId"
+              value={prescriptionValues.appointmentId}
+              onChange={handlePrescriptionChange}
+            />
+          </label>
+          <label>
+            Patient name
+            <input name="patientName" value={prescriptionValues.patientName} onChange={handlePrescriptionChange} />
+          </label>
+          <label>
+            Medications
+            <textarea
+              name="medications"
+              rows="4"
+              placeholder="One medication per line"
+              value={prescriptionValues.medications}
+              onChange={handlePrescriptionChange}
+            />
+          </label>
+          <label>
+            Notes
+            <textarea name="notes" rows="3" value={prescriptionValues.notes} onChange={handlePrescriptionChange} />
+          </label>
+          <div className="doctor-toolbar">
+            <button type="submit">Issue prescription</button>
+          </div>
+        </form>
+      </section>
+
+      <section className="doctor-surface-card">
+        <div className="doctor-card-topline">
+          <h3>Issued Prescriptions</h3>
+          <span className="doctor-mini-badge">{prescriptions.length} records</span>
+        </div>
+        <div className="doctor-list-stack">
+          {prescriptions.length ? (
+            prescriptions.map((prescription) => (
+              <article key={prescription.id} className="doctor-list-card">
+                <strong>{prescription.patient_name || prescription.patient_id}</strong>
+                <p>{new Date(prescription.created_at).toLocaleString()}</p>
+              </article>
+            ))
+          ) : (
+            <p className="empty-state">No prescriptions issued yet.</p>
+          )}
+        </div>
+      </section>
+    </div>
+  )
+
+  const renderVerification = () => (
+    <div className="doctor-content-grid">
+      <section className="doctor-surface-card">
+        <div className="doctor-card-topline">
+          <h3>Verification Status</h3>
+          <StatusPill
+            status={verification?.status === 'approved' ? 'ok' : verification ? 'warn' : 'pending'}
+            label={verification?.status || 'Pending'}
+          />
+        </div>
+        <div className="doctor-detail-list">
+          <div className="doctor-detail-row">
+            <span>Submitted documents</span>
+            <strong>{verification?.documentsSubmitted || 0}</strong>
+          </div>
+          <div className="doctor-detail-row">
+            <span>Required total</span>
+            <strong>{verification?.totalRequired || 4}</strong>
+          </div>
+        </div>
+
+        <form className="analysis-form" onSubmit={handleUploadDocument}>
+          <label>
+            Document type
+            <select value={verificationValues.documentType} onChange={handleVerificationType}>
+              <option value="license">License</option>
+              <option value="government_id">Government ID</option>
+              <option value="credentials">Credentials</option>
+              <option value="insurance">Insurance</option>
+            </select>
+          </label>
+          <label>
+            PDF document
+            <input type="file" accept="application/pdf,.pdf" onChange={handleVerificationFile} />
+          </label>
+          <div className="doctor-toolbar">
+            <button type="submit">Upload document</button>
+            <button type="button" className="secondary-button" onClick={handleSubmitVerification}>
+              Submit for review
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section className="doctor-surface-card">
+        <div className="doctor-card-topline">
+          <h3>Uploaded Documents</h3>
+          <span className="doctor-mini-badge">{documents.length} files</span>
+        </div>
+        <div className="doctor-list-stack">
+          {documents.length ? (
+            documents.map((document) => (
+              <article key={document.id} className="doctor-list-card">
+                <strong>{document.fileName || document.documentType}</strong>
+                <p>{document.documentType} | {document.status || 'submitted'}</p>
+              </article>
+            ))
+          ) : (
+            <p className="empty-state">No verification documents uploaded yet.</p>
+          )}
+        </div>
+      </section>
+    </div>
+  )
+
+  const renderProfile = () => (
+    <div className="doctor-page-stack">
+      <section className="doctor-surface-card">
+        <div className="doctor-card-topline">
+          <h3>Profile</h3>
+          <StatusPill status={profile ? 'ok' : 'pending'} label={profile ? 'Loaded' : 'New profile'} />
+        </div>
+        <form className="analysis-form" onSubmit={handleProfileSubmit}>
+          <label>
+            Name
+            <input name="name" value={profileValues.name} onChange={handleProfileChange} />
+          </label>
+          <label>
+            Specialization
+            <input name="specialization" value={profileValues.specialization} onChange={handleProfileChange} />
+          </label>
+          <label>
+            Consultation fee
+            <input
+              name="consultationFee"
+              type="number"
+              min="0"
+              step="0.01"
+              value={profileValues.consultationFee}
+              onChange={handleProfileChange}
+            />
+          </label>
+          <label>
+            Bio
+            <textarea name="bio" rows="4" value={profileValues.bio} onChange={handleProfileChange} />
+          </label>
+          <div className="doctor-toolbar">
+            <button type="submit">Save profile</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  )
+
+  const renderActiveSection = () => {
+    switch (activeSection) {
+      case 'appointments':
+        return renderAppointments()
+      case 'schedule':
+        return renderSchedule()
+      case 'patients':
+        return renderPatients()
+      case 'consultations':
+        return renderConsultations()
+      case 'prescriptions':
+        return renderPrescriptions()
+      case 'verification':
+        return renderVerification()
+      case 'profile':
+        return renderProfile()
+      case 'overview':
+      default:
+        return renderOverview()
+    }
+  }
+
+  return (
+    <div className="doctor-portal">
+      <aside className="doctor-portal-sidebar">
+        <div className="doctor-portal-brand">
+          <div className="doctor-brand-mark">AR</div>
+          <div>
+            <strong>Arogya</strong>
+            <span>Doctor Workspace</span>
+          </div>
+        </div>
+
+        <nav className="doctor-portal-nav">
+          {sidebarItems.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={`doctor-portal-link ${activeSection === item.id ? 'active' : ''}`}
+              onClick={() => setActiveSection(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="doctor-portal-footer">
+          <div className="doctor-portal-user">
+            <div className="doctor-avatar">{getInitials(profile?.name || session?.name)}</div>
+            <div>
+              <strong>Dr. {profile?.name || session?.name || 'Doctor'}</strong>
+              <span>{session?.email}</span>
             </div>
-          </form>
-
-          <div className="dashboard-list">
-            {documents.length ? (
-              documents.map((document) => (
-                <article key={document.id} className="dashboard-list-item">
-                  <strong>{document.fileName || document.documentType}</strong>
-                  <p>{document.documentType} • {document.status || 'submitted'}</p>
-                </article>
-              ))
-            ) : (
-              <p className="empty-state">No verification documents uploaded yet.</p>
-            )}
           </div>
-        </section>
+          <button type="button" className="doctor-signout-button" onClick={onSignOut}>
+            Sign out
+          </button>
+        </div>
+      </aside>
 
-        <section className="doctor-panel">
-          <div className="journey-card-header">
-            <h3>Prescriptions</h3>
-            <StatusPill status={prescriptions.length ? 'ok' : 'pending'} label={`${prescriptions.length} issued`} />
+      <section className="doctor-portal-main">
+        <header className="doctor-portal-header">
+          <div>
+            <p className="doctor-portal-section-label">{activeSectionLabel}</p>
+            <h1>{activeSectionLabel}</h1>
           </div>
-          <form className="analysis-form" onSubmit={handleIssuePrescription}>
-            <label>
-              Patient ID
-              <input name="patientId" value={prescriptionValues.patientId} onChange={handlePrescriptionChange} />
-            </label>
-            <label>
-              Appointment ID
-              <input name="appointmentId" value={prescriptionValues.appointmentId} onChange={handlePrescriptionChange} />
-            </label>
-            <label>
-              Patient name
-              <input name="patientName" value={prescriptionValues.patientName} onChange={handlePrescriptionChange} />
-            </label>
-            <label>
-              Medications
-              <textarea
-                name="medications"
-                rows="4"
-                placeholder="One medication per line"
-                value={prescriptionValues.medications}
-                onChange={handlePrescriptionChange}
-              />
-            </label>
-            <label>
-              Notes
-              <textarea name="notes" rows="3" value={prescriptionValues.notes} onChange={handlePrescriptionChange} />
-            </label>
-            <div className="form-actions">
-              <button type="submit">Issue prescription</button>
+          <div className="doctor-portal-header-user">
+            <div className="doctor-avatar small">{getInitials(profile?.name || session?.name)}</div>
+            <div>
+              <strong>Dr. {profile?.name || session?.name || 'Doctor'}</strong>
+              <span>{profile?.specialization || 'Doctor account'}</span>
             </div>
-          </form>
-
-          <div className="dashboard-list">
-            {prescriptions.length ? (
-              prescriptions.slice(0, 5).map((prescription) => (
-                <article key={prescription.id} className="dashboard-list-item">
-                  <strong>{prescription.patient_name || prescription.patient_id}</strong>
-                  <p>{new Date(prescription.created_at).toLocaleString()}</p>
-                </article>
-              ))
-            ) : (
-              <p className="empty-state">No prescriptions issued yet.</p>
-            )}
           </div>
+        </header>
+
+        {loading ? <p className="empty-state">Loading doctor dashboard...</p> : null}
+        {error ? <p className="error-text">{error}</p> : null}
+        {message ? <p className="doctor-success">{message}</p> : null}
+
+        {renderActiveSection()}
+      </section>
         </section>
 
         {/* Video Consultation Integration */}

@@ -4,6 +4,8 @@ export default function LoginForm({
   onSubmit,
   loading,
   roleHint,
+  hideRolePicker = false,
+  roleLabel = 'Preview role',
 }) {
   return (
     <form className="auth-form" onSubmit={onSubmit}>
@@ -31,21 +33,23 @@ export default function LoginForm({
         />
       </label>
 
-      <div className="inline-select">
-        <span>Preview role</span>
-        <div className="role-picker compact">
-          {['patient', 'doctor', 'admin'].map((role) => (
-            <button
-              key={role}
-              type="button"
-              className={`role-chip ${roleHint === role ? 'active' : ''}`}
-              onClick={() => onChange({ target: { name: 'role', value: role } })}
-            >
-              {role}
-            </button>
-          ))}
+      {!hideRolePicker ? (
+        <div className="inline-select">
+          <span>{roleLabel}</span>
+          <div className="role-picker compact">
+            {['patient', 'doctor', 'admin'].map((role) => (
+              <button
+                key={role}
+                type="button"
+                className={`role-chip ${roleHint === role ? 'active' : ''}`}
+                onClick={() => onChange({ target: { name: 'role', value: role } })}
+              >
+                {role}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <button type="submit" disabled={loading}>
         {loading ? 'Signing in...' : 'Sign in'}

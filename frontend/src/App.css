@@ -4,6 +4,11 @@
   padding: 24px 0 56px;
 }
 
+.app-shell.doctor-route-shell {
+  width: min(1500px, calc(100% - 24px));
+  padding: 12px 0 24px;
+}
+
 .top-nav {
   display: flex;
   justify-content: space-between;
@@ -243,6 +248,12 @@
   gap: 20px;
 }
 
+.doctor-auth-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 20px;
+}
+
 .full-span {
   grid-column: 1 / -1;
 }
@@ -409,6 +420,371 @@ button:disabled {
   display: grid;
   gap: 16px;
   margin-top: 18px;
+}
+
+.doctor-portal {
+  position: relative;
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  min-height: calc(100vh - 36px);
+  overflow: hidden;
+  border: 1px solid rgba(18, 46, 74, 0.08);
+  border-radius: 32px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 204, 137, 0.24), transparent 22%),
+    linear-gradient(180deg, #eef4fa 0%, #e3edf7 100%);
+  box-shadow: 0 28px 80px rgba(28, 44, 67, 0.14);
+}
+
+.doctor-portal-sidebar {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 24px;
+  padding: 28px 20px 20px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 24%),
+    linear-gradient(180deg, #48695f, #355148 55%, #243b35);
+  color: #f8f4ee;
+}
+
+.doctor-portal-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 8px 18px;
+  border-bottom: 1px solid rgba(255, 244, 232, 0.1);
+}
+
+.doctor-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  color: #ffffff;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  background: linear-gradient(135deg, #f35b7a, #ff9c66);
+}
+
+.doctor-portal-brand strong,
+.doctor-portal-user strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.doctor-portal-brand span,
+.doctor-portal-user span {
+  display: block;
+  margin-top: 2px;
+  color: rgba(248, 240, 232, 0.72);
+  font-size: 0.86rem;
+}
+
+.doctor-portal-nav {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.doctor-portal-link {
+  justify-content: flex-start;
+  padding: 14px 16px;
+  border-radius: 14px;
+  color: rgba(250, 244, 238, 0.94);
+  background: transparent;
+  box-shadow: none;
+  white-space: nowrap;
+}
+
+.doctor-portal-link:hover {
+  background: rgba(255, 246, 237, 0.09);
+  transform: translateX(2px);
+}
+
+.doctor-portal-link.active {
+  background: rgba(239, 200, 152, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(255, 228, 194, 0.28);
+}
+
+.doctor-portal-footer {
+  display: grid;
+  gap: 14px;
+}
+
+.doctor-portal-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 12px;
+  border-radius: 18px;
+  background: rgba(255, 246, 237, 0.08);
+}
+
+.doctor-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  color: #27443b;
+  font-weight: 800;
+  background: linear-gradient(135deg, #f3d588, #f7f3df);
+}
+
+.doctor-avatar.small {
+  width: 38px;
+  height: 38px;
+  font-size: 0.88rem;
+}
+
+.doctor-signout-button {
+  width: 100%;
+  background: rgba(224, 156, 107, 0.28);
+  box-shadow: none;
+}
+
+.doctor-signout-button:hover {
+  background: rgba(232, 172, 129, 0.38);
+}
+
+.doctor-portal-main {
+  display: grid;
+  align-content: start;
+  gap: 22px;
+  padding: 24px 28px 30px;
+}
+
+.doctor-portal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 26px;
+  border-radius: 22px;
+  border: 1px solid rgba(20, 52, 82, 0.08);
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 10px 28px rgba(31, 53, 80, 0.06);
+}
+
+.doctor-portal-section-label {
+  margin: 0;
+  color: #72849a;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.doctor-portal-header h1 {
+  margin: 8px 0 0;
+  color: #17324e;
+  font-size: 1.65rem;
+}
+
+.doctor-portal-header-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.doctor-portal-header-user strong {
+  display: block;
+  color: #1f3954;
+}
+
+.doctor-portal-header-user span {
+  display: block;
+  margin-top: 2px;
+  color: #6e8296;
+  font-size: 0.88rem;
+}
+
+.doctor-page-stack,
+.doctor-section-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.doctor-welcome-panel,
+.doctor-surface-card,
+.doctor-portal-guard-card {
+  padding: 22px 24px;
+  border: 1px solid rgba(18, 52, 86, 0.08);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 12px 32px rgba(31, 53, 80, 0.08);
+}
+
+.doctor-welcome-panel {
+  background:
+    radial-gradient(circle at top right, rgba(255, 214, 153, 0.3), transparent 34%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 251, 255, 0.92));
+}
+
+.doctor-welcome-panel h2,
+.doctor-surface-card h3,
+.doctor-portal-guard-card h2 {
+  margin: 0;
+  color: #16324d;
+}
+
+.doctor-welcome-panel p,
+.doctor-surface-card p,
+.doctor-portal-guard-card p {
+  margin: 10px 0 0;
+  color: #688095;
+}
+
+.doctor-metric-grid,
+.doctor-content-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.doctor-metric-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.doctor-content-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.doctor-metric-card {
+  padding: 20px 22px;
+  border: 1px solid rgba(20, 52, 82, 0.08);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 12px 32px rgba(31, 53, 80, 0.08);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.doctor-metric-card:hover,
+.doctor-surface-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 36px rgba(31, 53, 80, 0.1);
+}
+
+.doctor-metric-card span {
+  display: block;
+  color: #8a98a8;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.doctor-metric-card strong {
+  display: block;
+  margin-top: 12px;
+  color: #0e3756;
+  font-size: 2.1rem;
+  line-height: 1;
+}
+
+.doctor-metric-card p {
+  margin: 8px 0 0;
+  color: #7d8e9f;
+}
+
+.doctor-card-topline,
+.doctor-detail-row,
+.doctor-toolbar,
+.doctor-chip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.doctor-card-topline,
+.doctor-toolbar,
+.doctor-chip-row {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.doctor-mini-badge,
+.doctor-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.doctor-mini-badge {
+  color: #2b587a;
+  background: #e3eef7;
+}
+
+.doctor-chip {
+  color: #29506f;
+  background: #dfeaf4;
+}
+
+.doctor-detail-list,
+.doctor-list-stack {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.doctor-detail-row {
+  align-items: baseline;
+  padding-top: 10px;
+  border-top: 1px solid rgba(18, 52, 86, 0.08);
+}
+
+.doctor-detail-row span {
+  color: #72859a;
+}
+
+.doctor-detail-row strong {
+  color: #17324d;
+}
+
+.doctor-list-card {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: #f7fafc;
+  border: 1px solid rgba(20, 52, 82, 0.08);
+}
+
+.doctor-list-card strong {
+  color: #18344f;
+}
+
+.doctor-inline-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.doctor-portal-guard {
+  display: grid;
+  place-items: center;
+  min-height: calc(100vh - 48px);
+}
+
+.doctor-sidebar-kicker {
+  margin: 0 0 10px;
+  color: #bf6848;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.doctor-success {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 16px;
+  color: #245d4c;
+  background: #d8eee1;
 }
 
 .patient-overview-card,
@@ -710,8 +1086,19 @@ button:disabled {
   color: #b15438;
 }
 
+@media (max-width: 1280px) {
+  .app-shell.doctor-route-shell {
+    width: min(100% - 20px, 1500px);
+  }
+
+  .doctor-portal {
+    grid-template-columns: 250px minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 1080px) {
   .hero,
+  .doctor-auth-grid,
   .route-grid,
   .preview-grid,
   .patient-overview-grid,
@@ -720,19 +1107,48 @@ button:disabled {
   .doctor-overview-grid,
   .doctor-preview-grid,
   .doctor-workbench-grid,
-  .mini-form-grid {
+  .mini-form-grid,
+  .doctor-metric-grid,
+  .doctor-content-grid,
+  .doctor-inline-grid {
     grid-template-columns: 1fr;
   }
 
   .stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .doctor-portal {
+    grid-template-columns: 1fr;
+  }
+
+  .doctor-portal-sidebar {
+    grid-template-rows: auto auto auto;
+    gap: 18px;
+  }
+
+  .doctor-portal-nav {
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    overflow-x: auto;
+    padding-bottom: 6px;
+  }
+
+  .doctor-portal-footer {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+
+  .doctor-signout-button {
+    width: auto;
+    min-width: 128px;
+  }
 }
 
 @media (max-width: 720px) {
   .app-shell {
-    width: min(100% - 20px, 1220px);
-    padding-top: 20px;
+    width: min(100%, 1220px);
+    padding: 0;
   }
 
   .top-nav {
@@ -766,5 +1182,35 @@ button:disabled {
   .journey-card-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .doctor-portal {
+    grid-template-columns: 1fr;
+    border-radius: 0;
+    min-height: 100vh;
+  }
+
+  .app-shell.doctor-route-shell {
+    width: 100%;
+    padding: 0;
+  }
+
+  .doctor-portal-main,
+  .doctor-portal-sidebar {
+    padding: 18px;
+  }
+
+  .doctor-portal-header,
+  .doctor-portal-user {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .doctor-portal-footer {
+    grid-template-columns: 1fr;
+  }
+
+  .doctor-signout-button {
+    width: 100%;
   }
 }

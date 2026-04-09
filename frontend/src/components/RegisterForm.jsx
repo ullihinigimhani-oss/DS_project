@@ -3,6 +3,7 @@ export default function RegisterForm({
   onChange,
   onSubmit,
   loading,
+  hideRoleSelect = false,
 }) {
   return (
     <form className="auth-form" onSubmit={onSubmit}>
@@ -53,14 +54,16 @@ export default function RegisterForm({
         />
       </label>
 
-      <label>
-        Role
-        <select name="userType" value={values.userType} onChange={onChange}>
-          <option value="patient">Patient</option>
-          <option value="doctor">Doctor</option>
-          <option value="admin">Admin</option>
-        </select>
-      </label>
+      {!hideRoleSelect ? (
+        <label>
+          Role
+          <select name="userType" value={values.userType} onChange={onChange}>
+            <option value="patient">Patient</option>
+            <option value="doctor">Doctor</option>
+            <option value="admin">Admin</option>
+          </select>
+        </label>
+      ) : null}
 
       <button type="submit" disabled={loading}>
         {loading ? 'Creating account...' : 'Create account'}

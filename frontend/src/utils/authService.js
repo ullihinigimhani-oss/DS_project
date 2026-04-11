@@ -23,12 +23,20 @@ export async function loginUser(payload) {
 }
 
 export async function registerUser(payload) {
+  const {
+    licenseDocument: LICENSE_DOCUMENT,
+    governmentIdDocument: GOVERNMENT_ID_DOCUMENT,
+    credentialsDocument: CREDENTIALS_DOCUMENT,
+    insuranceDocument: INSURANCE_DOCUMENT,
+    ...authPayload
+  } = payload
+
   const response = await fetch(`${gatewayBaseUrl}/api/auth/register`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(authPayload),
   })
 
   return handleAuthResponse(response)

@@ -14,21 +14,24 @@ function toDateStr(date) {
 }
 
 // GET /api/v1/public/doctors
-// Lists all doctors with approved verification status
+// Lists all doctors and exposes whether they are verified for patient-facing pages
 exports.listDoctors = async (req, res) => {
   try {
     const result = await db.query(`
       SELECT
-          vs.doctor_id,
+          dp.doctor_id,
           COALESCE(dp.name, 'Doctor') AS name,
           COALESCE(dp.specialization, 'General Practice') AS specialization,
           dp.consultation_fee,
           dp.bio,
+          COALESCE(vs.status, 'pending') AS verification_status,
           vs.approved_at
-      FROM verification_status vs
-      LEFT JOIN doctor_profiles dp ON dp.doctor_id = vs.doctor_id
-      WHERE vs.status = 'approved'
-      ORDER BY dp.name ASC NULLS LAST, vs.approved_at DESC
+      FROM doctor_profiles dp
+      LEFT JOIN verification_status vs ON vs.doctor_id = dp.doctor_id
+      ORDER BY
+          CASE WHEN COALESCE(vs.status, 'pending') = 'approved' THEN 0 ELSE 1 END,
+          dp.name ASC NULLS LAST,
+          vs.approved_at DESC NULLS LAST
     `);
 
     res.status(200).json({ success: true, data: result.rows });

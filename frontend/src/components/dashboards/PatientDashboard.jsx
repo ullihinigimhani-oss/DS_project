@@ -83,12 +83,13 @@ export default function PatientDashboard({
   const [bookingBusyId, setBookingBusyId] = useState('')
   const [reason, setReason] = useState('')
   const [isTelemedicine, setIsTelemedicine] = useState(false)
+  const verifiedDoctors = doctorDirectory.filter((doctor) => doctor.verification_status === 'approved')
 
   useEffect(() => {
-    if (!selectedDoctorId && doctorDirectory.length) {
-      setSelectedDoctorId(doctorDirectory[0].doctor_id)
+    if (!selectedDoctorId && verifiedDoctors.length) {
+      setSelectedDoctorId(verifiedDoctors[0].doctor_id)
     }
-  }, [doctorDirectory, selectedDoctorId])
+  }, [selectedDoctorId, verifiedDoctors])
 
   const loadBookings = async () => {
     if (!isConnectedPatient) {
@@ -138,7 +139,7 @@ export default function PatientDashboard({
   }, [selectedDoctorId, weekStart])
 
   const recentHistory = history.slice(0, 4)
-  const selectedDoctor = doctorDirectory.find((doctor) => doctor.doctor_id === selectedDoctorId) || null
+  const selectedDoctor = verifiedDoctors.find((doctor) => doctor.doctor_id === selectedDoctorId) || null
   const availableSlots = availability.filter((slot) => !slot.isBooked)
 
   const bookingSummary = useMemo(() => {
@@ -169,10 +170,10 @@ export default function PatientDashboard({
     },
     {
       label: 'Doctors',
-      value: String(doctorDirectory.length),
-      detail: doctorDirectory.length
-        ? 'Approved doctors are available for booking.'
-        : 'Doctor directory is still loading.',
+      value: String(verifiedDoctors.length),
+      detail: verifiedDoctors.length
+        ? 'Verified doctors are available for booking.'
+        : 'No verified doctors are available for booking yet.',
     },
     {
       label: 'Symptom checks',
@@ -360,7 +361,7 @@ export default function PatientDashboard({
 
         {!isConnectedPatient ? (
           <p className="empty-state">
-            Sign in as a patient to create real bookings. You can still browse approved doctors
+            Sign in as a patient to create real bookings. You can still browse verified doctors
             and available slots from this dashboard.
           </p>
         ) : null}
@@ -373,7 +374,7 @@ export default function PatientDashboard({
                 value={selectedDoctorId}
                 onChange={(event) => setSelectedDoctorId(event.target.value)}
               >
-                {doctorDirectory.map((doctor) => (
+                {verifiedDoctors.map((doctor) => (
                   <option key={doctor.doctor_id} value={doctor.doctor_id}>
                     {doctor.name || 'Doctor'} - {doctor.specialization || 'General Practice'}
                   </option>
@@ -388,7 +389,7 @@ export default function PatientDashboard({
                 <span>Consultation fee: {selectedDoctor.consultation_fee ?? 'N/A'}</span>
               </div>
             ) : (
-              <p className="empty-state">No approved doctors are available yet.</p>
+              <p className="empty-state">No verified doctors are available for booking yet.</p>
             )}
 
             <div className="patient-week-row">
@@ -525,13 +526,24 @@ export default function PatientDashboard({
           {doctorDirectory.map((doctor) => (
             <article key={doctor.doctor_id} className="patient-directory-card">
               <div className="patient-directory-topline">
-                <StatusPill status="ok" label="Available" />
+                <StatusPill
+                  status={doctor.verification_status === 'approved' ? 'ok' : 'warn'}
+                  label={
+                    doctor.verification_status === 'approved' ? 'Verified Doctor' : 'Unverified'
+                  }
+                />
                 <span>{doctor.specialization || 'General Practice'}</span>
               </div>
               <strong>{doctor.name || 'Doctor'}</strong>
               <p>Consultation fee: {doctor.consultation_fee ?? 'N/A'}</p>
-              <button type="button" onClick={() => handleDoctorSelect(doctor.doctor_id)}>
-                Choose doctor
+              <button
+                type="button"
+                disabled={doctor.verification_status !== 'approved'}
+                onClick={() => handleDoctorSelect(doctor.doctor_id)}
+              >
+                {doctor.verification_status === 'approved'
+                  ? 'Choose doctor'
+                  : 'Awaiting verification'}
               </button>
             </article>
           ))}

@@ -1,10 +1,13 @@
 export default function RegisterForm({
   values,
   onChange,
+  onFileChange,
   onSubmit,
   loading,
   hideRoleSelect = false,
 }) {
+  const isDoctorRegistration = values.userType === 'doctor'
+
   return (
     <form className="auth-form" onSubmit={onSubmit}>
       <label>
@@ -63,6 +66,59 @@ export default function RegisterForm({
             <option value="admin">Admin</option>
           </select>
         </label>
+      ) : null}
+
+      {isDoctorRegistration ? (
+        <>
+          <p className="doctor-help">
+            Doctor signup requires the verification package now. These PDFs are sent for admin
+            review immediately after registration.
+          </p>
+
+          <label>
+            Medical license (PDF)
+            <input
+              name="licenseDocument"
+              type="file"
+              accept="application/pdf,.pdf"
+              onChange={onFileChange}
+              required
+            />
+          </label>
+
+          <label>
+            Government ID (PDF)
+            <input
+              name="governmentIdDocument"
+              type="file"
+              accept="application/pdf,.pdf"
+              onChange={onFileChange}
+              required
+            />
+          </label>
+
+          <label>
+            Credentials (PDF)
+            <input
+              name="credentialsDocument"
+              type="file"
+              accept="application/pdf,.pdf"
+              onChange={onFileChange}
+              required
+            />
+          </label>
+
+          <label>
+            Insurance (PDF)
+            <input
+              name="insuranceDocument"
+              type="file"
+              accept="application/pdf,.pdf"
+              onChange={onFileChange}
+              required
+            />
+          </label>
+        </>
       ) : null}
 
       <button type="submit" disabled={loading}>

@@ -124,6 +124,7 @@ app.get('/metrics', async (req, res, next) => {
 
 // Route requests to appropriate services
 app.use('/api/auth', trackGatewayRequest('/api/auth'), createProxy(services.auth));
+app.use('/api/admin', trackGatewayRequest('/api/admin'), createProxy(services.auth));
 app.use('/api/patients', trackGatewayRequest('/api/patients'), createProxy(services.patient));
 app.use('/api/doctors', trackGatewayRequest('/api/doctors'), createProxy(services.doctor));
 app.use('/api/v1/doctors', trackGatewayRequest('/api/v1/doctors'), createProxy(services.doctor));

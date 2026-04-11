@@ -6,7 +6,19 @@ import StatusPill from './components/StatusPill'
 import Home from './components/Home'
 import DoctorDashboard from './components/dashboards/DoctorDashboard'
 import PatientDashboard from './components/dashboards/PatientDashboard'
+import DoctorAppointmentsPage from './pages/doctor/Appointments'
+import DoctorSchedulePage from './pages/doctor/Schedule'
+import DoctorPatientsPage from './pages/doctor/Patients'
+import DoctorConsultationsPage from './pages/doctor/Consultations'
+import DoctorPrescriptionsPage from './pages/doctor/Prescriptions'
+import DoctorVerificationPage from './pages/doctor/Verification'
+import DoctorProfilePage from './pages/doctor/Profile'
 import { loginUser, registerUser } from './utils/authService'
+import {
+  submitDoctorVerification,
+  updateDoctorProfile,
+  uploadDoctorDocument,
+} from './utils/doctorService'
 import {
   analyzeSymptoms,
   apiBaseUrl,
@@ -122,10 +134,14 @@ export default function App() {
     phone: '',
     password: 'password123',
     userType: 'patient',
+    licenseDocument: null,
+    governmentIdDocument: null,
+    credentialsDocument: null,
+    insuranceDocument: null,
   })
 
   const serviceHealthy = gatewayHealth?.status === 'running'
-  const isDoctorPortalRoute = currentPath === '/doctor/dashboard'
+  const isDoctorPortalRoute = currentPath.startsWith('/doctor/')
   const isPatientPortalRoute = currentPath === '/patient'
   const activeRole = session?.role || loginValues.role
   const roleSummary = roleSummaries[activeRole] || roleSummaries.patient
@@ -252,6 +268,11 @@ export default function App() {
     setRegisterValues((current) => ({ ...current, [name]: value }))
   }
 
+  const handleRegisterFileChange = (event) => {
+    const { name, files } = event.target
+    setRegisterValues((current) => ({ ...current, [name]: files?.[0] || null }))
+  }
+
   const createConnectedSession = (authData, fallback) => {
     const user = authData?.data?.user || {}
 
@@ -263,6 +284,28 @@ export default function App() {
       mode: 'connected',
       token: authData.data.accessToken,
     }
+  }
+
+  const getDoctorRegistrationDocuments = () => [
+    { type: 'license', file: registerValues.licenseDocument },
+    { type: 'government_id', file: registerValues.governmentIdDocument },
+    { type: 'credentials', file: registerValues.credentialsDocument },
+    { type: 'insurance', file: registerValues.insuranceDocument },
+  ]
+
+  const completeDoctorRegistration = async (token) => {
+    await updateDoctorProfile(token, {
+      name: registerValues.name,
+      specialization: '',
+      consultationFee: '',
+      bio: '',
+    })
+
+    for (const document of getDoctorRegistrationDocuments()) {
+      await uploadDoctorDocument(token, document.file, document.type)
+    }
+
+    await submitDoctorVerification(token)
   }
 
   const handleLogin = async (event) => {
@@ -307,14 +350,37 @@ export default function App() {
     setAuthMessage('')
     clearPersistedAuth()
 
+    if (registerValues.userType === 'doctor') {
+      const missingDocuments = getDoctorRegistrationDocuments().filter((document) => !document.file)
+
+      if (missingDocuments.length > 0) {
+        setAuthBusy(false)
+        setAuthError('Doctor registration requires all four verification documents before account creation.')
+        return
+      }
+    }
+
     try {
       const data = await registerUser(registerValues)
 
       if (data?.success && data?.data?.accessToken) {
         const nextSession = createConnectedSession(data, registerValues)
+
+        if (nextSession.role === 'doctor') {
+          try {
+            await completeDoctorRegistration(nextSession.token)
+            setAuthMessage('Doctor account created and verification documents were sent to admin review.')
+          } catch (doctorSetupError) {
+            setAuthError(
+              `Doctor account was created, but the verification package could not be submitted: ${doctorSetupError.message}`,
+            )
+          }
+        } else {
+          setAuthMessage(data.message || 'Account created and signed in successfully.')
+        }
+
         persistSession(nextSession)
         setSession(nextSession)
-        setAuthMessage(data.message || 'Account created and signed in successfully.')
       } else {
         const preview = createPreviewSession(registerValues)
         persistSession(preview)
@@ -393,6 +459,7 @@ export default function App() {
       <RegisterForm
         values={registerValues}
         onChange={handleRegisterChange}
+        onFileChange={handleRegisterFileChange}
         onSubmit={handleRegister}
         loading={authBusy}
       />
@@ -416,11 +483,27 @@ export default function App() {
 
   const renderDoctorDashboardPage = () => (
     <DoctorDashboard
+      currentPath={currentPath}
       session={session}
       onSignOut={handleSignOut}
       onRequireLogin={navigateTo}
+      onNavigate={navigateTo}
     />
   )
+
+  const renderDoctorRoutePage = (RoutePage) => {
+    const Component = RoutePage
+
+    return (
+      <Component
+        currentPath={currentPath}
+        session={session}
+        onSignOut={handleSignOut}
+        onRequireLogin={navigateTo}
+        onNavigate={navigateTo}
+      />
+    )
+  }
 
   const renderDoctorsPage = () => (
     <SectionCard
@@ -439,7 +522,10 @@ export default function App() {
         {doctorDirectory.map((doctor) => (
           <article key={doctor.doctor_id} className="doctor-card">
             <div className="doctor-topline">
-              <StatusPill status="ok" label="Approved" />
+              <StatusPill
+                status={doctor.verification_status === 'approved' ? 'ok' : 'warn'}
+                label={doctor.verification_status === 'approved' ? 'Verified Doctor' : 'Unverified'}
+              />
               <span className="doctor-id">{doctor.doctor_id}</span>
             </div>
             <div>
@@ -582,6 +668,20 @@ export default function App() {
         return renderRegisterPage()
       case '/doctor/dashboard':
         return renderDoctorDashboardPage()
+      case '/doctor/appointments':
+        return renderDoctorRoutePage(DoctorAppointmentsPage)
+      case '/doctor/schedule':
+        return renderDoctorRoutePage(DoctorSchedulePage)
+      case '/doctor/patients':
+        return renderDoctorRoutePage(DoctorPatientsPage)
+      case '/doctor/consultations':
+        return renderDoctorRoutePage(DoctorConsultationsPage)
+      case '/doctor/prescriptions':
+        return renderDoctorRoutePage(DoctorPrescriptionsPage)
+      case '/doctor/verification':
+        return renderDoctorRoutePage(DoctorVerificationPage)
+      case '/doctor/profile':
+        return renderDoctorRoutePage(DoctorProfilePage)
       case '/patient':
         return renderPatientPage()
       case '/doctor':

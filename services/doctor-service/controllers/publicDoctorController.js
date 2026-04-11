@@ -1,4 +1,5 @@
 const db = require('../config/postgres');
+const { deleteFile, saveFile } = require('../utils/fileStorage');
 
 function getMonday(date) {
   const d = new Date(date);
@@ -13,6 +14,16 @@ function toDateStr(date) {
   return date.toISOString().split('T')[0];
 }
 
+function parseDataUrl(dataUrl) {
+  const match = String(dataUrl || '').match(/^data:(.+);base64,(.+)$/);
+  if (!match) return null;
+
+  return {
+    mimeType: match[1],
+    buffer: Buffer.from(match[2], 'base64'),
+  };
+}
+
 // GET /api/v1/public/doctors
 // Lists all doctors and exposes whether they are verified for patient-facing pages
 exports.listDoctors = async (req, res) => {
@@ -23,6 +34,7 @@ exports.listDoctors = async (req, res) => {
           COALESCE(dp.name, 'Doctor') AS name,
           COALESCE(dp.specialization, 'General Practice') AS specialization,
           dp.consultation_fee,
+          dp.profile_image_url,
           dp.bio,
           COALESCE(vs.status, 'pending') AS verification_status,
           vs.approved_at
@@ -92,19 +104,64 @@ exports.getDoctorSlots = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const doctorId = req.user.userId;
-    const { name, specialization, consultationFee, bio } = req.body;
+    const { name, specialization, consultationFee, bio, profileImageData, profileImageName } = req.body;
+    let profileImageUrl = null;
+
+    if (profileImageData) {
+      const parsedImage = parseDataUrl(profileImageData);
+
+      if (!parsedImage || !parsedImage.mimeType.startsWith('image/')) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid profile image payload',
+        });
+      }
+
+      const currentProfile = await db.query(
+        'SELECT profile_image_url FROM doctor_profiles WHERE doctor_id = $1',
+        [doctorId]
+      );
+
+      const saveResult = await saveFile(
+        parsedImage.buffer,
+        profileImageName || `profile-image.${parsedImage.mimeType.split('/')[1] || 'png'}`,
+        doctorId
+      );
+
+      if (!saveResult.success) {
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to save profile image',
+          error: saveResult.error,
+        });
+      }
+
+      if (currentProfile.rows[0]?.profile_image_url) {
+        await deleteFile(currentProfile.rows[0].profile_image_url);
+      }
+
+      profileImageUrl = saveResult.documentUrl;
+    }
 
     const result = await db.query(
-      `INSERT INTO doctor_profiles (doctor_id, name, specialization, consultation_fee, bio)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO doctor_profiles (doctor_id, name, specialization, consultation_fee, bio, profile_image_url)
+       VALUES ($1, $2, $3, $4, $5, $6)
        ON CONFLICT (doctor_id) DO UPDATE
          SET name = COALESCE(EXCLUDED.name, doctor_profiles.name),
              specialization = COALESCE(EXCLUDED.specialization, doctor_profiles.specialization),
              consultation_fee = COALESCE(EXCLUDED.consultation_fee, doctor_profiles.consultation_fee),
              bio = COALESCE(EXCLUDED.bio, doctor_profiles.bio),
+             profile_image_url = COALESCE(EXCLUDED.profile_image_url, doctor_profiles.profile_image_url),
              updated_at = CURRENT_TIMESTAMP
        RETURNING *`,
-      [doctorId, name || null, specialization || null, consultationFee || null, bio || null]
+      [
+        doctorId,
+        name || null,
+        specialization || null,
+        consultationFee || null,
+        bio || null,
+        profileImageUrl,
+      ]
     );
 
     res.status(200).json({ success: true, data: result.rows[0] });
@@ -125,5 +182,63 @@ exports.getProfile = async (req, res) => {
     res.status(200).json({ success: true, data: result.rows[0] || null });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// POST /api/v1/public/profile/image
+// Authenticated doctor uploads or replaces their profile image
+exports.uploadProfileImage = async (req, res) => {
+  try {
+    const doctorId = req.user.userId;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image uploaded',
+      });
+    }
+
+    const currentProfile = await db.query(
+      'SELECT profile_image_url FROM doctor_profiles WHERE doctor_id = $1',
+      [doctorId]
+    );
+
+    const saveResult = await saveFile(file.buffer, file.originalname, doctorId);
+
+    if (!saveResult.success) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to save image',
+        error: saveResult.error,
+      });
+    }
+
+    if (currentProfile.rows[0]?.profile_image_url) {
+      await deleteFile(currentProfile.rows[0].profile_image_url);
+    }
+
+    const result = await db.query(
+      `INSERT INTO doctor_profiles (doctor_id, profile_image_url)
+       VALUES ($1, $2)
+       ON CONFLICT (doctor_id) DO UPDATE
+         SET profile_image_url = EXCLUDED.profile_image_url,
+             updated_at = CURRENT_TIMESTAMP
+       RETURNING *`,
+      [doctorId, saveResult.documentUrl]
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile image uploaded successfully',
+      data: result.rows[0],
+    });
+  } catch (error) {
+    console.error('Error uploading doctor profile image:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload profile image',
+      error: error.message,
+    });
   }
 };

@@ -121,9 +121,13 @@ const initializeDatabase = async () => {
       name VARCHAR(255),
       specialization VARCHAR(255),
       consultation_fee DECIMAL(10, 2),
+      profile_image_url TEXT,
       bio TEXT,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+
+    ALTER TABLE doctor_profiles
+      ADD COLUMN IF NOT EXISTS profile_image_url TEXT;
 
     CREATE TABLE IF NOT EXISTS prescriptions (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -6,7 +6,7 @@ services:
     build:
       context: ../frontend
       args:
-        VITE_API_BASE_URL: http://gateway:3000/api
+        VITE_API_BASE_URL: http://localhost:3000/api
     ports:
       - "80:80"
     depends_on:
@@ -22,6 +22,7 @@ services:
     environment:
       PORT: 3000
       NODE_ENV: development
+      CORS_ORIGIN: http://localhost,http://127.0.0.1
       AUTH_SERVICE_URL: http://auth-service:3001
       PATIENT_SERVICE_URL: http://patient-service:3002
       DOCTOR_SERVICE_URL: http://doctor-service:3003
@@ -50,6 +51,10 @@ services:
     environment:
       PORT: 3001
       NODE_ENV: development
+      JWT_SECRET: SyOudFfvRbmoURg4Mq2N34wq
+      JWT_EXPIRE: never
+      REFRESH_TOKEN_SECRET: SyOudFfvRbmoURg4Mq2N34wq_refresh
+      REFRESH_TOKEN_EXPIRE: never
       DB_HOST: postgres-auth
       DB_PORT: 5432
       DB_NAME: auth_db
@@ -216,11 +221,17 @@ services:
     environment:
       PORT: 3007
       NODE_ENV: development
+      DB_HOST: postgres-notification
+      DB_PORT: 5432
+      DB_NAME: notification_db
+      DB_USER: admin
+      DB_PASSWORD: password
       KAFKA_BROKER: kafka:9092
       ENABLE_SMS: "${ENABLE_SMS:-true}"
       SMSAPI_TOKEN: "367|2SaoowtSbq3Z5QnK4111TghRLMRaQZ0fgM7ZJyBF"
       SMSAPI_SENDER_ID: "SMSAPI Demo"
     depends_on:
+      - postgres-notification
       - kafka
     networks:
       - healthcare-network
@@ -317,6 +328,19 @@ services:
     networks:
       - healthcare-network
 
+  postgres-notification:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: notification_db
+    ports:
+      - "5407:5432"
+    volumes:
+      - notification_db_data:/var/lib/postgresql/data
+    networks:
+      - healthcare-network
+
   # Kafka
   kafka:
     image: confluentinc/cp-kafka:7.4.0
@@ -352,6 +376,7 @@ volumes:
   appointment_db_data:
   telemedicine_db_data:
   payment_db_data:
+  notification_db_data:
 
 networks:
   healthcare-network:

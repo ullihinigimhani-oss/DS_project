@@ -3,8 +3,27 @@ import LoginForm from './components/LoginForm'
 import RegisterForm from './components/RegisterForm'
 import SectionCard from './components/SectionCard'
 import StatusPill from './components/StatusPill'
+import Home from './components/Home'
+import DoctorDashboard from './components/dashboards/DoctorDashboard'
 import PatientDashboard from './components/dashboards/PatientDashboard'
+import DoctorAppointmentsPage from './pages/doctor/Appointments'
+import DoctorSchedulePage from './pages/doctor/Schedule'
+import DoctorPatientsPage from './pages/doctor/Patients'
+import DoctorConsultationsPage from './pages/doctor/Consultations'
+import DoctorPrescriptionsPage from './pages/doctor/Prescriptions'
+import DoctorVerificationPage from './pages/doctor/Verification'
+import DoctorProfilePage from './pages/doctor/Profile'
+import PatientBookAppointmentPage from './pages/patient/BookAppointment'
+import PatientMyBookingsPage from './pages/patient/MyBookings'
+import PatientDoctorsPage from './pages/patient/Doctors'
+import PatientSymptomHistoryPage from './pages/patient/SymptomHistory'
+import PatientProfilePage from './pages/patient/Profile'
 import { loginUser, registerUser } from './utils/authService'
+import {
+  submitDoctorVerification,
+  updateDoctorProfile,
+  uploadDoctorDocument,
+} from './utils/doctorService'
 import {
   analyzeSymptoms,
   apiBaseUrl,
@@ -18,6 +37,7 @@ import './App.css'
 const defaultSymptoms = 'I have fever, cough, headache and runny nose'
 const defaultUserId = 'patient-001'
 const sessionStorageKey = 'healthcare-auth-shell-session'
+const authTokenStorageKey = 'token'
 
 const roleSummaries = {
   patient: {
@@ -34,53 +54,11 @@ const roleSummaries = {
   },
 }
 
-const roleLinks = [
-  { label: 'Home', path: '/' },
-  { label: 'Login', path: '/login' },
-  { label: 'Register', path: '/register' },
-  { label: 'Patient', path: '/patient' },
-  { label: 'Doctors', path: '/doctors' },
-  { label: 'AI Symptoms', path: '/ai-symptoms' },
-]
 
-const previewCards = [
-  {
-    title: 'Appointments',
-    description: 'Booking and availability will plug into the patient journey once the appointment UX branch begins.',
-    status: 'Queued',
-  },
-  {
-    title: 'Medical records',
-    description: 'Upload, document review, and patient record surfacing are staged for the next pass.',
-    status: 'Upcoming',
-  },
-  {
-    title: 'Payments',
-    description: 'Billing, receipts, and checkout state will land after the care flow is settled.',
-    status: 'Queued',
-  },
-]
-
-const roadmapCards = [
-  {
-    title: 'Appointment booking',
-    description: 'Connect patient dashboard actions to real booking routes and time-slot discovery.',
-    label: 'Queued',
-  },
-  {
-    title: 'Medical records',
-    description: 'Bring upload and records browsing into the patient dashboard without breaking the current shell.',
-    label: 'Upcoming',
-  },
-  {
-    title: 'Payments and receipts',
-    description: 'Finish the patient journey from symptom insight to booking and payment confirmation.',
-    label: 'Planned',
-  },
-]
 
 function createPreviewSession(base) {
   return {
+    userId: base.id || base.userId || base.user?.id || base.email?.split('@')[0] || null,
     name: base.name || base.email?.split('@')[0] || 'Preview user',
     email: base.email || 'preview@health.local',
     role: base.userType || base.role || 'patient',
@@ -92,6 +70,38 @@ function createPreviewSession(base) {
 function getInitialPath() {
   const path = window.location.pathname || '/'
   return path === '' ? '/' : path
+}
+
+function getRouteForRole(role) {
+  switch (role) {
+    case 'doctor':
+      return '/doctor/dashboard'
+    case 'admin':
+      return '/admin'
+    case 'patient':
+    default:
+      return '/patient'
+  }
+}
+
+function clearPersistedAuth() {
+  window.localStorage.removeItem(sessionStorageKey)
+  window.localStorage.removeItem(authTokenStorageKey)
+}
+
+function persistSession(nextSession) {
+  if (!nextSession) {
+    clearPersistedAuth()
+    return
+  }
+
+  window.localStorage.setItem(sessionStorageKey, JSON.stringify(nextSession))
+
+  if (nextSession.token) {
+    window.localStorage.setItem(authTokenStorageKey, nextSession.token)
+  } else {
+    window.localStorage.removeItem(authTokenStorageKey)
+  }
 }
 
 export default function App() {
@@ -121,9 +131,15 @@ export default function App() {
     phone: '',
     password: 'password123',
     userType: 'patient',
+    licenseDocument: null,
+    governmentIdDocument: null,
+    credentialsDocument: null,
+    insuranceDocument: null,
   })
 
   const serviceHealthy = gatewayHealth?.status === 'running'
+  const isDoctorPortalRoute = currentPath.startsWith('/doctor/')
+  const isPatientPortalRoute = currentPath.startsWith('/patient')
   const activeRole = session?.role || loginValues.role
   const roleSummary = roleSummaries[activeRole] || roleSummaries.patient
   const topCondition = analysis?.possibleConditions?.[0] || null
@@ -162,19 +178,30 @@ export default function App() {
     try {
       const saved = window.localStorage.getItem(sessionStorageKey)
       if (saved) {
-        setSession(JSON.parse(saved))
+        const parsed = JSON.parse(saved)
+
+        if (parsed?.mode === 'connected' && !parsed?.token) {
+          clearPersistedAuth()
+          setSession(null)
+          return
+        }
+
+        if (parsed?.token) {
+          window.localStorage.setItem(authTokenStorageKey, parsed.token)
+        } else {
+          window.localStorage.removeItem(authTokenStorageKey)
+        }
+
+        setSession(parsed)
       }
     } catch {
       // Ignore bad local data and continue with a clean session.
+      clearPersistedAuth()
     }
   }, [])
 
   useEffect(() => {
-    if (session) {
-      window.localStorage.setItem(sessionStorageKey, JSON.stringify(session))
-    } else {
-      window.localStorage.removeItem(sessionStorageKey)
-    }
+    persistSession(session)
   }, [session])
 
   useEffect(() => {
@@ -238,37 +265,76 @@ export default function App() {
     setRegisterValues((current) => ({ ...current, [name]: value }))
   }
 
+  const handleRegisterFileChange = (event) => {
+    const { name, files } = event.target
+    setRegisterValues((current) => ({ ...current, [name]: files?.[0] || null }))
+  }
+
+  const createConnectedSession = (authData, fallback) => {
+    const user = authData?.data?.user || {}
+
+    return {
+      userId: user.id || null,
+      name: user.name || fallback.name || fallback.email,
+      email: user.email || fallback.email,
+      role: user.userType || fallback.role || fallback.userType || 'patient',
+      mode: 'connected',
+      token: authData.data.accessToken,
+    }
+  }
+
+  const getDoctorRegistrationDocuments = () => [
+    { type: 'license', file: registerValues.licenseDocument },
+    { type: 'government_id', file: registerValues.governmentIdDocument },
+    { type: 'credentials', file: registerValues.credentialsDocument },
+    { type: 'insurance', file: registerValues.insuranceDocument },
+  ]
+
+  const completeDoctorRegistration = async (token) => {
+    await updateDoctorProfile(token, {
+      name: registerValues.name,
+      specialization: '',
+      consultationFee: '',
+      bio: '',
+    })
+
+    for (const document of getDoctorRegistrationDocuments()) {
+      await uploadDoctorDocument(token, document.file, document.type)
+    }
+
+    await submitDoctorVerification(token)
+  }
+
   const handleLogin = async (event) => {
     event.preventDefault()
     setAuthBusy(true)
     setAuthError('')
     setAuthMessage('')
+    clearPersistedAuth()
 
     try {
       const data = await loginUser(loginValues)
 
-      if (data?.success && data?.data?.token) {
-        setSession({
-          name: data.data.name || loginValues.email,
-          email: data.data.email || loginValues.email,
-          role: data.data.userType || loginValues.role,
-          mode: 'connected',
-          token: data.data.token,
-        })
+      if (data?.success && data?.data?.accessToken) {
+        const nextSession = createConnectedSession(data, loginValues)
+        persistSession(nextSession)
+        setSession(nextSession)
         setAuthMessage('Signed in successfully.')
       } else {
         const preview = createPreviewSession(loginValues)
+        persistSession(preview)
         setSession(preview)
         setAuthMessage(data.message || 'Auth backend is still pending, so preview mode was enabled.')
       }
 
-      navigateTo('/patient')
+      navigateTo(getRouteForRole(loginValues.role))
     } catch (error) {
       const preview = createPreviewSession(loginValues)
+      persistSession(preview)
       setSession(preview)
       setAuthError('Auth API is not fully ready yet. Preview mode was enabled instead.')
       setAuthMessage(error.message)
-      navigateTo('/patient')
+      navigateTo(getRouteForRole(loginValues.role))
     } finally {
       setAuthBusy(false)
     }
@@ -279,27 +345,54 @@ export default function App() {
     setAuthBusy(true)
     setAuthError('')
     setAuthMessage('')
+    clearPersistedAuth()
+
+    if (registerValues.userType === 'doctor') {
+      const missingDocuments = getDoctorRegistrationDocuments().filter((document) => !document.file)
+
+      if (missingDocuments.length > 0) {
+        setAuthBusy(false)
+        setAuthError('Doctor registration requires all four verification documents before account creation.')
+        return
+      }
+    }
 
     try {
       const data = await registerUser(registerValues)
 
-      if (data?.success && data?.data) {
-        const nextSession = createPreviewSession(registerValues)
+      if (data?.success && data?.data?.accessToken) {
+        const nextSession = createConnectedSession(data, registerValues)
+
+        if (nextSession.role === 'doctor') {
+          try {
+            await completeDoctorRegistration(nextSession.token)
+            setAuthMessage('Doctor account created and verification documents were sent to admin review.')
+          } catch (doctorSetupError) {
+            setAuthError(
+              `Doctor account was created, but the verification package could not be submitted: ${doctorSetupError.message}`,
+            )
+          }
+        } else {
+          setAuthMessage(data.message || 'Account created and signed in successfully.')
+        }
+
+        persistSession(nextSession)
         setSession(nextSession)
-        setAuthMessage(data.message || 'Account shell created. Preview mode enabled.')
       } else {
         const preview = createPreviewSession(registerValues)
+        persistSession(preview)
         setSession(preview)
         setAuthMessage(data.message || 'Registration shell saved in preview mode.')
       }
 
-      navigateTo('/patient')
+      navigateTo(getRouteForRole(registerValues.userType))
     } catch (error) {
       const preview = createPreviewSession(registerValues)
+      persistSession(preview)
       setSession(preview)
       setAuthError('Registration backend is not ready yet. Preview mode was enabled instead.')
       setAuthMessage(error.message)
-      navigateTo('/patient')
+      navigateTo(getRouteForRole(registerValues.userType))
     } finally {
       setAuthBusy(false)
     }
@@ -328,84 +421,13 @@ export default function App() {
   }
 
   const handleSignOut = () => {
+    const wasDoctor = session?.role === 'doctor'
+    clearPersistedAuth()
     setSession(null)
-    setAuthMessage('You have left preview mode.')
+    setAuthMessage(wasDoctor ? 'Doctor session signed out.' : 'You have left preview mode.')
     setAuthError('')
-    navigateTo('/')
+    navigateTo(wasDoctor ? '/login' : '/')
   }
-
-  const renderHomePage = () => (
-    <>
-      <header className="hero">
-        <div className="hero-copy">
-          <p className="eyebrow">Frontend Routing Shell</p>
-          <h1>Separate frontend screens for patient care, auth, doctors, and AI triage.</h1>
-          <p className="hero-text">
-            The UI is now organized into proper routes instead of one long page. The connected
-            modules already working today stay available through focused screens, while the
-            remaining service journeys stay staged for later branches.
-          </p>
-          <div className="hero-actions">
-            <StatusPill
-              status={serviceHealthy ? 'ok' : 'warn'}
-              label={serviceHealthy ? 'Gateway online' : 'Gateway needs attention'}
-            />
-            <StatusPill
-              status={session ? 'ok' : 'warn'}
-              label={session ? `${activeRole} shell active` : 'No active session'}
-            />
-            <span className="subtle-text">{apiBaseUrl}</span>
-          </div>
-          <div className="hero-note">
-            <strong>Current focus:</strong> separate pages, cleaner navigation, and a patient-first
-            route structure on top of the working backend integrations.
-          </div>
-        </div>
-
-        <div className="stats-grid">
-          {quickStats.map((item) => (
-            <div key={item.label} className="stat-card">
-              <span>{item.label}</span>
-              <strong>{item.value}</strong>
-            </div>
-          ))}
-        </div>
-      </header>
-
-      <div className="route-grid">
-        {roleLinks
-          .filter((item) => item.path !== '/')
-          .map((item) => (
-            <button
-              key={item.path}
-              type="button"
-              className="route-card"
-              onClick={() => navigateTo(item.path)}
-            >
-              <strong>{item.label}</strong>
-              <span>{item.path}</span>
-            </button>
-          ))}
-      </div>
-
-      <SectionCard
-        title="Next Surface Areas"
-        subtitle="These modules are staged cleanly now, so the next branches can deepen the experience without changing the routing shell."
-      >
-        <div className="preview-grid">
-          {roadmapCards.map((card) => (
-            <article key={card.title} className="preview-card">
-              <div className="preview-card-top">
-                <h3>{card.title}</h3>
-                <StatusPill status="pending" label={card.label} />
-              </div>
-              <p>{card.description}</p>
-            </article>
-          ))}
-        </div>
-      </SectionCard>
-    </>
-  )
 
   const renderLoginPage = () => (
     <SectionCard
@@ -419,6 +441,7 @@ export default function App() {
         onSubmit={handleLogin}
         loading={authBusy}
         roleHint={loginValues.role}
+        navigateTo={navigateTo}
       />
       {authError ? <p className="error-text">{authError}</p> : null}
       {authMessage ? <p className="empty-state">{authMessage}</p> : null}
@@ -434,8 +457,10 @@ export default function App() {
       <RegisterForm
         values={registerValues}
         onChange={handleRegisterChange}
+        onFileChange={handleRegisterFileChange}
         onSubmit={handleRegister}
         loading={authBusy}
+        navigateTo={navigateTo}
       />
       {authError ? <p className="error-text">{authError}</p> : null}
       {authMessage ? <p className="empty-state">{authMessage}</p> : null}
@@ -443,39 +468,62 @@ export default function App() {
   )
 
   const renderPatientPage = () => (
-    <div className="page-stack">
-      <SectionCard
-        title="Patient Dashboard"
-        subtitle="A patient-centered route built on top of the services already live in your stack."
-      >
-        <PatientDashboard
-          activeRole={activeRole}
-          session={session}
-          history={history}
-          doctorDirectory={doctorDirectory}
-          gatewayHealth={gatewayHealth}
-          topCondition={topCondition}
-        />
-      </SectionCard>
-
-      <SectionCard
-        title="Role Readiness"
-        subtitle="Patient is the primary focus here, while the remaining journeys are clearly staged."
-      >
-        <div className="preview-grid">
-          {previewCards.map((card) => (
-            <article key={card.title} className="preview-card">
-              <div className="preview-card-top">
-                <h3>{card.title}</h3>
-                <StatusPill status="warn" label={card.status} />
-              </div>
-              <p>{card.description}</p>
-            </article>
-          ))}
-        </div>
-      </SectionCard>
-    </div>
+    <PatientDashboard
+      currentPath={currentPath}
+      activeRole={activeRole}
+      session={session}
+      history={history}
+      doctorDirectory={doctorDirectory}
+      gatewayHealth={gatewayHealth}
+      topCondition={topCondition}
+      onSignOut={handleSignOut}
+      onRequireLogin={navigateTo}
+      onNavigate={navigateTo}
+    />
   )
+
+  const renderDoctorDashboardPage = () => (
+    <DoctorDashboard
+      currentPath={currentPath}
+      session={session}
+      onSignOut={handleSignOut}
+      onRequireLogin={navigateTo}
+      onNavigate={navigateTo}
+    />
+  )
+
+  const renderDoctorRoutePage = (RoutePage) => {
+    const Component = RoutePage
+
+    return (
+      <Component
+        currentPath={currentPath}
+        session={session}
+        onSignOut={handleSignOut}
+        onRequireLogin={navigateTo}
+        onNavigate={navigateTo}
+      />
+    )
+  }
+
+  const renderPatientRoutePage = (RoutePage) => {
+    const Component = RoutePage
+
+    return (
+      <Component
+        currentPath={currentPath}
+        activeRole={activeRole}
+        session={session}
+        history={history}
+        doctorDirectory={doctorDirectory}
+        gatewayHealth={gatewayHealth}
+        topCondition={topCondition}
+        onSignOut={handleSignOut}
+        onRequireLogin={navigateTo}
+        onNavigate={navigateTo}
+      />
+    )
+  }
 
   const renderDoctorsPage = () => (
     <SectionCard
@@ -494,7 +542,10 @@ export default function App() {
         {doctorDirectory.map((doctor) => (
           <article key={doctor.doctor_id} className="doctor-card">
             <div className="doctor-topline">
-              <StatusPill status="ok" label="Approved" />
+              <StatusPill
+                status={doctor.verification_status === 'approved' ? 'ok' : 'warn'}
+                label={doctor.verification_status === 'approved' ? 'Verified Doctor' : 'Unverified'}
+              />
               <span className="doctor-id">{doctor.doctor_id}</span>
             </div>
             <div>
@@ -635,46 +686,67 @@ export default function App() {
         return renderLoginPage()
       case '/register':
         return renderRegisterPage()
+      case '/doctor/dashboard':
+        return renderDoctorDashboardPage()
+      case '/doctor/appointments':
+        return renderDoctorRoutePage(DoctorAppointmentsPage)
+      case '/doctor/schedule':
+        return renderDoctorRoutePage(DoctorSchedulePage)
+      case '/doctor/patients':
+        return renderDoctorRoutePage(DoctorPatientsPage)
+      case '/doctor/consultations':
+        return renderDoctorRoutePage(DoctorConsultationsPage)
+      case '/doctor/prescriptions':
+        return renderDoctorRoutePage(DoctorPrescriptionsPage)
+      case '/doctor/verification':
+        return renderDoctorRoutePage(DoctorVerificationPage)
+      case '/doctor/profile':
+        return renderDoctorRoutePage(DoctorProfilePage)
       case '/patient':
         return renderPatientPage()
+      case '/patient/book-appointment':
+        return renderPatientRoutePage(PatientBookAppointmentPage)
+      case '/patient/my-bookings':
+        return renderPatientRoutePage(PatientMyBookingsPage)
+      case '/patient/doctors':
+        return renderPatientRoutePage(PatientDoctorsPage)
+      case '/patient/symptom-history':
+        return renderPatientRoutePage(PatientSymptomHistoryPage)
+      case '/patient/profile':
+        return renderPatientRoutePage(PatientProfilePage)
+      case '/doctor':
+        return session?.role === 'doctor' ? renderDoctorDashboardPage() : renderLoginPage()
       case '/doctors':
         return renderDoctorsPage()
       case '/ai-symptoms':
         return renderAiPage()
-      case '/doctor':
       case '/admin':
         return renderPlaceholderPage()
+      case '/Home':
       case '/':
       default:
-        return renderHomePage()
+        return (
+          <Home
+            session={session}
+            activeRole={activeRole}
+            apiBaseUrl={apiBaseUrl}
+            gatewayHealth={gatewayHealth}
+            serviceHealthy={serviceHealthy}
+            quickStats={quickStats}
+            doctorDirectory={doctorDirectory}
+            navigateTo={navigateTo}
+            getRouteForRole={getRouteForRole}
+          />
+        )
     }
   }
 
   return (
-    <div className="app-shell">
-      <nav className="top-nav">
-        <button type="button" className="brand-link" onClick={() => navigateTo('/')}>
-          SmartCare Frontend
-        </button>
-        <div className="nav-links">
-          {roleLinks.map((item) => (
-            <button
-              key={item.path}
-              type="button"
-              className={`nav-link ${currentPath === item.path ? 'active' : ''}`}
-              onClick={() => navigateTo(item.path)}
-            >
-              {item.label}
-            </button>
-          ))}
-          {session ? (
-            <button type="button" className="nav-link" onClick={handleSignOut}>
-              Sign out
-            </button>
-          ) : null}
-        </div>
-      </nav>
-
+    <div
+      className={`app-shell ${isDoctorPortalRoute ? 'doctor-route-shell' : ''} ${
+        isPatientPortalRoute ? 'patient-route-shell' : ''
+      }`.trim()}
+    >
       {renderCurrentPage()}
     </div>
   )

@@ -12,6 +12,17 @@ const JWT_EXPIRE = process.env.JWT_EXPIRE || process.env.ACCESS_TOKEN_EXPIRY || 
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || process.env.JWT_REFRESH_SECRET || 'SyOudFfvRbmoURg4Mq2N34wq_refresh_fallback';
 const REFRESH_TOKEN_EXPIRE = process.env.REFRESH_TOKEN_EXPIRE || process.env.REFRESH_TOKEN_EXPIRY || '7d';
 
+const normalizeExpiry = (value) => {
+  if (!value) return undefined;
+
+  const normalized = String(value).trim().toLowerCase();
+  if (normalized === 'never' || normalized === 'none' || normalized === 'false' || normalized === '0') {
+    return undefined;
+  }
+
+  return value;
+};
+
 // Debug: Check all JWT secrets
 console.log('JWT_SECRET:', !!JWT_SECRET);
 console.log('REFRESH_TOKEN_SECRET:', !!REFRESH_TOKEN_SECRET);
@@ -19,14 +30,22 @@ console.log('REFRESH_TOKEN_SECRET:', !!REFRESH_TOKEN_SECRET);
 /**
  * Generate JWT access token
  */
-const generateAccessToken = (userId, email, userType) =>
-  jwt.sign({ userId, email, userType }, JWT_SECRET, { expiresIn: JWT_EXPIRE });
+const generateAccessToken = (userId, email, userType) => {
+  const expiresIn = normalizeExpiry(JWT_EXPIRE);
+  const options = expiresIn ? { expiresIn } : {};
+
+  return jwt.sign({ userId, email, userType }, JWT_SECRET, options);
+};
 
 /**
  * Generate refresh token
  */
-const generateRefreshToken = (userId, email) =>
-  jwt.sign({ userId, email }, REFRESH_TOKEN_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRE });
+const generateRefreshToken = (userId, email) => {
+  const expiresIn = normalizeExpiry(REFRESH_TOKEN_EXPIRE);
+  const options = expiresIn ? { expiresIn } : {};
+
+  return jwt.sign({ userId, email }, REFRESH_TOKEN_SECRET, options);
+};
 
 /**
  * Generate both tokens

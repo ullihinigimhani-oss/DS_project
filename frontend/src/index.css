@@ -1,10 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Outfit:wght@300;400;500;600&display=swap');
+
 :root {
-  color: #2f2924;
-  background:
-    radial-gradient(circle at top left, rgba(217, 108, 79, 0.15), transparent 34%),
-    radial-gradient(circle at top right, rgba(126, 161, 122, 0.16), transparent 30%),
-    linear-gradient(180deg, #f5ede1 0%, #fbf7f1 42%, #f2e8d8 100%);
-  font-family: "Segoe UI", "Trebuchet MS", sans-serif;
+  color: #0d1f18;
+  background: #f7fbf8;
+  font-family: 'Outfit', 'Segoe UI', sans-serif;
   line-height: 1.5;
   font-weight: 400;
 }
@@ -23,11 +22,37 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  color: #2f2924;
+  color: #0d1f18;
+  background: #f7fbf8;
 }
 
 button,
 input,
 textarea {
   font: inherit;
+}
+
+/* Shared tokens available globally */
+:root {
+  --border-subtle:  rgba(29, 158, 117, 0.18);
+  --border-primary: rgba(29, 158, 117, 0.35);
+  --bg-primary:     #ffffff;
+  --bg-secondary:   #f7fbf8;
+  --text-primary:   #0d1f18;
+  --text-secondary: #4a6758;
+  --text-tertiary:  #8aab9c;
+  --font-mono:      ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar       { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #9fe1cb; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #1d9e75; }
+
+/* Focus */
+:focus-visible {
+  outline: 2px solid #1d9e75;
+  outline-offset: 2px;
+  border-radius: 4px;
 }

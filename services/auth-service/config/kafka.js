@@ -6,18 +6,30 @@ const kafka = new Kafka({
 });
 
 const producer = kafka.producer();
+let isProducerConnected = false;
 
 const initializeProducer = async () => {
   try {
     await producer.connect();
+    isProducerConnected = true;
     console.log('Auth Service Kafka Producer connected');
+    return true;
   } catch (error) {
-    console.error('Failed to connect Kafka Producer:', error);
-    process.exit(1);
+    isProducerConnected = false;
+    console.error(
+      'Failed to connect Kafka Producer. Auth service will continue without event publishing:',
+      error.message,
+    );
+    return false;
   }
 };
 
 const sendAuthEvent = async (eventType, data) => {
+  if (!isProducerConnected) {
+    console.warn(`Skipping auth event "${eventType}" because Kafka is unavailable`);
+    return false;
+  }
+
   try {
     await producer.send({
       topic: 'auth-events',
@@ -33,13 +45,23 @@ const sendAuthEvent = async (eventType, data) => {
       ],
     });
     console.log(`Auth event sent: ${eventType}`);
+    return true;
   } catch (error) {
     console.error('Error sending auth event:', error);
+    return false;
   }
 };
 
 const disconnectProducer = async () => {
-  await producer.disconnect();
+  if (!isProducerConnected) {
+    return;
+  }
+
+  try {
+    await producer.disconnect();
+  } finally {
+    isProducerConnected = false;
+  }
 };
 
 module.exports = {

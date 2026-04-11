@@ -1,0 +1,103 @@
+import { getInitials, patientSidebarItems, usePatientPortal } from './PatientPortalContext'
+
+export default function PatientPortalLayout({
+  currentPath,
+  onNavigate,
+  onRequireLogin,
+  onSignOut,
+  children,
+}) {
+  const { activeRole, session, topCondition, bookingError, bookingMessage } = usePatientPortal()
+
+  const activeNavItem =
+    patientSidebarItems.find((item) => item.path === currentPath) ||
+    patientSidebarItems.find((item) => item.path === '/patient')
+
+  if (activeRole !== 'patient') {
+    return (
+      <div className="patient-portal-guard">
+        <div className="patient-portal-guard-card">
+          <p className="patient-sidebar-kicker">Arogya Patient Portal</p>
+          <h2>Patient login is required before the dashboard can open.</h2>
+          <p>
+            Use the shared login or registration page, choose the patient role, and the app will
+            redirect you into this dashboard automatically.
+          </p>
+          <div className="patient-toolbar">
+            <button type="button" onClick={() => onRequireLogin('/login')}>
+              Go to login
+            </button>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => onRequireLogin('/register')}
+            >
+              Create account
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="patient-portal">
+      <aside className="patient-portal-sidebar">
+        <div className="patient-portal-brand">
+          <div className="patient-brand-mark">AR</div>
+          <div>
+            <strong>Arogya</strong>
+            <span>Patient Workspace</span>
+          </div>
+        </div>
+
+        <nav className="patient-portal-nav">
+          {patientSidebarItems.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={`patient-portal-link ${currentPath === item.path ? 'active' : ''}`}
+              onClick={() => onNavigate(item.path)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="patient-portal-footer">
+          <div className="patient-portal-user">
+            <div className="patient-avatar">{getInitials(session?.name)}</div>
+            <div>
+              <strong>{session?.name || 'Patient'}</strong>
+              <span>{session?.email || 'patient@example.com'}</span>
+            </div>
+          </div>
+          <button type="button" className="patient-signout-button" onClick={onSignOut}>
+            Sign out
+          </button>
+        </div>
+      </aside>
+
+      <section className="patient-portal-main">
+        <header className="patient-portal-header">
+          <div>
+            <p className="patient-portal-section-label">{activeNavItem?.label || 'Overview'}</p>
+            <h1>{activeNavItem?.label || 'Overview'}</h1>
+          </div>
+          <div className="patient-portal-header-user">
+            <div className="patient-avatar small">{getInitials(session?.name)}</div>
+            <div>
+              <strong>{session?.name || 'Patient'}</strong>
+              <span>{topCondition?.name || 'Care plan in progress'}</span>
+            </div>
+          </div>
+        </header>
+
+        {bookingError ? <p className="error-text">{bookingError}</p> : null}
+        {bookingMessage ? <p className="patient-success">{bookingMessage}</p> : null}
+
+        {children}
+      </section>
+    </div>
+  )
+}

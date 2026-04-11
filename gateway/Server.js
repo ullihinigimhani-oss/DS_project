@@ -26,12 +26,19 @@ const parseCorsOrigins = (origins) =>
     .filter(Boolean);
 
 const allowedOrigins = parseCorsOrigins(process.env.CORS_ORIGIN);
+const localOriginPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
 
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+    if (
+      !origin ||
+      allowedOrigins.length === 0 ||
+      allowedOrigins.includes(origin) ||
+      localOriginPattern.test(origin)
+    ) {
       return callback(null, true);
     }
+    console.error(`Gateway CORS rejected origin: ${origin}`);
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
@@ -103,6 +110,34 @@ const createProxy = (serviceUrl) => proxy(serviceUrl, {
   },
 });
 
+const createUploadProxy = (serviceUrl) => proxy(serviceUrl, {
+  parseReqBody: false,
+  proxyReqPathResolver(req) {
+    return req.originalUrl;
+  },
+  proxyReqOptDecorator(proxyReqOpts, srcReq) {
+    proxyReqOpts.headers = proxyReqOpts.headers || {};
+
+    if (srcReq.headers.authorization) {
+      proxyReqOpts.headers.authorization = srcReq.headers.authorization;
+    }
+
+    if (srcReq.headers['content-type']) {
+      proxyReqOpts.headers['content-type'] = srcReq.headers['content-type'];
+    }
+
+    return proxyReqOpts;
+  },
+  proxyErrorHandler(err, res) {
+    console.error('Gateway proxy error:', err.message);
+    res.status(502).json({
+      success: false,
+      message: 'Upstream service unavailable',
+      error: err.message,
+    });
+  },
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({
@@ -130,8 +165,11 @@ app.use('/api/v1/medical-records', trackGatewayRequest('/api/v1/medical-records'
 app.use('/api/doctors', trackGatewayRequest('/api/doctors'), createProxy(services.doctor));
 app.use('/api/v1/doctors', trackGatewayRequest('/api/v1/doctors'), createProxy(services.doctor));
 app.use('/api/v1/prescriptions', trackGatewayRequest('/api/v1/prescriptions'), createProxy(services.doctor));
+app.use('/api/v1/public/profile/image', trackGatewayRequest('/api/v1/public/profile/image'), createUploadProxy(services.doctor));
 app.use('/api/v1/public', trackGatewayRequest('/api/v1/public'), createProxy(services.doctor));
+app.use('/uploads/doctor-verification', trackGatewayRequest('/uploads/doctor-verification'), createProxy(services.doctor));
 app.use('/api/v1/schedule', trackGatewayRequest('/api/v1/schedule'), createProxy(services.doctor));
+app.use('/api/v1/verification/upload', trackGatewayRequest('/api/v1/verification/upload'), createUploadProxy(services.doctor));
 app.use('/api/v1/verification', trackGatewayRequest('/api/v1/verification'), createProxy(services.doctor));
 app.use('/api/v1/appointments', trackGatewayRequest('/api/v1/appointments'), createProxy(services.appointment));
 app.use('/api/appointments', trackGatewayRequest('/api/appointments'), createProxy(services.appointment));

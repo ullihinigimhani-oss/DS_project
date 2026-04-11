@@ -154,6 +154,14 @@ export async function fetchDoctorPrescriptions(token) {
   return readJson(response)
 }
 
+export async function fetchDoctorPatientPrescriptions(token, patientId) {
+  const response = await fetch(`${doctorApiBase}/prescriptions/patient/${patientId}`, {
+    headers: getAuthHeaders(token),
+  })
+
+  return readJson(response)
+}
+
 export async function issueDoctorPrescription(token, payload) {
   const response = await fetch(`${doctorApiBase}/prescriptions`, {
     method: 'POST',

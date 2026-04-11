@@ -126,6 +126,7 @@ app.get('/metrics', async (req, res, next) => {
 app.use('/api/auth', trackGatewayRequest('/api/auth'), createProxy(services.auth));
 app.use('/api/admin', trackGatewayRequest('/api/admin'), createProxy(services.auth));
 app.use('/api/patients', trackGatewayRequest('/api/patients'), createProxy(services.patient));
+app.use('/api/v1/medical-records', trackGatewayRequest('/api/v1/medical-records'), createProxy(services.patient));
 app.use('/api/doctors', trackGatewayRequest('/api/doctors'), createProxy(services.doctor));
 app.use('/api/v1/doctors', trackGatewayRequest('/api/v1/doctors'), createProxy(services.doctor));
 app.use('/api/v1/prescriptions', trackGatewayRequest('/api/v1/prescriptions'), createProxy(services.doctor));

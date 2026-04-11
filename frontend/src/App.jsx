@@ -53,10 +53,6 @@ const roleLinks = [
   { label: 'Home', path: '/' },
   { label: 'Login', path: '/login' },
   { label: 'Register', path: '/register' },
-  { label: 'Doctor Dashboard', path: '/doctor/dashboard' },
-  { label: 'Patient', path: '/patient' },
-  { label: 'Doctors', path: '/doctors' },
-  { label: 'AI Symptoms', path: '/ai-symptoms' },
 ]
 
 function createPreviewSession(base) {

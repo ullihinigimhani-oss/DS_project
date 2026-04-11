@@ -13,6 +13,11 @@ import DoctorConsultationsPage from './pages/doctor/Consultations'
 import DoctorPrescriptionsPage from './pages/doctor/Prescriptions'
 import DoctorVerificationPage from './pages/doctor/Verification'
 import DoctorProfilePage from './pages/doctor/Profile'
+import PatientBookAppointmentPage from './pages/patient/BookAppointment'
+import PatientMyBookingsPage from './pages/patient/MyBookings'
+import PatientDoctorsPage from './pages/patient/Doctors'
+import PatientSymptomHistoryPage from './pages/patient/SymptomHistory'
+import PatientProfilePage from './pages/patient/Profile'
 import { loginUser, registerUser } from './utils/authService'
 import {
   submitDoctorVerification,
@@ -142,7 +147,7 @@ export default function App() {
 
   const serviceHealthy = gatewayHealth?.status === 'running'
   const isDoctorPortalRoute = currentPath.startsWith('/doctor/')
-  const isPatientPortalRoute = currentPath === '/patient'
+  const isPatientPortalRoute = currentPath.startsWith('/patient')
   const activeRole = session?.role || loginValues.role
   const roleSummary = roleSummaries[activeRole] || roleSummaries.patient
   const topCondition = analysis?.possibleConditions?.[0] || null
@@ -470,6 +475,7 @@ export default function App() {
 
   const renderPatientPage = () => (
     <PatientDashboard
+      currentPath={currentPath}
       activeRole={activeRole}
       session={session}
       history={history}
@@ -478,6 +484,7 @@ export default function App() {
       topCondition={topCondition}
       onSignOut={handleSignOut}
       onRequireLogin={navigateTo}
+      onNavigate={navigateTo}
     />
   )
 
@@ -498,6 +505,25 @@ export default function App() {
       <Component
         currentPath={currentPath}
         session={session}
+        onSignOut={handleSignOut}
+        onRequireLogin={navigateTo}
+        onNavigate={navigateTo}
+      />
+    )
+  }
+
+  const renderPatientRoutePage = (RoutePage) => {
+    const Component = RoutePage
+
+    return (
+      <Component
+        currentPath={currentPath}
+        activeRole={activeRole}
+        session={session}
+        history={history}
+        doctorDirectory={doctorDirectory}
+        gatewayHealth={gatewayHealth}
+        topCondition={topCondition}
         onSignOut={handleSignOut}
         onRequireLogin={navigateTo}
         onNavigate={navigateTo}
@@ -684,6 +710,16 @@ export default function App() {
         return renderDoctorRoutePage(DoctorProfilePage)
       case '/patient':
         return renderPatientPage()
+      case '/patient/book-appointment':
+        return renderPatientRoutePage(PatientBookAppointmentPage)
+      case '/patient/my-bookings':
+        return renderPatientRoutePage(PatientMyBookingsPage)
+      case '/patient/doctors':
+        return renderPatientRoutePage(PatientDoctorsPage)
+      case '/patient/symptom-history':
+        return renderPatientRoutePage(PatientSymptomHistoryPage)
+      case '/patient/profile':
+        return renderPatientRoutePage(PatientProfilePage)
       case '/doctor':
         return session?.role === 'doctor' ? renderDoctorDashboardPage() : renderLoginPage()
       case '/doctors':

@@ -95,18 +95,13 @@ export default function Home({
       <nav className="hp-nav">
         <div className="hp-nav-brand">
           <span className="hp-nav-pulse" aria-hidden="true" />
-          <span className="hp-nav-logo">Arogya</span>
-          <span className="hp-nav-tagline">eChanneling</span>
+          <span className="hp-nav-logo" >Arogya</span>
         </div>
         <div className="hp-nav-links">
-          <button type="button" className="hp-nav-link" onClick={() => navigateTo('/doctors')}>Find Doctors</button>
-          <button type="button" className="hp-nav-link" onClick={() => navigateTo('/symptom-checker')}>AI Triage</button>
+          <button type="button" className="hp-nav-link" onClick={() => navigateTo('/')}>Home</button>
           <button type="button" className="hp-nav-link" onClick={() => navigateTo('/login')}>Sign In</button>
-          <button
-            type="button"
-            className="hp-nav-cta"
-            onClick={() => navigateTo(session ? getRouteForRole(activeRole) : '/login')}
-          >
+          <button type="button" className="hp-nav-link" onClick={() => navigateTo('/register')}>Create Account</button>
+          <button type="button" className="hp-nav-link" onClick={() => navigateTo(session ? getRouteForRole(activeRole) : '/login')}>
             {session ? 'My workspace' : 'Book now'}
           </button>
         </div>

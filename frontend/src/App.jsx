@@ -54,11 +54,7 @@ const roleSummaries = {
   },
 }
 
-const roleLinks = [
-  { label: 'Home', path: '/' },
-  { label: 'Login', path: '/login' },
-  { label: 'Register', path: '/register' },
-]
+
 
 function createPreviewSession(base) {
   return {
@@ -445,6 +441,7 @@ export default function App() {
         onSubmit={handleLogin}
         loading={authBusy}
         roleHint={loginValues.role}
+        navigateTo={navigateTo}
       />
       {authError ? <p className="error-text">{authError}</p> : null}
       {authMessage ? <p className="empty-state">{authMessage}</p> : null}
@@ -463,6 +460,7 @@ export default function App() {
         onFileChange={handleRegisterFileChange}
         onSubmit={handleRegister}
         loading={authBusy}
+        navigateTo={navigateTo}
       />
       {authError ? <p className="error-text">{authError}</p> : null}
       {authMessage ? <p className="empty-state">{authMessage}</p> : null}
@@ -749,31 +747,6 @@ export default function App() {
         isPatientPortalRoute ? 'patient-route-shell' : ''
       }`.trim()}
     >
-      {!isDoctorPortalRoute && !isPatientPortalRoute ? (
-        <nav className="top-nav">
-          <button type="button" className="brand-link" onClick={() => navigateTo('/')}>
-            Arogya
-          </button>
-          <div className="nav-links">
-            {roleLinks.map((item) => (
-              <button
-                key={item.path}
-                type="button"
-                className={`nav-link ${currentPath === item.path ? 'active' : ''}`}
-                onClick={() => navigateTo(item.path)}
-              >
-                {item.label}
-              </button>
-            ))}
-            {session ? (
-              <button type="button" className="nav-link" onClick={handleSignOut}>
-                Sign out
-              </button>
-            ) : null}
-          </div>
-        </nav>
-      ) : null}
-
       {renderCurrentPage()}
     </div>
   )

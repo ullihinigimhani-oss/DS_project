@@ -10,13 +10,34 @@ function getAuthHeaders(token, extraHeaders = {}) {
 }
 
 async function readJson(response) {
-  const data = await response.json()
+  const raw = await response.text()
+  let data = null
+
+  try {
+    data = raw ? JSON.parse(raw) : null
+  } catch {
+    data = null
+  }
 
   if (!response.ok) {
-    throw new Error(data.message || data.error || 'Doctor request failed')
+    if (data?.message || data?.error) {
+      throw new Error(data.message || data.error)
+    }
+
+    throw new Error(`Doctor request failed (${response.status})`)
+  }
+
+  if (!data) {
+    throw new Error('Doctor service returned an unexpected response format')
   }
 
   return data
+}
+
+export function resolveDoctorAssetUrl(assetPath) {
+  if (!assetPath) return ''
+  if (assetPath.startsWith('http://') || assetPath.startsWith('https://')) return assetPath
+  return `${gatewayBaseUrl}${assetPath}`
 }
 
 export async function fetchDoctorProfile(token) {
@@ -95,6 +116,18 @@ export async function deleteDoctorScheduleSlot(token, slotId) {
   return readJson(response)
 }
 
+export async function resetDoctorScheduleWeek(token, weekStart) {
+  const response = await fetch(`${doctorApiBase}/schedule/reset-week`, {
+    method: 'POST',
+    headers: getAuthHeaders(token, {
+      'Content-Type': 'application/json',
+    }),
+    body: JSON.stringify({ weekStart }),
+  })
+
+  return readJson(response)
+}
+
 export async function fetchDoctorVerificationStatus(token, doctorId) {
   const response = await fetch(`${doctorApiBase}/verification/status/${doctorId}`, {
     headers: getAuthHeaders(token),
@@ -136,6 +169,14 @@ export async function submitDoctorVerification(token) {
 
 export async function fetchDoctorPrescriptions(token) {
   const response = await fetch(`${doctorApiBase}/prescriptions/my`, {
+    headers: getAuthHeaders(token),
+  })
+
+  return readJson(response)
+}
+
+export async function fetchDoctorPatientPrescriptions(token, patientId) {
+  const response = await fetch(`${doctorApiBase}/prescriptions/patient/${patientId}`, {
     headers: getAuthHeaders(token),
   })
 

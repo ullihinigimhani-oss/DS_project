@@ -10,13 +10,19 @@ const { UPLOAD_DIR } = require('./utils/fileStorage');
 
 const app = express();
 const PORT = process.env.PORT || 3003;
+let databaseReady = false;
 
 app.use(express.json());
 app.use('/uploads/doctor-verification', express.static(UPLOAD_DIR));
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ service: 'doctor-service', status: 'running', port: PORT });
+  res.json({
+    service: 'doctor-service',
+    status: 'running',
+    port: PORT,
+    database: databaseReady ? 'ready' : 'initializing',
+  });
 });
 
 app.use('/api/v1/doctors', doctorRoutes);
@@ -32,17 +38,24 @@ app.use((req, res) => {
   });
 });
 
-const startServer = async () => {
+const initializeDatabaseWithRetry = async (attempt = 1) => {
   try {
     await initializeDatabase();
-
-    app.listen(PORT, () => {
-      console.log(`Doctor Service running on port ${PORT}`);
-    });
+    databaseReady = true;
+    console.log('Doctor database is ready.');
   } catch (error) {
-    console.error('Failed to start doctor-service:', error.message);
-    process.exit(1);
+    databaseReady = false;
+    const retryDelay = Math.min(attempt * 5000, 30000);
+    console.error(
+      `Doctor database initialization failed (attempt ${attempt}): ${error.message}. Retrying in ${retryDelay / 1000}s.`
+    );
+    setTimeout(() => {
+      void initializeDatabaseWithRetry(attempt + 1);
+    }, retryDelay);
   }
 };
 
-startServer();
+app.listen(PORT, () => {
+  console.log(`Doctor Service running on port ${PORT}`);
+  void initializeDatabaseWithRetry();
+});

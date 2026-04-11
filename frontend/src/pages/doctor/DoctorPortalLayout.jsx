@@ -1,4 +1,5 @@
 import VideoRoom from '../../components/VideoRoom'
+import { resolveDoctorAssetUrl } from '../../utils/doctorService'
 import { getInitials, sidebarItems, useDoctorPortal } from './DoctorPortalContext'
 
 export default function DoctorPortalLayout({
@@ -18,6 +19,8 @@ export default function DoctorPortalLayout({
     activeCallSessionId,
     setActiveCallSessionId,
   } = useDoctorPortal()
+
+  const doctorImageUrl = resolveDoctorAssetUrl(profile?.profile_image_url)
 
   const activeNavItem =
     sidebarItems.find((item) => item.path === currentPath) ||
@@ -82,7 +85,13 @@ export default function DoctorPortalLayout({
 
         <div className="doctor-portal-footer">
           <div className="doctor-portal-user">
-            <div className="doctor-avatar">{getInitials(profile?.name || session?.name)}</div>
+            <div className="doctor-avatar">
+              {doctorImageUrl ? (
+                <img src={doctorImageUrl} alt={`Dr. ${profile?.name || session?.name || 'Doctor'}`} />
+              ) : (
+                getInitials(profile?.name || session?.name)
+              )}
+            </div>
             <div>
               <strong>Dr. {profile?.name || session?.name || 'Doctor'}</strong>
               <span>{session?.email}</span>
@@ -101,7 +110,13 @@ export default function DoctorPortalLayout({
             <h1>{activeNavItem?.label || 'Overview'}</h1>
           </div>
           <div className="doctor-portal-header-user">
-            <div className="doctor-avatar small">{getInitials(profile?.name || session?.name)}</div>
+            <div className="doctor-avatar small">
+              {doctorImageUrl ? (
+                <img src={doctorImageUrl} alt={`Dr. ${profile?.name || session?.name || 'Doctor'}`} />
+              ) : (
+                getInitials(profile?.name || session?.name)
+              )}
+            </div>
             <div>
               <strong>Dr. {profile?.name || session?.name || 'Doctor'}</strong>
               <span>{profile?.specialization || 'Doctor account'}</span>

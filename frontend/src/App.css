@@ -1450,12 +1450,19 @@ button:disabled {
   color: #27443b;
   font-weight: 800;
   background: linear-gradient(135deg, #f3d588, #f7f3df);
+  overflow: hidden;
 }
 
 .doctor-avatar.small {
   width: 38px;
   height: 38px;
   font-size: 0.88rem;
+}
+
+.doctor-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .doctor-signout-button {
@@ -1627,6 +1634,10 @@ button:disabled {
   flex-wrap: wrap;
 }
 
+.doctor-detail-row-start {
+  align-items: flex-start;
+}
+
 .doctor-mini-badge,
 .doctor-chip {
   display: inline-flex;
@@ -1646,6 +1657,113 @@ button:disabled {
 .doctor-chip {
   color: #29506f;
   background: #dfeaf4;
+}
+
+.doctor-profile-hero {
+  background:
+    radial-gradient(circle at top right, rgba(255, 214, 153, 0.22), transparent 28%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(245, 249, 254, 0.92));
+}
+
+.doctor-profile-hero-grid,
+.doctor-profile-identity,
+.doctor-profile-upload-grid {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.doctor-profile-hero-grid,
+.doctor-profile-upload-grid {
+  align-items: center;
+}
+
+.doctor-profile-identity {
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.doctor-profile-heading {
+  display: grid;
+  gap: 8px;
+}
+
+.doctor-profile-heading h2 {
+  margin: 0;
+  color: #143758;
+  font-size: 1.8rem;
+}
+
+.doctor-profile-photo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 108px;
+  height: 108px;
+  border-radius: 28px;
+  color: #244b6a;
+  font-size: 2rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #f7dda6, #fff5df);
+  box-shadow: inset 0 0 0 1px rgba(36, 73, 102, 0.08);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.doctor-profile-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.doctor-profile-summary-grid {
+  align-items: start;
+}
+
+.doctor-profile-form {
+  gap: 18px;
+}
+
+.doctor-profile-upload-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(20, 52, 82, 0.08);
+  background: linear-gradient(180deg, rgba(247, 251, 255, 0.98), rgba(255, 249, 244, 0.92));
+}
+
+.doctor-profile-photo-preview {
+  width: 96px;
+  height: 96px;
+  border-radius: 24px;
+}
+
+.doctor-profile-upload-actions {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+}
+
+.doctor-file-input {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  padding: 13px 18px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #c86b49, #df8d60);
+  cursor: pointer;
+  box-shadow: 0 14px 28px rgba(200, 107, 73, 0.22);
+}
+
+.doctor-file-input input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
 }
 
 .doctor-section-support {
@@ -1703,6 +1821,41 @@ button:disabled {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
   margin-top: 18px;
+}
+
+.doctor-prescription-highlight-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.doctor-prescription-highlight {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(20, 52, 82, 0.08);
+  background: linear-gradient(180deg, rgba(247, 251, 255, 0.96), rgba(255, 249, 244, 0.9));
+}
+
+.doctor-prescription-highlight span {
+  color: #6e8395;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.doctor-prescription-highlight strong {
+  color: #16324d;
+  font-size: 1.7rem;
+  line-height: 1.05;
+}
+
+.doctor-prescription-highlight p {
+  margin: 0;
+  color: #61778c;
 }
 
 .doctor-schedule-highlight {
@@ -1768,6 +1921,12 @@ button:disabled {
 .doctor-appointments-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+  gap: 18px;
+}
+
+.doctor-prescription-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(340px, 0.9fr);
   gap: 18px;
 }
 
@@ -1884,6 +2043,100 @@ button:disabled {
 
 .doctor-patient-summary-card .doctor-detail-row {
   align-items: center;
+}
+
+.doctor-prescription-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+  margin-bottom: 18px;
+}
+
+.doctor-prescription-quick-card,
+.doctor-prescription-record-card {
+  border: 1px solid rgba(20, 52, 82, 0.1);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease,
+    background 180ms ease;
+}
+
+.doctor-prescription-quick-card {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  text-align: left;
+  color: inherit;
+  background: #f7fafc;
+  box-shadow: none;
+}
+
+.doctor-prescription-quick-card:hover,
+.doctor-prescription-record-card:hover,
+.doctor-prescription-record-card.active {
+  transform: translateY(-1px);
+  border-color: rgba(36, 84, 116, 0.2);
+  box-shadow: 0 14px 26px rgba(31, 53, 80, 0.08);
+}
+
+.doctor-prescription-quick-card strong,
+.doctor-prescription-record-card strong {
+  color: #18344f;
+}
+
+.doctor-prescription-quick-card span {
+  color: #72859a;
+  font-size: 0.92rem;
+}
+
+.doctor-prescription-quick-card p,
+.doctor-prescription-record-card p {
+  margin: 0;
+  color: #61778c;
+}
+
+.doctor-prescription-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.doctor-prescription-pill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.doctor-prescription-history-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.doctor-prescription-record-card {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  padding: 16px 18px;
+  border-radius: 18px;
+  text-align: left;
+  color: inherit;
+  background: #f7fafc;
+  box-shadow: none;
+}
+
+.doctor-prescription-record-card.active {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(238, 245, 250, 0.92));
+}
+
+.doctor-prescription-search {
+  min-width: min(100%, 420px);
+  flex: 1;
+}
+
+.doctor-prescription-search-top {
+  margin-top: 12px;
 }
 
 .doctor-schedule-mode-row {
@@ -2552,6 +2805,7 @@ button:disabled {
   .doctor-content-grid,
   .doctor-appointments-layout,
   .doctor-patient-layout,
+  .doctor-prescription-layout,
   .doctor-inline-grid {
     grid-template-columns: 1fr;
   }
@@ -2565,8 +2819,14 @@ button:disabled {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .doctor-prescription-highlight-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .doctor-schedule-highlight-grid,
-  .doctor-schedule-day-grid {
+  .doctor-schedule-day-grid,
+  .doctor-prescription-quick-grid,
+  .doctor-prescription-form-grid {
     grid-template-columns: 1fr;
   }
 
@@ -2629,6 +2889,9 @@ button:disabled {
   .doctor-appointment-card-top,
   .doctor-appointment-meta,
   .doctor-appointment-footer,
+  .doctor-profile-hero-grid,
+  .doctor-profile-identity,
+  .doctor-profile-upload-grid,
   .doctor-schedule-day-header,
   .doctor-schedule-slot-pill,
   .doctor-slot-topline {
@@ -2721,12 +2984,17 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .doctor-prescription-highlight-grid {
+    grid-template-columns: 1fr;
+  }
+
   .doctor-schedule-highlight-grid {
     grid-template-columns: 1fr;
   }
 
   .doctor-meta,
   .doctor-topline,
+  .doctor-card-topline,
   .patient-card-topline,
   .preview-card-top,
   .home-spotlight-header,

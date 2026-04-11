@@ -22,7 +22,7 @@ services:
     environment:
       PORT: 3000
       NODE_ENV: development
-      CORS_ORIGIN: http://localhost,http://127.0.0.1
+      CORS_ORIGIN: http://localhost,http://127.0.0.1,http://localhost:80,http://127.0.0.1:80,http://localhost:81,http://127.0.0.1:81
       AUTH_SERVICE_URL: http://auth-service:3001
       PATIENT_SERVICE_URL: http://patient-service:3002
       DOCTOR_SERVICE_URL: http://doctor-service:3003

@@ -63,6 +63,15 @@ function removeStoredJson(key) {
   window.sessionStorage.removeItem(key)
 }
 
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new window.FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = () => reject(new Error('Failed to read the selected image file.'))
+    reader.readAsDataURL(file)
+  })
+}
+
 export function formatTime(value) {
   if (!value) return 'Time not set'
   return String(value).slice(0, 5)
@@ -147,6 +156,9 @@ export function DoctorPortalProvider({ session, children }) {
   const [selectedAppointmentId, setSelectedAppointmentId] = useState('')
   const [appointmentActionId, setAppointmentActionId] = useState('')
   const [rejectReason, setRejectReason] = useState('')
+  const [profileEditing, setProfileEditing] = useState(false)
+  const [profileImageFile, setProfileImageFile] = useState(null)
+  const [profileImagePreview, setProfileImagePreview] = useState('')
 
   const [profileValues, setProfileValues] = useState({
     name: '',
@@ -171,9 +183,59 @@ export function DoctorPortalProvider({ session, children }) {
     patientId: storedPrescriptionDraft?.patientId || '',
     appointmentId: storedPrescriptionDraft?.appointmentId || '',
     patientName: storedPrescriptionDraft?.patientName || '',
-    medications: '',
-    notes: '',
+    medications: storedPrescriptionDraft?.medications || '',
+    notes: storedPrescriptionDraft?.notes || '',
   })
+
+  useEffect(() => {
+    if (!profileImageFile) {
+      setProfileImagePreview('')
+      return undefined
+    }
+
+    const nextPreview = window.URL.createObjectURL(profileImageFile)
+    setProfileImagePreview(nextPreview)
+
+    return () => {
+      window.URL.revokeObjectURL(nextPreview)
+    }
+  }, [profileImageFile])
+
+  const buildProfileValues = (nextProfile) => ({
+    name: nextProfile?.name || session?.name || '',
+    specialization: nextProfile?.specialization || '',
+    consultationFee:
+      nextProfile?.consultation_fee != null ? String(nextProfile.consultation_fee) : '',
+    bio: nextProfile?.bio || '',
+  })
+
+  useEffect(() => {
+    const draft = {
+      patientId: prescriptionValues.patientId,
+      appointmentId: prescriptionValues.appointmentId,
+      patientName: prescriptionValues.patientName,
+      medications: prescriptionValues.medications,
+      notes: prescriptionValues.notes,
+    }
+
+    if (
+      draft.patientId ||
+      draft.appointmentId ||
+      draft.patientName ||
+      draft.medications ||
+      draft.notes
+    ) {
+      writeStoredJson(prescriptionDraftKey, draft)
+    } else {
+      removeStoredJson(prescriptionDraftKey)
+    }
+  }, [
+    prescriptionValues.appointmentId,
+    prescriptionValues.medications,
+    prescriptionValues.notes,
+    prescriptionValues.patientId,
+    prescriptionValues.patientName,
+  ])
 
   const loadDoctorWorkspace = async () => {
     if (!isConnectedDoctor || !doctorId) return
@@ -197,12 +259,7 @@ export function DoctorPortalProvider({ session, children }) {
       setVerification(verificationData.data)
       setDocuments(Array.isArray(documentsData.data) ? documentsData.data : [])
       setPrescriptions(Array.isArray(prescriptionsData.data) ? prescriptionsData.data : [])
-      setProfileValues({
-        name: nextProfile?.name || session?.name || '',
-        specialization: nextProfile?.specialization || '',
-        consultationFee: nextProfile?.consultation_fee ? String(nextProfile.consultation_fee) : '',
-        bio: nextProfile?.bio || '',
-      })
+      setProfileValues(buildProfileValues(nextProfile))
     } catch (loadError) {
       setError(loadError.message)
     } finally {
@@ -384,6 +441,29 @@ export function DoctorPortalProvider({ session, children }) {
     setProfileValues((current) => ({ ...current, [name]: value }))
   }
 
+  const handleProfileImageChange = (event) => {
+    const file = event.target.files?.[0] || null
+
+    if (file && !file.type.startsWith('image/')) {
+      setError('Please choose an image file for the doctor profile photo.')
+      return
+    }
+
+    setError('')
+    setProfileImageFile(file)
+  }
+
+  const clearProfileImageSelection = () => {
+    setProfileImageFile(null)
+  }
+
+  const resetProfileForm = () => {
+    setProfileValues(buildProfileValues(profile))
+    setProfileImageFile(null)
+    setProfileEditing(false)
+    setError('')
+  }
+
   const handleSlotChange = (event) => {
     const { name, value } = event.target
     setSlotValues((current) => ({ ...current, [name]: value }))
@@ -400,8 +480,17 @@ export function DoctorPortalProvider({ session, children }) {
     setError('')
 
     try {
-      const result = await updateDoctorProfile(session.token, profileValues)
+      const result = await updateDoctorProfile(session.token, {
+        ...profileValues,
+        consultationFee:
+          profileValues.consultationFee === '' ? null : Number(profileValues.consultationFee),
+        profileImageData: profileImageFile ? await fileToDataUrl(profileImageFile) : undefined,
+        profileImageName: profileImageFile ? profileImageFile.name : undefined,
+      })
       setProfile(result.data)
+      setProfileValues(buildProfileValues(result.data))
+      setProfileImageFile(null)
+      setProfileEditing(false)
       setMessage('Doctor profile saved successfully.')
     } catch (submitError) {
       setError(submitError.message)
@@ -640,10 +729,14 @@ export function DoctorPortalProvider({ session, children }) {
     selectedAppointmentId,
     appointmentActionId,
     rejectReason,
+    profileEditing,
+    profileImageFile,
+    profileImagePreview,
     profileValues,
     slotValues,
     verificationValues,
     prescriptionValues,
+    setPrescriptionValues,
     patientCount,
     availableSlots,
     sortedScheduleSlots,
@@ -662,10 +755,14 @@ export function DoctorPortalProvider({ session, children }) {
     setAppointmentFilter,
     setSelectedAppointmentId,
     setRejectReason,
+    setProfileEditing,
     handleProfileChange,
+    handleProfileImageChange,
     handleSlotChange,
     handlePrescriptionChange,
     handleProfileSubmit,
+    clearProfileImageSelection,
+    resetProfileForm,
     handleScheduleType,
     handleAddSlot,
     handleToggleSlot,

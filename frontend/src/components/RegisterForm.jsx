@@ -17,6 +17,8 @@ export default function RegisterForm({
   loading,
   hideRoleSelect = false,
   navigateTo,
+  bannerError = '',
+  bannerMessage = '',
 }) {
   const isDoctorRegistration = values.userType === 'doctor'
 
@@ -77,6 +79,13 @@ export default function RegisterForm({
             <h1 className="auth-form-title">Create your<br /><em>profile</em></h1>
             <p className="auth-form-sub">Start your health journey in under two minutes.</p>
           </div>
+
+          {bannerError ? (
+            <p className="auth-banner auth-banner--error" role="alert">
+              {bannerError}
+            </p>
+          ) : null}
+          {bannerMessage ? <p className="auth-banner auth-banner--success">{bannerMessage}</p> : null}
 
           {/* Form */}
           <form className="auth-form" onSubmit={onSubmit} noValidate>

@@ -9,9 +9,11 @@ export default function LoginForm({
   hideRolePicker = false,
   roleLabel = 'Preview role',
   navigateTo,
+  bannerError = '',
+  bannerMessage = '',
 }) {
   return (
-    <div className="auth-page">
+    <div className="auth-page auth-page--login">
       {/* Background */}
       <div className="auth-bg" aria-hidden="true">
         <div className="auth-bg-circle auth-bg-circle--1" />
@@ -68,6 +70,13 @@ export default function LoginForm({
               Access your appointments, health records, and upcoming visits.
             </p>
           </div>
+
+          {bannerError ? (
+            <p className="auth-banner auth-banner--error" role="alert">
+              {bannerError}
+            </p>
+          ) : null}
+          {bannerMessage ? <p className="auth-banner auth-banner--success">{bannerMessage}</p> : null}
 
           <form className="auth-form auth-form--login" onSubmit={onSubmit} noValidate>
 

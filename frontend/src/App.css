@@ -4,6 +4,15 @@
   padding: 24px 0 56px;
 }
 
+.app-shell--auth {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 .app-shell.doctor-route-shell {
   width: min(1500px, calc(100% - 24px));
   padding: 12px 0 24px;
@@ -15,8 +24,9 @@
   align-items: center;
   gap: 16px;
   margin-bottom: 24px;
-  padding: 18px 22px;
-  border-radius: 24px;
+  padding: 20px 26px;
+  min-height: 72px;
+  border-radius: 26px;
   border: 1px solid rgba(46, 56, 74, 0.1);
   background: rgba(255, 252, 248, 0.84);
   box-shadow: 0 18px 46px rgba(38, 47, 61, 0.08);
@@ -46,16 +56,24 @@
 
 .nav-link {
   border-radius: 999px;
-  padding: 10px 14px;
+  padding: 12px 18px;
   color: #35506d;
   cursor: pointer;
   box-shadow: none;
-  transition: 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, background 0.2s ease;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.nav-link:hover:not(.active) {
+  background: rgba(63, 96, 127, 0.08);
+  transform: translateY(-1px);
 }
 
 .nav-link.active {
   color: #ffffff;
-  background: linear-gradient(135deg, #3f607f, #5d84a6);
+  background: linear-gradient(135deg, #2d5a7b, #4a7a9e);
+  box-shadow: 0 6px 20px rgba(45, 90, 123, 0.28);
 }
 
 .hero {
@@ -623,14 +641,13 @@
   background: #f2e1b8;
 }
 
-.auth-form,
+/* Login/Register use components/auth.css (.auth-form .auth-input). Do not style .auth-form here — it overwrote icon padding. */
 .analysis-form {
   display: grid;
   gap: 16px;
   margin-top: 20px;
 }
 
-.auth-form label,
 .analysis-form label {
   display: grid;
   gap: 8px;
@@ -638,8 +655,6 @@
   font-weight: 700;
 }
 
-.auth-form input,
-.auth-form select,
 .analysis-form input,
 .analysis-form textarea {
   width: 100%;
@@ -650,8 +665,6 @@
   background: rgba(255, 255, 255, 0.92);
 }
 
-.auth-form input:focus,
-.auth-form select:focus,
 .analysis-form input:focus,
 .analysis-form textarea:focus {
   outline: 2px solid rgba(191, 104, 72, 0.16);
@@ -742,8 +755,8 @@ button:disabled {
 
 .patient-portal {
   position: relative;
-  display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   min-height: calc(100vh - 36px);
   overflow: hidden;
   border: 1px solid rgba(77, 91, 112, 0.08);
@@ -756,22 +769,30 @@ button:disabled {
 }
 
 .patient-portal-sidebar {
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: 24px;
-  padding: 28px 20px 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  width: 220px;
+  height: 100vh;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 24%),
     linear-gradient(180deg, #8e715d, #6c5547 55%, #4f4037);
   color: #fff8f2;
+  border-right: 1px solid rgba(255, 242, 232, 0.12);
+  box-shadow: 2px 0 15px rgba(142, 85, 61, 0.15);
+  z-index: 100;
+  overflow-y: auto;
 }
 
 .patient-portal-brand {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 6px 8px 18px;
-  border-bottom: 1px solid rgba(255, 242, 232, 0.12);
 }
 
 .patient-brand-mark {
@@ -802,34 +823,46 @@ button:disabled {
 }
 
 .patient-portal-nav {
-  display: grid;
-  gap: 10px;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+  flex: 1;
 }
 
 .patient-portal-link {
   justify-content: flex-start;
-  padding: 14px 16px;
-  border-radius: 14px;
+  padding: 14px 18px;
+  border-radius: 12px;
   color: rgba(255, 248, 242, 0.95);
   background: transparent;
   box-shadow: none;
   white-space: nowrap;
+  font-size: 0.9rem;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  width: 100%;
 }
 
 .patient-portal-link:hover {
   background: rgba(255, 244, 236, 0.08);
-  transform: translateX(2px);
+  transform: translateX(4px);
+  color: #fff;
 }
 
 .patient-portal-link.active {
   background: rgba(255, 205, 170, 0.16);
   box-shadow: inset 0 0 0 1px rgba(255, 228, 203, 0.24);
+  color: #fff;
 }
 
 .patient-portal-footer {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   gap: 14px;
+  margin-top: auto;
 }
 
 .patient-portal-user {
@@ -870,10 +903,14 @@ button:disabled {
 }
 
 .patient-portal-main {
-  display: grid;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
   gap: 22px;
   padding: 24px 28px 30px;
+  overflow-y: auto;
+  margin-left: 220px;
+  min-height: 100vh;
+  background: rgba(242, 246, 250, 0.5);
 }
 
 .patient-portal-header {
@@ -1076,6 +1113,11 @@ button:disabled {
 
 .patient-detail-row strong {
   color: #17324d;
+}
+
+.patient-detail-row:first-child {
+  border-top: none;
+  padding-top: 0;
 }
 
 .patient-booking-shell {
@@ -1286,8 +1328,8 @@ button:disabled {
 
 .doctor-portal {
   position: relative;
-  display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   min-height: calc(100vh - 36px);
   overflow: hidden;
   border: 1px solid rgba(18, 46, 74, 0.08);
@@ -1299,22 +1341,30 @@ button:disabled {
 }
 
 .doctor-portal-sidebar {
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: 24px;
-  padding: 28px 20px 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  width: 220px;
+  height: 100vh;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 24%),
     linear-gradient(180deg, #48695f, #355148 55%, #243b35);
   color: #f8f4ee;
+  border-right: 1px solid rgba(255, 244, 232, 0.1);
+  box-shadow: 2px 0 15px rgba(28, 44, 67, 0.15);
+  z-index: 100;
+  overflow-y: auto;
 }
 
 .doctor-portal-brand {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 6px 8px 18px;
-  border-bottom: 1px solid rgba(255, 244, 232, 0.1);
 }
 
 .doctor-brand-mark {
@@ -1345,24 +1395,27 @@ button:disabled {
 }
 
 .doctor-portal-nav {
-  display: grid;
-  gap: 10px;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+  flex: 1;
 }
 
 .doctor-portal-link {
   justify-content: flex-start;
-  padding: 14px 16px;
-  border-radius: 14px;
+  padding: 12px 16px;
+  border-radius: 12px;
   color: rgba(250, 244, 238, 0.94);
   background: transparent;
   box-shadow: none;
   white-space: nowrap;
+  font-size: 0.9rem;
 }
 
 .doctor-portal-link:hover {
   background: rgba(255, 246, 237, 0.09);
-  transform: translateX(2px);
+  transform: translateX(4px);
 }
 
 .doctor-portal-link.active {
@@ -1371,8 +1424,11 @@ button:disabled {
 }
 
 .doctor-portal-footer {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   gap: 14px;
+  margin-top: auto;
 }
 
 .doctor-portal-user {
@@ -1413,10 +1469,14 @@ button:disabled {
 }
 
 .doctor-portal-main {
-  display: grid;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
   gap: 22px;
   padding: 24px 28px 30px;
+  overflow-y: auto;
+  margin-left: 220px;
+  min-height: 100vh;
+  background: rgba(242, 246, 250, 0.5);
 }
 
 .doctor-portal-header {
@@ -2469,10 +2529,6 @@ button:disabled {
     width: min(100% - 20px, 1500px);
   }
 
-  .patient-portal,
-  .doctor-portal {
-    grid-template-columns: 250px minmax(0, 1fr);
-  }
 }
 
 @media (max-width: 1080px) {
@@ -2523,22 +2579,41 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
-  .doctor-portal {
-    grid-template-columns: 1fr;
+  .doctor-portal,
+  .patient-portal {
+    flex-direction: column;
   }
 
   .patient-portal-sidebar,
   .doctor-portal-sidebar {
-    grid-template-rows: auto auto auto;
-    gap: 18px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: auto;
+    padding: 12px 16px;
+    gap: 12px;
+    z-index: 100;
   }
 
   .patient-portal-nav,
   .doctor-portal-nav {
-    grid-auto-flow: column;
-    grid-auto-columns: max-content;
-    overflow-x: auto;
-    padding-bottom: 6px;
+    flex-direction: row;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .patient-portal-link,
+  .doctor-portal-link {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+
+  .patient-portal-main,
+  .doctor-portal-main {
+    margin-left: 0;
   }
 
   .patient-portal-footer,
@@ -2667,7 +2742,6 @@ button:disabled {
 
   .patient-portal,
   .doctor-portal {
-    grid-template-columns: 1fr;
     border-radius: 0;
     min-height: 100vh;
   }

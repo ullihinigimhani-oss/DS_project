@@ -33,6 +33,7 @@ import {
   gatewayBaseUrl,
 } from './utils/api'
 import './App.css'
+import './styles/post-login-creative.css'
 
 const defaultSymptoms = 'I have fever, cough, headache and runny nose'
 const defaultUserId = 'patient-001'
@@ -140,6 +141,7 @@ export default function App() {
   const serviceHealthy = gatewayHealth?.status === 'running'
   const isDoctorPortalRoute = currentPath.startsWith('/doctor/')
   const isPatientPortalRoute = currentPath.startsWith('/patient')
+  const isAuthRoute = currentPath === '/login' || currentPath === '/register'
   const activeRole = session?.role || loginValues.role
   const roleSummary = roleSummaries[activeRole] || roleSummaries.patient
   const topCondition = analysis?.possibleConditions?.[0] || null
@@ -430,41 +432,29 @@ export default function App() {
   }
 
   const renderLoginPage = () => (
-    <SectionCard
-      className="auth-page-card"
-      title="Sign In"
-      subtitle="Use preview auth to move into the patient route while backend auth keeps settling."
-    >
-      <LoginForm
-        values={loginValues}
-        onChange={handleLoginChange}
-        onSubmit={handleLogin}
-        loading={authBusy}
-        roleHint={loginValues.role}
-        navigateTo={navigateTo}
-      />
-      {authError ? <p className="error-text">{authError}</p> : null}
-      {authMessage ? <p className="empty-state">{authMessage}</p> : null}
-    </SectionCard>
+    <LoginForm
+      values={loginValues}
+      onChange={handleLoginChange}
+      onSubmit={handleLogin}
+      loading={authBusy}
+      roleHint={loginValues.role}
+      navigateTo={navigateTo}
+      bannerError={authError}
+      bannerMessage={authMessage}
+    />
   )
 
   const renderRegisterPage = () => (
-    <SectionCard
-      className="auth-page-card"
-      title="Create Account"
-      subtitle="Register into preview mode so the separate patient flow can already be explored."
-    >
-      <RegisterForm
-        values={registerValues}
-        onChange={handleRegisterChange}
-        onFileChange={handleRegisterFileChange}
-        onSubmit={handleRegister}
-        loading={authBusy}
-        navigateTo={navigateTo}
-      />
-      {authError ? <p className="error-text">{authError}</p> : null}
-      {authMessage ? <p className="empty-state">{authMessage}</p> : null}
-    </SectionCard>
+    <RegisterForm
+      values={registerValues}
+      onChange={handleRegisterChange}
+      onFileChange={handleRegisterFileChange}
+      onSubmit={handleRegister}
+      loading={authBusy}
+      navigateTo={navigateTo}
+      bannerError={authError}
+      bannerMessage={authMessage}
+    />
   )
 
   const renderPatientPage = () => (
@@ -745,7 +735,7 @@ export default function App() {
     <div
       className={`app-shell ${isDoctorPortalRoute ? 'doctor-route-shell' : ''} ${
         isPatientPortalRoute ? 'patient-route-shell' : ''
-      }`.trim()}
+      } ${isAuthRoute ? 'app-shell--auth' : ''}`.trim()}
     >
       {renderCurrentPage()}
     </div>

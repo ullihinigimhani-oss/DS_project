@@ -6,6 +6,7 @@
 /* ── PAGE SHELL ─────────────────────────────────── */
 .auth-page {
   min-height: 100vh;
+  min-height: 100dvh;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -71,26 +72,51 @@
   50%       { transform: scale(1.06) translateY(-20px); }
 }
 
-/* ── TOP NAV BAR ─────────────────────────────────── */
+/* ── BRAND / NAV ─────────────────────────────────── */
 .auth-panel--brand {
   position: relative;
   z-index: 10;
   width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.1rem 3rem;
-  background: rgba(247, 251, 248, 0.9);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(29, 158, 117, 0.1);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(247, 251, 248, 0.94) 100%);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(29, 158, 117, 0.12);
 }
 
-.auth-brand-inner {
+/* Login: thick top bar + creative stat pills */
+.auth-page--login .auth-panel--brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.1rem, 2.8vw, 1.75rem) clamp(1.25rem, 4vw, 3.25rem);
+  min-height: 5.5rem;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 12px 40px rgba(29, 158, 117, 0.07);
+}
+
+.auth-page--login .auth-brand-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  gap: 2rem;
+  max-width: 1200px;
+  gap: clamp(1rem, 3vw, 2.5rem);
+}
+
+/* Register: brand column (stacked on small screens) */
+.auth-page--register .auth-panel.auth-panel--brand {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 1.75rem clamp(1.25rem, 4vw, 2.5rem) 2rem;
+}
+
+.auth-page--register .auth-brand-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.75rem;
+  width: 100%;
 }
 
 .auth-brand-logo {
@@ -118,52 +144,76 @@
 
 .auth-brand-name {
   font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 1.6rem;
-  font-weight: 400;
+  font-size: clamp(1.65rem, 3vw, 2rem);
+  font-weight: 500;
   color: #0d1f18;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
-/* Trust stats in nav */
+/* Creative metric “buttons” (login nav) */
 .auth-brand-stats {
   display: flex;
-  gap: 2.5rem;
+  flex-wrap: wrap;
+  gap: 10px 12px;
   align-items: center;
+  justify-content: center;
 }
 
 .auth-brand-stat {
-  display: flex;
+  display: inline-flex;
   flex-direction: column;
-  gap: 1px;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 10px 20px;
+  min-height: 52px;
   text-align: center;
+  border-radius: 999px;
+  background: linear-gradient(145deg, #ffffff 0%, rgba(237, 247, 243, 0.95) 100%);
+  border: 1.5px solid rgba(29, 158, 117, 0.22);
+  box-shadow:
+    0 4px 16px rgba(29, 158, 117, 0.08),
+    0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.auth-brand-stat:hover {
+  transform: translateY(-2px);
+  border-color: rgba(29, 158, 117, 0.45);
+  box-shadow:
+    0 8px 24px rgba(29, 158, 117, 0.14),
+    0 1px 0 rgba(255, 255, 255, 0.95) inset;
 }
 
 .auth-brand-stat strong {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #0f6e56;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0b5c47;
   font-family: 'Cormorant Garamond', Georgia, serif;
   line-height: 1;
+  letter-spacing: -0.02em;
 }
 
 .auth-brand-stat span {
-  font-size: 0.68rem;
-  color: #8aab9c;
+  font-size: 0.65rem;
+  color: #5a8a78;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.1em;
+  font-weight: 600;
 }
 
 /* Floating doctor card in nav */
 .auth-brand-card {
   display: flex;
   align-items: center;
-  gap: 10px;
-  background: #fff;
-  border: 1px solid rgba(29, 158, 117, 0.2);
-  border-radius: 50px;
-  padding: 6px 14px 6px 8px;
+  gap: 12px;
+  background: linear-gradient(135deg, #ffffff, rgba(240, 249, 245, 0.98));
+  border: 1.5px solid rgba(29, 158, 117, 0.25);
+  border-radius: 999px;
+  padding: 8px 16px 8px 10px;
   animation: auth-card-float 5s ease-in-out infinite;
   flex-shrink: 0;
+  box-shadow: 0 6px 22px rgba(29, 158, 117, 0.1);
 }
 
 @keyframes auth-card-float {
@@ -172,17 +222,17 @@
 }
 
 .auth-brand-card-avatar {
-  width: 30px;
-  height: 30px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background: rgba(29, 158, 117, 0.12);
-  border: 1px solid rgba(29, 158, 117, 0.25);
+  background: linear-gradient(145deg, rgba(29, 158, 117, 0.18), rgba(29, 158, 117, 0.06));
+  border: 1.5px solid rgba(29, 158, 117, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: #0f6e56;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #0b5c47;
   letter-spacing: 0.03em;
   flex-shrink: 0;
 }
@@ -217,19 +267,50 @@
   white-space: nowrap;
 }
 
-/* Why items — used in register brand section, hidden in nav */
+/* Register-only: why join list */
 .auth-brand-why {
   display: none;
 }
 
+.auth-page--register .auth-brand-why {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+@media (min-width: 960px) {
+  .auth-page--register {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .auth-page--register .auth-panel.auth-panel--brand {
+    flex: 0 0 min(42vw, 440px);
+    max-width: 480px;
+    min-height: 100vh;
+    min-height: 100dvh;
+    justify-content: center;
+    border-bottom: none;
+    border-right: 1px solid rgba(29, 158, 117, 0.12);
+    box-shadow: 4px 0 32px rgba(29, 158, 117, 0.04);
+  }
+
+  .auth-page--register .auth-panel--form {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
 @media (max-width: 768px) {
-  .auth-brand-stats,
-  .auth-brand-card {
+  .auth-page--login .auth-brand-stats,
+  .auth-page--login .auth-brand-card {
     display: none;
   }
 
-  .auth-panel--brand {
-    padding: 1rem 1.5rem;
+  .auth-page--login .auth-panel--brand {
+    min-height: 4.5rem;
+    padding: 1rem 1.25rem;
   }
 }
 
@@ -246,8 +327,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
-  min-height: 100vh;
+  padding: clamp(1.25rem, 4vw, 2.25rem);
+  min-height: 0;
   animation: auth-panel-in 0.45s ease-out both;
 }
 
@@ -270,10 +351,16 @@
 
 .auth-form-wrap--scroll {
   max-width: 760px;
-  max-height: calc(100vh - 12rem);
+  max-height: min(680px, calc(100dvh - 7rem));
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #9fe1cb transparent;
+}
+
+@media (min-width: 960px) {
+  .auth-page--register .auth-form-wrap--scroll {
+    max-height: min(720px, calc(100dvh - 5rem));
+  }
 }
 
 @media (max-width: 640px) {
@@ -344,6 +431,27 @@
   line-height: 1.6;
 }
 
+.auth-banner {
+  margin: 0 0 1.25rem;
+  padding: 12px 16px;
+  border-radius: 14px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.auth-banner--error {
+  color: #7a2e2e;
+  background: rgba(193, 74, 74, 0.1);
+  border: 1px solid rgba(193, 74, 74, 0.22);
+}
+
+.auth-banner--success {
+  color: #0b5c47;
+  background: rgba(29, 158, 117, 0.1);
+  border: 1px solid rgba(29, 158, 117, 0.22);
+}
+
 /* ── FORM FIELDS ──────────────────────────────── */
 .auth-form {
   display: flex;
@@ -390,23 +498,31 @@
 .auth-input-wrap {
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: stretch;
+  width: 100%;
 }
 
 .auth-input-icon {
   position: absolute;
-  left: 14px;
-  color: #8aab9c;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 48px;
   display: flex;
   align-items: center;
+  justify-content: center;
+  color: #8aab9c;
   pointer-events: none;
   transition: color 0.2s;
+  z-index: 1;
+  flex-shrink: 0;
 }
 
 .auth-input {
   width: 100%;
-  height: 50px;
-  padding: 0 16px 0 50px;
+  min-width: 0;
+  height: 52px;
+  padding: 0 18px 0 48px;
   background: #f7fbf8;
   border: 1.5px solid rgba(29, 158, 117, 0.15);
   border-radius: 14px;
@@ -414,6 +530,7 @@
   color: #0d1f18;
   transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
   outline: none;
+  box-sizing: border-box;
 }
 
 .auth-input::placeholder {
@@ -745,15 +862,16 @@
 
 /* ── REGISTER SPECIFIC ────────────────────────── */
 .auth-page--register .auth-panel--form {
-  padding-top: 3rem;
-  padding-bottom: 4rem;
+  padding-top: 2rem;
+  padding-bottom: 2.5rem;
 }
 
 /* ── RESPONSIVE ───────────────────────────────── */
 @media (max-width: 640px) {
   .auth-panel--form {
-    padding: 1.5rem 1rem 3rem;
-    align-items: flex-start;
+    padding: 1.25rem 1rem 2rem;
+    align-items: center;
+    justify-content: center;
   }
 
   .auth-form-wrap {

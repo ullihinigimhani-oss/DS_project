@@ -18,7 +18,8 @@ import PatientMyBookingsPage from './pages/patient/MyBookings'
 import PatientDoctorsPage from './pages/patient/Doctors'
 import PatientSymptomHistoryPage from './pages/patient/SymptomHistory'
 import PatientProfilePage from './pages/patient/Profile'
-import { loginUser, registerUser } from './utils/authService'
+import AdminVerifications from './pages/Admin/AdminVerifications'
+import { checkEmailAvailability, loginUser, registerUser } from './utils/authService'
 import {
   submitDoctorVerification,
   updateDoctorProfile,
@@ -56,18 +57,6 @@ const roleSummaries = {
 }
 
 
-
-function createPreviewSession(base) {
-  return {
-    userId: base.id || base.userId || base.user?.id || base.email?.split('@')[0] || null,
-    name: base.name || base.email?.split('@')[0] || 'Preview user',
-    email: base.email || 'preview@health.local',
-    phone: base.phone || '',
-    role: base.userType || base.role || 'patient',
-    mode: 'preview',
-    token: null,
-  }
-}
 
 function getInitialPath() {
   const path = window.location.pathname || '/'
@@ -123,21 +112,23 @@ export default function App() {
   const [authError, setAuthError] = useState('')
   const [session, setSession] = useState(null)
   const [loginValues, setLoginValues] = useState({
-    email: 'patient@example.com',
-    password: 'password123',
+    email: '',
+    password: '',
     role: 'patient',
   })
   const [registerValues, setRegisterValues] = useState({
-    name: 'New User',
-    email: 'newuser@example.com',
+    name: '',
+    email: '',
     phone: '',
-    password: 'password123',
+    password: '',
     userType: 'patient',
     licenseDocument: null,
     governmentIdDocument: null,
     credentialsDocument: null,
     insuranceDocument: null,
   })
+  const [registerEmailHint, setRegisterEmailHint] = useState('')
+  const [registerEmailChecking, setRegisterEmailChecking] = useState(false)
 
   const serviceHealthy = gatewayHealth?.status === 'running'
   const isDoctorPortalRoute = currentPath.startsWith('/doctor/')
@@ -155,7 +146,7 @@ export default function App() {
       },
       {
         label: 'Auth mode',
-        value: session?.mode === 'preview' ? 'Preview shell' : session ? 'Connected' : 'Signed out',
+        value: session?.mode === 'connected' ? 'Connected' : session ? 'Session' : 'Signed out',
       },
       {
         label: 'Role focus',
@@ -206,6 +197,42 @@ export default function App() {
   useEffect(() => {
     persistSession(session)
   }, [session])
+
+  useEffect(() => {
+    const raw = registerValues.email?.trim() || ''
+    const looksValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)
+
+    if (!raw || !looksValid) {
+      setRegisterEmailHint('')
+      setRegisterEmailChecking(false)
+      return undefined
+    }
+
+    setRegisterEmailChecking(true)
+    const timerId = window.setTimeout(async () => {
+      try {
+        const res = await checkEmailAvailability(raw)
+        setRegisterEmailChecking(false)
+        if (!res.success || !res.data) {
+          setRegisterEmailHint('')
+          return
+        }
+        if (!res.data.available) {
+          const ut = res.data.existingUserType || 'user'
+          setRegisterEmailHint(
+            `This email is already registered as a ${ut}. Sign in with that account or choose a different email.`,
+          )
+        } else {
+          setRegisterEmailHint('')
+        }
+      } catch {
+        setRegisterEmailChecking(false)
+        setRegisterEmailHint('')
+      }
+    }, 450)
+
+    return () => window.clearTimeout(timerId)
+  }, [registerValues.email])
 
   useEffect(() => {
     const loadGatewayHealth = async () => {
@@ -324,21 +351,12 @@ export default function App() {
         persistSession(nextSession)
         setSession(nextSession)
         setAuthMessage('Signed in successfully.')
+        navigateTo(getRouteForRole(nextSession.role))
       } else {
-        const preview = createPreviewSession(loginValues)
-        persistSession(preview)
-        setSession(preview)
-        setAuthMessage(data.message || 'Auth backend is still pending, so preview mode was enabled.')
+        setAuthError(data?.message || 'Login failed. Please check your credentials.')
       }
-
-      navigateTo(getRouteForRole(loginValues.role))
     } catch (error) {
-      const preview = createPreviewSession(loginValues)
-      persistSession(preview)
-      setSession(preview)
-      setAuthError('Auth API is not fully ready yet. Preview mode was enabled instead.')
-      setAuthMessage(error.message)
-      navigateTo(getRouteForRole(loginValues.role))
+      setAuthError(error.message || 'Login failed. Please check your credentials.')
     } finally {
       setAuthBusy(false)
     }
@@ -351,6 +369,19 @@ export default function App() {
     setAuthMessage('')
     clearPersistedAuth()
 
+    const regEmail = registerValues.email?.trim() || ''
+    if (!regEmail) {
+      setAuthBusy(false)
+      setAuthError('Please enter your email address.')
+      return
+    }
+
+    if (registerEmailHint) {
+      setAuthBusy(false)
+      setAuthError(registerEmailHint)
+      return
+    }
+
     if (registerValues.userType === 'doctor') {
       const missingDocuments = getDoctorRegistrationDocuments().filter((document) => !document.file)
 
@@ -362,6 +393,16 @@ export default function App() {
     }
 
     try {
+      const availability = await checkEmailAvailability(regEmail)
+      if (availability.success && availability.data && !availability.data.available) {
+        const ut = availability.data.existingUserType || 'user'
+        setAuthBusy(false)
+        setAuthError(
+          `This email is already registered as a ${ut}. Sign in with that account or use a different email.`,
+        )
+        return
+      }
+
       const data = await registerUser(registerValues)
 
       if (data?.success && data?.data?.accessToken) {
@@ -370,33 +411,28 @@ export default function App() {
         if (nextSession.role === 'doctor') {
           try {
             await completeDoctorRegistration(nextSession.token)
-            setAuthMessage('Doctor account created and verification documents were sent to admin review.')
+            setAuthMessage(
+              'Doctor account created and documents were submitted for admin review. Sign in after an administrator approves your account.',
+            )
           } catch (doctorSetupError) {
             setAuthError(
-              `Doctor account was created, but the verification package could not be submitted: ${doctorSetupError.message}`,
+              `Doctor account was created, but verification could not be completed: ${doctorSetupError.message}`,
             )
           }
+          clearPersistedAuth()
+          setSession(null)
+          navigateTo('/login')
         } else {
           setAuthMessage(data.message || 'Account created and signed in successfully.')
+          persistSession(nextSession)
+          setSession(nextSession)
+          navigateTo(getRouteForRole(registerValues.userType))
         }
-
-        persistSession(nextSession)
-        setSession(nextSession)
       } else {
-        const preview = createPreviewSession(registerValues)
-        persistSession(preview)
-        setSession(preview)
-        setAuthMessage(data.message || 'Registration shell saved in preview mode.')
+        setAuthError(data?.message || 'Registration failed.')
       }
-
-      navigateTo(getRouteForRole(registerValues.userType))
     } catch (error) {
-      const preview = createPreviewSession(registerValues)
-      persistSession(preview)
-      setSession(preview)
-      setAuthError('Registration backend is not ready yet. Preview mode was enabled instead.')
-      setAuthMessage(error.message)
-      navigateTo(getRouteForRole(registerValues.userType))
+      setAuthError(error.message || 'Registration failed.')
     } finally {
       setAuthBusy(false)
     }
@@ -428,7 +464,7 @@ export default function App() {
     const wasDoctor = session?.role === 'doctor'
     clearPersistedAuth()
     setSession(null)
-    setAuthMessage(wasDoctor ? 'Doctor session signed out.' : 'You have left preview mode.')
+    setAuthMessage('You have been signed out.')
     setAuthError('')
     navigateTo(wasDoctor ? '/login' : '/')
   }
@@ -440,6 +476,7 @@ export default function App() {
       onSubmit={handleLogin}
       loading={authBusy}
       roleHint={loginValues.role}
+      roleLabel="Sign in as"
       navigateTo={navigateTo}
       bannerError={authError}
       bannerMessage={authMessage}
@@ -456,6 +493,8 @@ export default function App() {
       navigateTo={navigateTo}
       bannerError={authError}
       bannerMessage={authMessage}
+      emailAvailabilityMessage={registerEmailHint}
+      emailChecking={registerEmailChecking}
     />
   )
 
@@ -713,7 +752,13 @@ export default function App() {
       case '/ai-symptoms':
         return renderAiPage()
       case '/admin':
-        return renderPlaceholderPage()
+        return (
+          <AdminVerifications
+            session={session}
+            onRequireLogin={navigateTo}
+            onNavigate={navigateTo}
+          />
+        )
       case '/Home':
       case '/':
       default:

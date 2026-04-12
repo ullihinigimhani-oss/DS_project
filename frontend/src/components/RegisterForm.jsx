@@ -1,6 +1,6 @@
 import './auth.css'
 
-const roleIcons = { patient: '◉', doctor: '⚕', admin: '⊕' }
+const roleIcons = { patient: '◉', doctor: '⚕' }
 
 const docFields = [
   { name: 'licenseDocument',      label: 'Medical licence',   hint: 'SLMC registration certificate' },
@@ -19,6 +19,8 @@ export default function RegisterForm({
   navigateTo,
   bannerError = '',
   bannerMessage = '',
+  emailAvailabilityMessage = '',
+  emailChecking = false,
 }) {
   const isDoctorRegistration = values.userType === 'doctor'
 
@@ -151,9 +153,20 @@ export default function RegisterForm({
                   placeholder="you@example.com"
                   value={values.email}
                   onChange={onChange}
+                  autoComplete="email"
                   required
                 />
               </div>
+              {emailChecking ? (
+                <p className="auth-email-checking" aria-live="polite">
+                  Checking whether this email is already registered…
+                </p>
+              ) : null}
+              {emailAvailabilityMessage ? (
+                <p className="auth-email-availability auth-email-availability--taken" role="status">
+                  {emailAvailabilityMessage}
+                </p>
+              ) : null}
             </div>
 
             <div className="auth-field-group">
@@ -184,7 +197,7 @@ export default function RegisterForm({
               <div className="auth-field-group">
                 <span className="auth-label">I am joining as</span>
                 <div className="auth-role-picker auth-role-picker--register">
-                  {['patient', 'doctor', 'admin'].map((role) => (
+                  {['patient', 'doctor'].map((role) => (
                     <button
                       key={role}
                       type="button"
@@ -221,14 +234,19 @@ export default function RegisterForm({
                         {field.label}
                         <span className="auth-doc-hint">{field.hint}</span>
                       </label>
-                      <label className="auth-file-label" htmlFor={`reg-${field.name}`}>
+                      <label
+                        className={`auth-file-label ${values[field.name] ? 'auth-file-label--has-file' : ''}`}
+                        htmlFor={`reg-${field.name}`}
+                      >
                         <span className="auth-file-icon" aria-hidden="true">
                           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                             <path d="M10 2H4.5A1.5 1.5 0 003 3.5v11A1.5 1.5 0 004.5 16h9a1.5 1.5 0 001.5-1.5V6.5L10 2z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
                             <path d="M10 2v4.5H14.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
                         </span>
-                        <span className="auth-file-text">Upload PDF</span>
+                        <span className="auth-file-text">
+                          {values[field.name] ? 'Replace PDF' : 'Upload PDF'}
+                        </span>
                         <input
                           id={`reg-${field.name}`}
                           className="auth-file-input"
@@ -239,6 +257,15 @@ export default function RegisterForm({
                           required
                         />
                       </label>
+                      {values[field.name] ? (
+                        <p className="auth-file-selected-name" aria-live="polite">
+                          <span className="auth-file-selected-icon" aria-hidden="true">✓</span>
+                          Uploaded: <strong>{values[field.name].name}</strong>
+                          {typeof values[field.name].size === 'number'
+                            ? ` · ${Math.round(values[field.name].size / 1024)} KB`
+                            : null}
+                        </p>
+                      ) : null}
                     </div>
                   ))}
                 </div>

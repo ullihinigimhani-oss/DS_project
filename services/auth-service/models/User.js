@@ -32,7 +32,8 @@ class User {
    * Find user by email
    */
   static async findByEmail(email) {
-    const query = 'SELECT * FROM users WHERE email = $1';
+    if (!email) return null;
+    const query = 'SELECT * FROM users WHERE LOWER(TRIM(email)) = LOWER(TRIM($1))';
     const result = await db.query(query, [email]);
     return result.rows[0];
   }

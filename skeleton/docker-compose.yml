@@ -61,6 +61,8 @@ services:
       DB_USER: admin
       DB_PASSWORD: password
       KAFKA_BROKER: kafka:9092
+      DOCTOR_SERVICE_URL: http://doctor-service:3003
+      INTERNAL_SERVICE_KEY: healthcare-internal-dev
     depends_on:
       - postgres-auth
       - kafka
@@ -107,6 +109,7 @@ services:
       DB_PASSWORD: password
       JWT_SECRET: SyOudFfvRbmoURg4Mq2N34wq
       UPLOAD_DIR: /uploads/doctor-verification
+      INTERNAL_SERVICE_KEY: healthcare-internal-dev
     depends_on:
       - postgres-doctor
     volumes:

@@ -7,21 +7,21 @@ export default function PatientPortalLayout({
   onSignOut,
   children,
 }) {
-  const { activeRole, session, topCondition, bookingError, bookingMessage } = usePatientPortal()
+  const { session, topCondition, bookingError, bookingMessage, isConnectedPatient } = usePatientPortal()
 
   const activeNavItem =
     patientSidebarItems.find((item) => item.path === currentPath) ||
     patientSidebarItems.find((item) => item.path === '/patient')
 
-  if (activeRole !== 'patient') {
+  if (!isConnectedPatient) {
     return (
       <div className="patient-portal-guard">
         <div className="patient-portal-guard-card">
           <p className="patient-sidebar-kicker">Arogya Patient Portal</p>
           <h2>Patient login is required before the dashboard can open.</h2>
           <p>
-            Use the shared login or registration page, choose the patient role, and the app will
-            redirect you into this dashboard automatically.
+            Sign in with a valid patient account from the login page. The system checks your email
+            and password against the auth service before opening this workspace.
           </p>
           <div className="patient-toolbar">
             <button type="button" onClick={() => onRequireLogin('/login')}>

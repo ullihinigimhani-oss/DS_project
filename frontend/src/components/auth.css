@@ -745,6 +745,43 @@
   pointer-events: none;
 }
 
+.auth-file-label--has-file {
+  border-style: solid;
+  border-color: rgba(29, 158, 117, 0.5);
+  background: rgba(29, 158, 117, 0.07);
+}
+
+.auth-file-selected-name {
+  font-size: 0.78rem;
+  color: #0f6e56;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.auth-file-selected-icon {
+  color: #1d9e75;
+  font-weight: 700;
+}
+
+.auth-email-checking {
+  font-size: 0.78rem;
+  color: #6a8a9c;
+  margin: 6px 0 0;
+}
+
+.auth-email-availability {
+  font-size: 0.8rem;
+  margin: 6px 0 0;
+  line-height: 1.45;
+}
+
+.auth-email-availability--taken {
+  color: #b45309;
+}
+
 /* ── SUBMIT BUTTON ────────────────────────────── */
 .auth-submit {
   display: flex;

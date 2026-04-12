@@ -7,7 +7,7 @@ export default function LoginForm({
   loading,
   roleHint,
   hideRolePicker = false,
-  roleLabel = 'Preview role',
+  roleLabel = 'Sign in as',
   navigateTo,
   bannerError = '',
   bannerMessage = '',
@@ -98,6 +98,7 @@ export default function LoginForm({
                   placeholder="you@example.com"
                   value={values.email}
                   onChange={onChange}
+                  autoComplete="email"
                   required
                 />
               </div>
@@ -122,6 +123,7 @@ export default function LoginForm({
                   placeholder="Enter your password"
                   value={values.password}
                   onChange={onChange}
+                  autoComplete="current-password"
                   required
                 />
               </div>

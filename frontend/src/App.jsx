@@ -632,11 +632,16 @@ export default function App() {
         {analysis ? (
           <div className="analysis-result">
             <div className="result-banner">
-              <strong>{topCondition?.name || 'No diagnosis'}</strong>
+              <strong>{analysis.guidanceType === 'preliminary_symptom_guidance' ? 'Preliminary symptom guidance' : topCondition?.name || 'Symptom summary'}</strong>
               <span>
                 Confidence: {analysis.confidence ? `${Math.round(analysis.confidence * 100)}%` : '0%'}
               </span>
             </div>
+            {topCondition?.name ? (
+              <p>
+                Most likely match to review with a clinician: <strong>{topCondition.name}</strong>
+              </p>
+            ) : null}
             <p>{analysis.recommendation}</p>
 
             <div className="chip-group">

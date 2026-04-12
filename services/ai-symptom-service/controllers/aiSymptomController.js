@@ -1,7 +1,74 @@
 const axios = require('axios');
 const db = require('../config/postgres');
+const {
+  PRELIMINARY_GUIDANCE_NOTICE,
+  generateGeminiSymptomGuidance,
+} = require('../services/geminiSymptomService');
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:5000';
+
+function normalizeSymptomsInput(symptoms) {
+  if (Array.isArray(symptoms)) {
+    return symptoms.map((item) => String(item || '').trim()).filter(Boolean);
+  }
+
+  return String(symptoms || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function buildFallbackGuidance(symptoms) {
+  return {
+    success: true,
+    data: {
+      symptoms,
+      detectedSymptoms: symptoms,
+      possibleConditions: [],
+      confidence: 0,
+      recommendation: `${PRELIMINARY_GUIDANCE_NOTICE} The AI analysis service is temporarily unavailable. Please consult a healthcare professional for evaluation.`,
+      guidanceType: 'preliminary_symptom_guidance',
+      disclaimer: PRELIMINARY_GUIDANCE_NOTICE,
+      consultationAdvice: {
+        level: 'routine',
+        risk: 35,
+        message: 'Please arrange a healthcare review if symptoms persist or worsen.',
+        warningSigns: [],
+      },
+      selfCare: [],
+      whenToSeekCare: [],
+      source: 'fallback',
+    },
+  };
+}
+
+function normalizeMlResponse(responseData, symptoms) {
+  const data = responseData?.data || {};
+  const possibleConditions = Array.isArray(data.possibleConditions)
+    ? data.possibleConditions.map((condition) => ({
+        ...condition,
+        confidencePercent:
+          typeof condition?.confidencePercent === 'number'
+            ? condition.confidencePercent
+            : Math.round((Number(condition?.confidence || 0) || 0) * 1000) / 10,
+      }))
+    : [];
+
+  return {
+    success: true,
+    data: {
+      ...data,
+      symptoms,
+      detectedSymptoms: Array.isArray(data.detectedSymptoms) ? data.detectedSymptoms : symptoms,
+      possibleConditions,
+      confidence: Number(data.confidence || 0),
+      recommendation: `${PRELIMINARY_GUIDANCE_NOTICE} ${String(data.recommendation || '').trim()}`.trim(),
+      guidanceType: 'preliminary_symptom_guidance',
+      disclaimer: PRELIMINARY_GUIDANCE_NOTICE,
+      source: 'ml-service',
+    },
+  };
+}
 
 const analyzeSymptoms = async (req, res) => {
   try {
@@ -10,29 +77,30 @@ const analyzeSymptoms = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Symptoms are required' });
     }
 
+    const normalizedSymptoms = normalizeSymptomsInput(symptoms);
     let responseData;
+
     try {
-      const response = await axios.post(`${ML_SERVICE_URL}/api/symptoms/analyze`, {
-        symptoms,
+      responseData = await generateGeminiSymptomGuidance({
+        symptoms: normalizedSymptoms,
         sessionSymptoms: sessionSymptoms || [],
       });
-      responseData = response.data;
-    } catch (mlError) {
-      console.error(
-        'ML service error, using fallback:',
-        mlError.response?.status || mlError.code || mlError.message
-      );
-      responseData = {
-        success: true,
-        data: {
-          symptoms,
-          detectedSymptoms: [],
-          possibleConditions: [],
-          confidence: 0,
-          recommendation:
-            'The AI analysis service is temporarily unavailable. Please consult a healthcare professional for evaluation.',
-        },
-      };
+    } catch (geminiError) {
+      console.error('Gemini guidance failed, falling back to ML service:', geminiError.message);
+
+      try {
+        const response = await axios.post(`${ML_SERVICE_URL}/api/symptoms/analyze`, {
+          symptoms: normalizedSymptoms,
+          sessionSymptoms: sessionSymptoms || [],
+        });
+        responseData = normalizeMlResponse(response.data, normalizedSymptoms);
+      } catch (mlError) {
+        console.error(
+          'ML service error, using fallback:',
+          mlError.response?.status || mlError.code || mlError.message
+        );
+        responseData = buildFallbackGuidance(normalizedSymptoms);
+      }
     }
 
     try {
@@ -43,7 +111,7 @@ const analyzeSymptoms = async (req, res) => {
          VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [
           userId || null,
-          Array.isArray(symptoms) ? symptoms.join(', ') : String(symptoms),
+          normalizedSymptoms.join(', '),
           JSON.stringify(d.detectedSymptoms || []),
           JSON.stringify(d.possibleConditions || []),
           d.confidence || null,

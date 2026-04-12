@@ -19,6 +19,13 @@ const register = async (req, res) => {
       });
     }
 
+    if (userType === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin accounts cannot be created via registration',
+      });
+    }
+
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
       return res.status(409).json({

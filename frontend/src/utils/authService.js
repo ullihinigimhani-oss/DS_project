@@ -41,3 +41,14 @@ export async function registerUser(payload) {
 
   return handleAuthResponse(response)
 }
+
+export async function verifyUser(token) {
+  const response = await fetch(`${gatewayBaseUrl}/api/auth/verify`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  return handleAuthResponse(response)
+}

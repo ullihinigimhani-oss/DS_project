@@ -184,7 +184,7 @@ export default function RegisterForm({
               <div className="auth-field-group">
                 <span className="auth-label">I am joining as</span>
                 <div className="auth-role-picker auth-role-picker--register">
-                  {['patient', 'doctor', 'admin'].map((role) => (
+                  {['patient', 'doctor'].map((role) => (
                     <button
                       key={role}
                       type="button"

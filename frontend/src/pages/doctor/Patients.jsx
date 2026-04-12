@@ -296,20 +296,16 @@ function PatientsContent() {
           )}
         </section>
 
-        <section className="doctor-surface-card">
-          <div className="doctor-card-topline">
-            <h3>Patient details</h3>
-            {selectedPatient ? (
+        {selectedPatient ? (
+          <section className="doctor-surface-card">
+            <div className="doctor-card-topline">
+              <h3>Patient details</h3>
               <StatusPill
                 status={patientAppointments.length ? 'ok' : 'pending'}
                 label={patientAppointments.length ? 'History found' : 'Limited history'}
               />
-            ) : null}
-          </div>
+            </div>
 
-          {!selectedPatient ? (
-            <p className="empty-state">Choose a patient from the list to view their full medical history.</p>
-          ) : (
             <div className="doctor-page-stack">
               {patientDetailError ? <p className="error-text">{patientDetailError}</p> : null}
               {patientDetailLoading ? <p className="empty-state">Loading patient details...</p> : null}
@@ -472,8 +468,8 @@ function PatientsContent() {
                 </section>
               </div>
             </div>
-          )}
-        </section>
+          </section>
+        ) : null}
       </div>
     </div>
   )

@@ -2711,6 +2711,57 @@ button:disabled {
   border-radius: 22px;
   background: linear-gradient(180deg, rgba(247, 251, 255, 0.96), rgba(255, 249, 244, 0.9));
   border: 1px solid rgba(93, 132, 166, 0.16);
+  display: grid;
+  gap: 16px;
+}
+
+.analysis-loading-card,
+.analysis-summary-card {
+  border: 1px solid rgba(46, 56, 74, 0.08);
+  border-radius: 20px;
+  padding: 16px 18px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.analysis-loading-card {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.analysis-loading-card strong,
+.analysis-summary-card strong {
+  color: #22364d;
+}
+
+.analysis-loading-card p,
+.analysis-summary-card ul {
+  margin: 8px 0 0;
+  color: #607086;
+}
+
+.analysis-loading-spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 3px solid rgba(83, 121, 158, 0.18);
+  border-top-color: #2d6a8c;
+  animation: analysisSpin 0.9s linear infinite;
+}
+
+.analysis-confidence-meter {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(93, 132, 166, 0.16);
+  overflow: hidden;
+}
+
+.analysis-confidence-meter-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #59a56a, #6ec17e);
 }
 
 .result-banner strong {
@@ -2718,15 +2769,121 @@ button:disabled {
   font-size: 1.1rem;
 }
 
+.analysis-overview-grid,
+.analysis-condition-list {
+  display: grid;
+  gap: 12px;
+}
+
+.analysis-overview-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.analysis-overview-card,
+.analysis-condition-card,
+.analysis-primary-callout,
+.analysis-session-guard {
+  border: 1px solid rgba(46, 56, 74, 0.08);
+  border-radius: 20px;
+  padding: 16px 18px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.analysis-overview-card span,
+.analysis-primary-callout span {
+  display: block;
+  color: #6e7d90;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.analysis-overview-card strong,
+.analysis-primary-callout strong {
+  display: block;
+  margin-top: 8px;
+  color: #22364d;
+  font-size: 1.05rem;
+}
+
+.analysis-overview-card p,
+.analysis-condition-card p,
+.analysis-primary-callout p {
+  margin: 8px 0 0;
+  color: #607086;
+}
+
+.analysis-primary-callout {
+  border-left: 4px solid #62a76a;
+  background: linear-gradient(180deg, rgba(240, 252, 242, 0.94), rgba(250, 255, 251, 0.9));
+}
+
+.analysis-session-guard {
+  display: grid;
+  gap: 10px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 242, 236, 0.9));
+}
+
+.analysis-session-guard strong {
+  color: #22364d;
+  font-size: 1.05rem;
+}
+
+.analysis-session-guard p {
+  margin: 0;
+  color: #607086;
+}
+
+.analysis-condition-list {
+  margin-top: 2px;
+}
+
+.analysis-condition-card .chip-group {
+  margin-top: 12px;
+}
+
+.analysis-summary-card ul {
+  padding-left: 18px;
+}
+
+.analysis-summary-card li + li {
+  margin-top: 6px;
+}
+
+.analysis-cta-row {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.analysis-primary-cta {
+  border: none;
+  border-radius: 16px;
+  padding: 12px 18px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #1f7a6f, #2a9082);
+  box-shadow: 0 16px 28px rgba(31, 122, 111, 0.18);
+  cursor: pointer;
+}
+
+.analysis-primary-cta:hover {
+  transform: translateY(-1px);
+}
+
+.analysis-primary-cta:focus {
+  outline: 2px solid rgba(31, 122, 111, 0.24);
+  outline-offset: 2px;
+}
+
 .consult-box {
-  margin-top: 16px;
   padding: 14px 16px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.84);
 }
 
 .chip-group {
-  margin-top: 16px;
+  margin-top: 0;
 }
 
 .chip-group.compact {
@@ -2759,6 +2916,16 @@ button:disabled {
 
 .error-text {
   color: #b15438;
+}
+
+@keyframes analysisSpin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes homeReveal {
@@ -3005,6 +3172,14 @@ button:disabled {
   .roadmap-topline,
   .journey-card-header {
     flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .analysis-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .analysis-loading-card {
     align-items: flex-start;
   }
 

@@ -1,11 +1,12 @@
-const axios = require('axios');
 const db = require('../config/postgres');
 const {
   PRELIMINARY_GUIDANCE_NOTICE,
   generateGeminiSymptomGuidance,
 } = require('../services/geminiSymptomService');
-
-const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:5000';
+const {
+  analyzeWithCustomModel,
+  shouldUsePrimaryModel,
+} = require('../services/customSymptomModelService');
 
 function normalizeSymptomsInput(symptoms) {
   if (Array.isArray(symptoms)) {
@@ -13,12 +14,12 @@ function normalizeSymptomsInput(symptoms) {
   }
 
   return String(symptoms || '')
-    .split(',')
+    .split(/[,\n]/)
     .map((item) => item.trim())
     .filter(Boolean);
 }
 
-function buildFallbackGuidance(symptoms) {
+function buildFallbackGuidance(symptoms, primaryModel) {
   return {
     success: true,
     data: {
@@ -26,7 +27,7 @@ function buildFallbackGuidance(symptoms) {
       detectedSymptoms: symptoms,
       possibleConditions: [],
       confidence: 0,
-      recommendation: `${PRELIMINARY_GUIDANCE_NOTICE} The AI analysis service is temporarily unavailable. Please consult a healthcare professional for evaluation.`,
+      recommendation: `${PRELIMINARY_GUIDANCE_NOTICE} The local symptom model could not confidently determine a result, and the Gemini fallback is currently unavailable. Please consult a healthcare professional for evaluation.`,
       guidanceType: 'preliminary_symptom_guidance',
       disclaimer: PRELIMINARY_GUIDANCE_NOTICE,
       consultationAdvice: {
@@ -38,68 +39,63 @@ function buildFallbackGuidance(symptoms) {
       selfCare: [],
       whenToSeekCare: [],
       source: 'fallback',
-    },
-  };
-}
-
-function normalizeMlResponse(responseData, symptoms) {
-  const data = responseData?.data || {};
-  const possibleConditions = Array.isArray(data.possibleConditions)
-    ? data.possibleConditions.map((condition) => ({
-        ...condition,
-        confidencePercent:
-          typeof condition?.confidencePercent === 'number'
-            ? condition.confidencePercent
-            : Math.round((Number(condition?.confidence || 0) || 0) * 1000) / 10,
-      }))
-    : [];
-
-  return {
-    success: true,
-    data: {
-      ...data,
-      symptoms,
-      detectedSymptoms: Array.isArray(data.detectedSymptoms) ? data.detectedSymptoms : symptoms,
-      possibleConditions,
-      confidence: Number(data.confidence || 0),
-      recommendation: `${PRELIMINARY_GUIDANCE_NOTICE} ${String(data.recommendation || '').trim()}`.trim(),
-      guidanceType: 'preliminary_symptom_guidance',
-      disclaimer: PRELIMINARY_GUIDANCE_NOTICE,
-      source: 'ml-service',
+      primaryModel,
     },
   };
 }
 
 const analyzeSymptoms = async (req, res) => {
   try {
-    const { symptoms, sessionSymptoms, userId } = req.body;
+    const { symptoms, sessionSymptoms } = req.body;
+    const currentUserId = req.user?.userId;
+
     if (!symptoms) {
       return res.status(400).json({ success: false, message: 'Symptoms are required' });
     }
 
+    if (!currentUserId) {
+      return res.status(401).json({ success: false, message: 'User context is required' });
+    }
+
     const normalizedSymptoms = normalizeSymptomsInput(symptoms);
-    let responseData;
+    const primaryModelResult = analyzeWithCustomModel({
+      symptoms,
+      sessionSymptoms: sessionSymptoms || [],
+    });
 
-    try {
-      responseData = await generateGeminiSymptomGuidance({
-        symptoms: normalizedSymptoms,
-        sessionSymptoms: sessionSymptoms || [],
-      });
-    } catch (geminiError) {
-      console.error('Gemini guidance failed, falling back to ML service:', geminiError.message);
+    let responseData = primaryModelResult;
 
+    if (!shouldUsePrimaryModel(primaryModelResult.data)) {
       try {
-        const response = await axios.post(`${ML_SERVICE_URL}/api/symptoms/analyze`, {
-          symptoms: normalizedSymptoms,
+        responseData = await generateGeminiSymptomGuidance({
+          symptoms: primaryModelResult.data.detectedSymptoms.length
+            ? primaryModelResult.data.detectedSymptoms
+            : normalizedSymptoms,
           sessionSymptoms: sessionSymptoms || [],
         });
-        responseData = normalizeMlResponse(response.data, normalizedSymptoms);
-      } catch (mlError) {
-        console.error(
-          'ML service error, using fallback:',
-          mlError.response?.status || mlError.code || mlError.message
+
+        responseData.data.source = 'gemini-fallback';
+        responseData.data.primaryModel = {
+          source: primaryModelResult.data.source,
+          confidence: primaryModelResult.data.confidence,
+          possibleConditions: primaryModelResult.data.possibleConditions,
+          recommendedSpecialist: primaryModelResult.data.recommendedSpecialist,
+          severity: primaryModelResult.data.severity,
+        };
+      } catch (geminiError) {
+        console.error('Gemini fallback failed, using safe local fallback:', geminiError.message);
+        responseData = buildFallbackGuidance(
+          primaryModelResult.data.detectedSymptoms.length
+            ? primaryModelResult.data.detectedSymptoms
+            : normalizedSymptoms,
+          {
+            source: primaryModelResult.data.source,
+            confidence: primaryModelResult.data.confidence,
+            possibleConditions: primaryModelResult.data.possibleConditions,
+            recommendedSpecialist: primaryModelResult.data.recommendedSpecialist,
+            severity: primaryModelResult.data.severity,
+          }
         );
-        responseData = buildFallbackGuidance(normalizedSymptoms);
       }
     }
 
@@ -110,7 +106,7 @@ const analyzeSymptoms = async (req, res) => {
             (user_id, symptoms, detected_symptoms, possible_conditions, confidence, recommendation, raw_response)
          VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [
-          userId || null,
+          currentUserId,
           normalizedSymptoms.join(', '),
           JSON.stringify(d.detectedSymptoms || []),
           JSON.stringify(d.possibleConditions || []),
@@ -132,22 +128,20 @@ const analyzeSymptoms = async (req, res) => {
 
 const getAnalysisHistory = async (req, res) => {
   try {
-    const { userId, limit = 20 } = req.query;
-    const params = [];
-    let whereClause = '';
+    const currentUserId = req.user?.userId;
+    const { limit = 20 } = req.query;
 
-    if (userId) {
-      params.push(userId);
-      whereClause = 'WHERE user_id = $1';
+    if (!currentUserId) {
+      return res.status(401).json({ success: false, message: 'User context is required' });
     }
 
-    params.push(parseInt(limit, 10) || 20);
+    const params = [currentUserId, parseInt(limit, 10) || 20];
     const result = await db.query(
       `SELECT id, user_id, symptoms, detected_symptoms, possible_conditions, confidence, recommendation, analyzed_at
        FROM symptom_analyses
-       ${whereClause}
+       WHERE user_id = $1
        ORDER BY analyzed_at DESC
-       LIMIT $${params.length}`,
+       LIMIT $2`,
       params
     );
 

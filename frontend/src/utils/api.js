@@ -3,6 +3,17 @@ export const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost
 export const gatewayBaseUrl = apiBaseUrl.endsWith('/api')
   ? apiBaseUrl.slice(0, -4)
   : apiBaseUrl
+const authTokenStorageKey = 'token'
+
+function getAuthHeaders() {
+  const token = window.localStorage.getItem(authTokenStorageKey)
+
+  return token
+    ? {
+        Authorization: `Bearer ${token}`,
+      }
+    : {}
+}
 
 async function readJson(response) {
   const data = await response.json()
@@ -29,6 +40,7 @@ export async function analyzeSymptoms(payload) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...getAuthHeaders(),
     },
     body: JSON.stringify(payload),
   })
@@ -36,10 +48,12 @@ export async function analyzeSymptoms(payload) {
   return readJson(response)
 }
 
-export async function fetchAnalysisHistory(userId) {
-  const response = await fetch(
-    `${apiBaseUrl}/ai-symptoms/history?userId=${encodeURIComponent(userId)}`,
-  )
+export async function fetchAnalysisHistory() {
+  const response = await fetch(`${apiBaseUrl}/ai-symptoms/history`, {
+    headers: {
+      ...getAuthHeaders(),
+    },
+  })
 
   return readJson(response)
 }

@@ -4,6 +4,7 @@ import RegisterForm from './components/RegisterForm'
 import SectionCard from './components/SectionCard'
 import StatusPill from './components/StatusPill'
 import Home from './components/Home'
+import AiSymptomWorkspace from './components/AiSymptomWorkspace'
 import DoctorDashboard from './components/dashboards/DoctorDashboard'
 import PatientDashboard from './components/dashboards/PatientDashboard'
 import DoctorAppointmentsPage from './pages/doctor/Appointments'
@@ -37,26 +38,8 @@ import './App.css'
 import './styles/post-login-creative.css'
 
 const defaultSymptoms = 'I have fever, cough, headache and runny nose'
-const defaultUserId = 'patient-001'
 const sessionStorageKey = 'healthcare-auth-shell-session'
 const authTokenStorageKey = 'token'
-
-const roleSummaries = {
-  patient: {
-    title: 'Patient workspace',
-    subtitle: 'Symptom checks, care guidance, and doctor discovery are centered here now.',
-  },
-  doctor: {
-    title: 'Doctor workspace',
-    subtitle: 'Schedule, verification, prescriptions, and profile editing will sit here next.',
-  },
-  admin: {
-    title: 'Admin workspace',
-    subtitle: 'Audit views, user management, and platform operations will plug in here later.',
-  },
-}
-
-
 
 function getInitialPath() {
   const path = window.location.pathname || '/'
@@ -100,7 +83,6 @@ export default function App() {
   const [gatewayHealth, setGatewayHealth] = useState(null)
   const [doctorDirectory, setDoctorDirectory] = useState([])
   const [directoryState, setDirectoryState] = useState('idle')
-  const [userId, setUserId] = useState(defaultUserId)
   const [symptoms, setSymptoms] = useState(defaultSymptoms)
   const [analysis, setAnalysis] = useState(null)
   const [history, setHistory] = useState([])
@@ -135,7 +117,6 @@ export default function App() {
   const isPatientPortalRoute = currentPath.startsWith('/patient')
   const isAuthRoute = currentPath === '/login' || currentPath === '/register'
   const activeRole = session?.role || loginValues.role
-  const roleSummary = roleSummaries[activeRole] || roleSummaries.patient
   const topCondition = analysis?.possibleConditions?.[0] || null
 
   const quickStats = useMemo(() => {
@@ -263,10 +244,15 @@ export default function App() {
     loadDoctorDirectory()
   }, [])
 
-  const loadHistory = async (nextUserId = userId) => {
+  const loadHistory = async () => {
+    if (!session?.userId) {
+      setHistory([])
+      return
+    }
+
     setHistoryLoading(true)
     try {
-      const data = await fetchAnalysisHistory(nextUserId)
+      const data = await fetchAnalysisHistory()
       setHistory(Array.isArray(data.data) ? data.data : [])
     } catch (_error) {
       setHistory([])
@@ -276,8 +262,13 @@ export default function App() {
   }
 
   useEffect(() => {
-    loadHistory(defaultUserId)
-  }, [])
+    if (session?.userId) {
+      loadHistory()
+      return
+    }
+
+    setHistory([])
+  }, [session])
 
   const navigateTo = (path) => {
     if (path === currentPath) return
@@ -445,13 +436,12 @@ export default function App() {
 
     try {
       const data = await analyzeSymptoms({
-        userId,
         symptoms,
         sessionSymptoms: [],
       })
 
       setAnalysis(data.data)
-      await loadHistory(userId)
+      await loadHistory()
     } catch (error) {
       setAnalysisError(error.message)
       setAnalysis(null)
@@ -537,7 +527,7 @@ export default function App() {
     )
   }
 
-  const renderPatientRoutePage = (RoutePage) => {
+  const renderPatientRoutePage = (RoutePage, extraProps = {}) => {
     const Component = RoutePage
 
     return (
@@ -552,6 +542,15 @@ export default function App() {
         onSignOut={handleSignOut}
         onRequireLogin={navigateTo}
         onNavigate={navigateTo}
+        analysis={analysis}
+        symptoms={symptoms}
+        analysisLoading={analysisLoading}
+        historyLoading={historyLoading}
+        analysisError={analysisError}
+        onSymptomsChange={setSymptoms}
+        onAnalyze={handleAnalyze}
+        onRefreshHistory={loadHistory}
+        {...extraProps}
       />
     )
   }
@@ -594,126 +593,20 @@ export default function App() {
   )
 
   const renderAiPage = () => (
-    <div className="page-stack">
-      <SectionCard
-        title="AI Symptom Analyzer"
-        subtitle="A live symptom triage screen that feeds directly into the patient journey."
-      >
-        <form className="analysis-form" onSubmit={handleAnalyze}>
-          <label>
-            User ID
-            <input value={userId} onChange={(event) => setUserId(event.target.value)} />
-          </label>
-          <label>
-            Symptoms
-            <textarea
-              rows="5"
-              value={symptoms}
-              onChange={(event) => setSymptoms(event.target.value)}
-            />
-          </label>
-          <div className="form-actions">
-            <button type="submit" disabled={analysisLoading}>
-              {analysisLoading ? 'Analyzing...' : 'Analyze symptoms'}
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => loadHistory(userId)}
-              disabled={historyLoading}
-            >
-              {historyLoading ? 'Refreshing...' : 'Refresh history'}
-            </button>
-          </div>
-        </form>
-
-        {analysisError ? <p className="error-text">{analysisError}</p> : null}
-
-        {analysis ? (
-          <div className="analysis-result">
-            <div className="result-banner">
-              <strong>{analysis.guidanceType === 'preliminary_symptom_guidance' ? 'Preliminary symptom guidance' : topCondition?.name || 'Symptom summary'}</strong>
-              <span>
-                Confidence: {analysis.confidence ? `${Math.round(analysis.confidence * 100)}%` : '0%'}
-              </span>
-            </div>
-            {topCondition?.name ? (
-              <p>
-                Most likely match to review with a clinician: <strong>{topCondition.name}</strong>
-              </p>
-            ) : null}
-            <p>{analysis.recommendation}</p>
-
-            <div className="chip-group">
-              {(analysis.detectedSymptoms || []).map((symptom) => (
-                <span key={symptom} className="chip">
-                  {symptom}
-                </span>
-              ))}
-            </div>
-
-            {(analysis.possibleConditions || []).length ? (
-              <div className="conditions-list">
-                {analysis.possibleConditions.map((condition) => (
-                  <div key={condition.name} className="condition-row">
-                    <span>{condition.name}</span>
-                    <strong>{condition.confidencePercent}%</strong>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-
-            {analysis.consultationAdvice ? (
-              <div className="consult-box">
-                <strong>{analysis.consultationAdvice.message}</strong>
-                <span>Risk score: {analysis.consultationAdvice.risk}</span>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-      </SectionCard>
-
-      <SectionCard
-        title="Analysis History"
-        subtitle="Recent AI analyses stay visible so this route can evolve into a fuller care timeline."
-      >
-        {historyLoading ? <p className="empty-state">Loading history...</p> : null}
-        {!historyLoading && history.length === 0 ? (
-          <p className="empty-state">No history for this user yet.</p>
-        ) : null}
-
-        <div className="history-list">
-          {history.map((item) => (
-            <article key={item.id} className="history-card">
-              <div className="history-header">
-                <strong>{item.user_id}</strong>
-                <span>{new Date(item.analyzed_at).toLocaleString()}</span>
-              </div>
-              <p>{item.symptoms}</p>
-              <div className="chip-group compact">
-                {(item.detected_symptoms || []).map((symptom) => (
-                  <span key={symptom} className="chip">
-                    {symptom}
-                  </span>
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
-      </SectionCard>
-    </div>
-  )
-
-  const renderPlaceholderPage = () => (
-    <SectionCard
-      title={`${activeRole.charAt(0).toUpperCase() + activeRole.slice(1)} Route Preview`}
-      subtitle="This route is reserved so the next role-based frontend branches can land cleanly."
-    >
-      <div className="placeholder-page">
-        <strong>{roleSummary.title}</strong>
-        <p>{roleSummary.subtitle}</p>
-      </div>
-    </SectionCard>
+    <AiSymptomWorkspace
+      session={session}
+      history={history}
+      analysis={analysis}
+      topCondition={topCondition}
+      symptoms={symptoms}
+      analysisLoading={analysisLoading}
+      historyLoading={historyLoading}
+      analysisError={analysisError}
+      onSymptomsChange={setSymptoms}
+      onAnalyze={handleAnalyze}
+      onRefreshHistory={loadHistory}
+      onNavigate={navigateTo}
+    />
   )
 
   const renderCurrentPage = () => {
@@ -746,6 +639,7 @@ export default function App() {
         return renderPatientRoutePage(PatientMyBookingsPage)
       case '/patient/doctors':
         return renderPatientRoutePage(PatientDoctorsPage)
+      case '/patient/ai-symptoms':
       case '/patient/symptom-history':
         return renderPatientRoutePage(PatientSymptomHistoryPage)
       case '/patient/profile':

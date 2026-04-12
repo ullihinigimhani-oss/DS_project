@@ -6,6 +6,7 @@ const prescriptionRoutes = require('./routes/prescriptionRoutes');
 const publicDoctorRoutes = require('./routes/publicDoctorRoutes');
 const scheduleRoutes = require('./routes/scheduleRoutes');
 const verificationRoutes = require('./routes/verificationRoutes');
+const internalVerificationRoutes = require('./routes/internalVerificationRoutes');
 const { UPLOAD_DIR } = require('./utils/fileStorage');
 
 const app = express();
@@ -30,6 +31,22 @@ app.use('/api/v1/prescriptions', prescriptionRoutes);
 app.use('/api/v1/public', publicDoctorRoutes);
 app.use('/api/v1/schedule', scheduleRoutes);
 app.use('/api/v1/verification', verificationRoutes);
+app.use('/api/v1/internal/verification', internalVerificationRoutes);
+
+app.use((err, req, res, next) => {
+  if (err?.message === 'Only PDF files are allowed' || err?.name === 'MulterError') {
+    return res.status(400).json({
+      success: false,
+      message: err.message || 'Upload validation failed',
+    });
+  }
+
+  console.error('Doctor service error:', err);
+  return res.status(500).json({
+    success: false,
+    message: err.message || 'Unexpected server error',
+  });
+});
 
 app.use((req, res) => {
   res.status(404).json({

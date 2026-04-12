@@ -10,6 +10,31 @@ async function handleAuthResponse(response) {
   return data
 }
 
+/**
+ * Ask auth-service whether this email is already registered (any role: patient, doctor, etc.).
+ */
+export async function checkEmailAvailability(email) {
+  const trimmed = String(email || '').trim()
+  if (!trimmed) {
+    return { success: true, data: { available: true, existingUserType: null } }
+  }
+
+  const response = await fetch(
+    `${gatewayBaseUrl}/api/auth/email-availability?email=${encodeURIComponent(trimmed)}`,
+  )
+  const data = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    return {
+      success: false,
+      message: data.message || data.error || 'Unable to check email',
+      data: null,
+    }
+  }
+
+  return data
+}
+
 export async function loginUser(payload) {
   const response = await fetch(`${gatewayBaseUrl}/api/auth/login`, {
     method: 'POST',

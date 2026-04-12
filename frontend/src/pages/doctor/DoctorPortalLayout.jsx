@@ -43,8 +43,8 @@ export default function DoctorPortalLayout({
           <p className="doctor-sidebar-kicker">Arogya Doctor Portal</p>
           <h2>Doctor login is required before the dashboard can open.</h2>
           <p>
-            Use the shared login or registration page, choose the doctor role, and the app will
-            redirect you into this dashboard automatically.
+            Sign in with a verified doctor account. New doctors must complete registration and wait
+            for an administrator to approve verification before they can sign in.
           </p>
           <div className="doctor-toolbar">
             <button type="button" onClick={() => onRequireLogin('/login')}>

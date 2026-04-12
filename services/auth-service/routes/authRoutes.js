@@ -4,6 +4,13 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 
 /**
+ * @route   GET /api/auth/email-availability?email=
+ * @desc    Check whether an email is already registered (auth DB)
+ * @access  Public
+ */
+router.get('/email-availability', authController.checkEmailAvailability);
+
+/**
  * @route   POST /api/auth/register
  * @desc    Register a new user
  * @access  Public

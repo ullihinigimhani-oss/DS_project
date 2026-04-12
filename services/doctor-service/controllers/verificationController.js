@@ -5,7 +5,7 @@
  */
 
 const VerificationModel = require('../models/VerificationModel');
-const { saveFile, deleteFile, deleteDocorFiles } = require('../utils/fileStorage');
+const { saveFile, deleteFile } = require('../utils/fileStorage');
 
 /**
  * Upload a verification document (file-based)
@@ -235,10 +235,8 @@ exports.approveVerification = async (req, res) => {
       });
     }
 
-    // Approve verification
+    // Approve verification (keep document records and files so admins retain an audit trail)
     const approvedStatus = await VerificationModel.approveVerification(doctorId);
-    await VerificationModel.deleteDocumentsByDoctorId(doctorId);
-    await deleteDocorFiles(doctorId);
 
     res.status(200).json({
       success: true,

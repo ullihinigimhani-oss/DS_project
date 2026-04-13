@@ -6,6 +6,9 @@ import { formatDate, formatTime, usePatientPortal } from './PatientPortalContext
 
 const stripePromise = loadStripe("pk_test_51TLRtcBiXAUe5p1fRzmD6mQaXFsJoEd8QCHUWxhjgcXVoNluCN7MaCSfaBzVosNY4dMmU5kTImQwjvz07ft3l4GX009QiUFjB8")
 
+// Fixed booking fee constant
+const FIXED_BOOKING_FEE = 2000
+
 function PaymentForm({ onNavigate }) {
   const stripe = useStripe()
   const elements = useElements()
@@ -59,6 +62,16 @@ function PaymentForm({ onNavigate }) {
   const appointmentAmount = useMemo(
     () => Number(pendingPaymentBooking?.amount || 0).toFixed(2),
     [pendingPaymentBooking?.amount],
+  )
+
+  // Calculate fee breakdown: fixed booking fee + doctor consultation fee
+  const doctorConsultationFee = useMemo(
+    () => Number(pendingPaymentBooking?.amount || 0),
+    [pendingPaymentBooking?.amount],
+  )
+  const totalAmountToPay = useMemo(
+    () => (FIXED_BOOKING_FEE + doctorConsultationFee).toFixed(2),
+    [doctorConsultationFee],
   )
 
   const handleSubmit = async (event) => {
@@ -125,7 +138,22 @@ function PaymentForm({ onNavigate }) {
           {pendingPaymentBooking.doctorName} | {formatDate(pendingPaymentBooking.appointmentDate)} |{' '}
           {formatTime(pendingPaymentBooking.startTime)} - {formatTime(pendingPaymentBooking.endTime)}
         </p>
-        <p>Total amount: ${appointmentAmount}</p>
+
+        <div className="patient-fee-breakdown">
+          <div className="patient-fee-row">
+            <span>Booking fee:</span>
+            <strong>₹{FIXED_BOOKING_FEE.toLocaleString('en-IN')}</strong>
+          </div>
+          <div className="patient-fee-row">
+            <span>Consultation fee:</span>
+            <strong>₹{doctorConsultationFee.toLocaleString('en-IN')}</strong>
+          </div>
+          <div className="patient-fee-row patient-fee-total">
+            <span>Total amount to pay:</span>
+            <strong>₹{totalAmountToPay.replace('.00', '')}</strong>
+          </div>
+        </div>
+
         <form onSubmit={handleSubmit} className="patient-booking-form">
           <label className="patient-field">
             Card details

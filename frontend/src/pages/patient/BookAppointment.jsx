@@ -2,6 +2,15 @@ import PatientPortalPage from './PatientPortalPage'
 import { formatDate, formatTime, usePatientPortal } from './PatientPortalContext'
 import { useMemo } from 'react'
 
+// Validation helper for 10-digit phone number
+function isValidPhone(phone) {
+  const cleaned = String(phone).replace(/\D/g, '')
+  return cleaned.length === 10
+}
+
+// Fixed booking fee constant
+const FIXED_BOOKING_FEE = 2000
+
 function BookAppointmentContent({ onNavigate }) {
   const {
     isConnectedPatient,
@@ -15,6 +24,7 @@ function BookAppointmentContent({ onNavigate }) {
     selectedDoctor,
     suggestedDoctor,
     isTelemedicine,
+    isDifferentPatient,
     reason,
     patientNameInput,
     patientPhoneInput,
@@ -25,6 +35,7 @@ function BookAppointmentContent({ onNavigate }) {
     setReason,
     setPatientNameInput,
     setPatientPhoneInput,
+    setIsDifferentPatient,
     clearBookingDraft,
     handleCreateBooking,
   } = usePatientPortal()
@@ -75,12 +86,17 @@ function BookAppointmentContent({ onNavigate }) {
   }, [availability])
 
   const bookableWindows = slotWindows.filter((window) => window.nextAvailable)
+  const isPhoneValid = isValidPhone(patientPhoneInput)
   const bookingFormComplete = Boolean(
     selectedDoctor &&
       reason.trim() &&
       patientNameInput.trim() &&
-      patientPhoneInput.trim(),
+      isPhoneValid,
   )
+
+  // Calculate total cost: fixed booking fee + doctor consultation fee
+  const consultationFee = selectedDoctor?.consultation_fee ? Number(selectedDoctor.consultation_fee) : 0
+  const totalCost = FIXED_BOOKING_FEE + consultationFee
 
   return (
     <div className="patient-page-stack">
@@ -170,7 +186,22 @@ function BookAppointmentContent({ onNavigate }) {
               <div className="patient-doctor-spotlight">
                 <strong>{selectedDoctor.name || 'Doctor'}</strong>
                 <p>{selectedDoctor.specialization || 'General Practice'}</p>
-                <span>Consultation fee: {selectedDoctor.consultation_fee ?? 'N/A'}</span>
+                
+                <div className="patient-fee-breakdown">
+                  <div className="patient-fee-row">
+                    <span>Booking fee:</span>
+                    <strong>₹{FIXED_BOOKING_FEE.toLocaleString('en-IN')}</strong>
+                  </div>
+                  <div className="patient-fee-row">
+                    <span>Consultation fee:</span>
+                    <strong>₹{consultationFee.toLocaleString('en-IN')}</strong>
+                  </div>
+                  <div className="patient-fee-row patient-fee-total">
+                    <span>Total cost:</span>
+                    <strong>₹{totalCost.toLocaleString('en-IN')}</strong>
+                  </div>
+                </div>
+
                 {pendingPaymentBooking ? (
                   <div className="patient-booking-draft-notes">
                     <strong>Appointment form fields (from model)</strong>
@@ -210,23 +241,51 @@ function BookAppointmentContent({ onNavigate }) {
                 placeholder="Share a short reason for the consultation."
               />
             </label>
+
+            <div className="patient-week-row">
+              <label className="patient-toggle">
+                <input
+                  type="checkbox"
+                  checked={isDifferentPatient}
+                  onChange={(event) => setIsDifferentPatient(event.target.checked)}
+                />
+                This is a different patient
+              </label>
+            </div>
+
             <label className="patient-field">
               Patient name (required)
               <input
                 type="text"
                 value={patientNameInput}
                 onChange={(event) => setPatientNameInput(event.target.value)}
-                placeholder="Enter patient name"
+                placeholder={isDifferentPatient ? "Enter patient name" : "Patient name"}
+                disabled={!isDifferentPatient}
               />
             </label>
+
             <label className="patient-field">
               Patient phone (required)
               <input
                 type="tel"
                 value={patientPhoneInput}
-                onChange={(event) => setPatientPhoneInput(event.target.value)}
-                placeholder="Enter patient phone"
+                onChange={(event) => {
+                  const value = event.target.value.replace(/\D/g, '')
+                  setPatientPhoneInput(value)
+                }}
+                placeholder="Enter 10-digit phone number (e.g., 9876543210)"
+                maxLength="10"
               />
+              {patientPhoneInput && !isPhoneValid ? (
+                <p style={{ color: '#d64545', fontSize: '0.85rem', marginTop: '4px' }}>
+                  Phone number must be exactly 10 digits
+                </p>
+              ) : null}
+              {isPhoneValid ? (
+                <p style={{ color: '#1d9e75', fontSize: '0.85rem', marginTop: '4px' }}>
+                  ✓ Valid phone number
+                </p>
+              ) : null}
             </label>
           </div>
 
@@ -278,7 +337,7 @@ function BookAppointmentContent({ onNavigate }) {
                     </button>
                     {!bookingFormComplete ? (
                       <p className="empty-state">
-                        Fill required fields: reason, patient name, and patient phone.
+                        {!selectedDoctor ? 'Select a doctor' : !reason.trim() ? 'Enter visit reason' : !patientNameInput.trim() ? 'Enter patient name' : !isPhoneValid ? 'Phone must be 10 digits' : 'Complete required fields'}
                       </p>
                     ) : null}
                   </article>

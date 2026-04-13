@@ -205,6 +205,7 @@ export function PatientPortalProvider({
   const [patientPhoneInput, setPatientPhoneInput] = useState(
     persistedState.patientPhoneInput || session?.phone || '',
   )
+  const [isDifferentPatient, setIsDifferentPatient] = useState(Boolean(persistedState.isDifferentPatient))
   const [isTelemedicine, setIsTelemedicine] = useState(Boolean(persistedState.isTelemedicine))
   const [bookingDraft, setBookingDraft] = useState(persistedState.bookingDraft || null)
   const [pendingPaymentBooking, setPendingPaymentBooking] = useState(
@@ -242,6 +243,7 @@ export function PatientPortalProvider({
           reason,
           patientNameInput,
           patientPhoneInput,
+          isDifferentPatient,
           isTelemedicine,
           bookingDraft,
           pendingPaymentBooking,
@@ -250,6 +252,7 @@ export function PatientPortalProvider({
     )
   }, [
     bookingDraft,
+    isDifferentPatient,
     isTelemedicine,
     patientNameInput,
     patientPhoneInput,
@@ -586,6 +589,7 @@ export function PatientPortalProvider({
     reason,
     patientNameInput,
     patientPhoneInput,
+    isDifferentPatient,
     isTelemedicine,
     bookingDraft,
     verifiedDoctors,
@@ -603,6 +607,7 @@ export function PatientPortalProvider({
     setReason,
     setPatientNameInput,
     setPatientPhoneInput,
+    setIsDifferentPatient,
     setIsTelemedicine,
     clearBookingDraft,
     prepareBookingFromAnalysis,

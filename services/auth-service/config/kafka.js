@@ -9,6 +9,10 @@ const producer = kafka.producer();
 let isProducerConnected = false;
 
 const initializeProducer = async () => {
+  if (isProducerConnected) {
+    return true;
+  }
+
   try {
     await producer.connect();
     isProducerConnected = true;
@@ -26,8 +30,11 @@ const initializeProducer = async () => {
 
 const sendAuthEvent = async (eventType, data) => {
   if (!isProducerConnected) {
-    console.warn(`Skipping auth event "${eventType}" because Kafka is unavailable`);
-    return false;
+    const reconnected = await initializeProducer();
+    if (!reconnected) {
+      console.warn(`Skipping auth event "${eventType}" because Kafka is unavailable`);
+      return false;
+    }
   }
 
   try {
@@ -47,6 +54,7 @@ const sendAuthEvent = async (eventType, data) => {
     console.log(`Auth event sent: ${eventType}`);
     return true;
   } catch (error) {
+    isProducerConnected = false;
     console.error('Error sending auth event:', error);
     return false;
   }

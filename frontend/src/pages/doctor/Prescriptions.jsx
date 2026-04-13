@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import ModernSelect from '../../components/ModernSelect'
+import ModernSearchBar from '../../components/ModernSearchBar'
 import StatusPill from '../../components/StatusPill'
 import { fetchPatientLatestSymptomAnalysis } from '../../utils/patientService'
 import DoctorPortalPage from './DoctorPortalPage'
@@ -340,14 +342,15 @@ function PrescriptionsContent() {
         </div>
         <p>Search by patient, medication, notes, or appointment ID to jump straight to a record.</p>
         <div className="doctor-toolbar">
-          <label className="doctor-compact-field doctor-prescription-search doctor-prescription-search-top">
-            Search history
-            <input
+          <div className="doctor-compact-field doctor-prescription-search doctor-prescription-search-top">
+            <span style={{ marginBottom: '0.5rem', display: 'block' }}>Search history</span>
+            <ModernSearchBar
               value={historyFilter}
               onChange={(event) => setHistoryFilter(event.target.value)}
+              onReset={() => setHistoryFilter('')}
               placeholder="Search by patient, medication, notes, or appointment ID"
             />
-          </label>
+          </div>
         </div>
       </section>
 
@@ -387,40 +390,43 @@ function PrescriptionsContent() {
 
           <form className="analysis-form" onSubmit={handleIssuePrescription}>
             <div className="doctor-prescription-form-grid">
-              <label className="doctor-select-field">
-                Patient
-                <select value={prescriptionValues.patientId} onChange={handlePatientSelect}>
-                  <option value="">Select patient</option>
-                  {patientOptions.map((patient) => (
-                    <option key={patient.id} value={patient.id}>
-                      {patient.name} ({formatCompactId(patient.id)})
-                    </option>
-                  ))}
-                </select>
+              <div className="doctor-compact-field doctor-select-field">
+                <span>Patient</span>
+                <ModernSelect
+                  value={prescriptionValues.patientId}
+                  onChange={handlePatientSelect}
+                  placeholder="Select patient"
+                  options={patientOptions.map((patient) => ({
+                    value: patient.id,
+                    label: `${patient.name} (${formatCompactId(patient.id)})`,
+                  }))}
+                />
                 <small className="doctor-field-hint">
                   {prescriptionValues.patientId
                     ? `Patient ID: ${prescriptionValues.patientId}`
                     : 'Choose the patient who should receive this prescription.'}
                 </small>
-              </label>
+              </div>
 
-              <label className="doctor-select-field">
-                Appointment
-                <select value={prescriptionValues.appointmentId} onChange={handleAppointmentSelect}>
-                  <option value="">Standalone prescription</option>
-                  {selectedPatientAppointments.map((appointment) => (
-                    <option key={appointment.id} value={appointment.id}>
-                      {formatDate(appointment.appointment_date)} | {formatTime(appointment.start_time)} |{' '}
-                      {(appointment.status || 'pending').replace(/_/g, ' ')}
-                    </option>
-                  ))}
-                </select>
+              <div className="doctor-compact-field doctor-select-field">
+                <span>Appointment</span>
+                <ModernSelect
+                  value={prescriptionValues.appointmentId}
+                  onChange={handleAppointmentSelect}
+                  placeholder="Standalone prescription"
+                  options={selectedPatientAppointments.map((appointment) => ({
+                    value: appointment.id,
+                    label: `${formatDate(appointment.appointment_date)} | ${formatTime(
+                      appointment.start_time,
+                    )} | ${(appointment.status || 'pending').replace(/_/g, ' ')}`,
+                  }))}
+                />
                 <small className="doctor-field-hint">
                   {prescriptionValues.appointmentId
                     ? 'This prescription will stay linked to the selected visit.'
                     : 'Keep this as a standalone prescription if no visit should be attached.'}
                 </small>
-              </label>
+              </div>
             </div>
 
             <label>

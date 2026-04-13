@@ -16,6 +16,8 @@ html,
 body,
 #root {
   min-height: 100%;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -24,6 +26,7 @@ body {
   min-height: 100vh;
   color: #0d1f18;
   background: #f7fbf8;
+  overflow-x: hidden;
 }
 
 button,

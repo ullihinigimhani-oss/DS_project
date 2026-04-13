@@ -97,6 +97,8 @@ export default function App() {
   const [authBusy, setAuthBusy] = useState(false)
   const [authMessage, setAuthMessage] = useState('')
   const [authError, setAuthError] = useState('')
+  const [doctorSearch, setDoctorSearch] = useState('')
+  const [doctorSpecialtyFilter, setDoctorSpecialtyFilter] = useState('all')
   const [session, setSession] = useState(null)
   const [loginValues, setLoginValues] = useState({
     email: '',
@@ -121,6 +123,7 @@ export default function App() {
   const isDoctorPortalRoute = currentPath.startsWith('/doctor/')
   const isPatientPortalRoute = currentPath.startsWith('/patient')
   const isAdminPortalRoute = currentPath === '/admin' || currentPath.startsWith('/admin/')
+  const isPublicDoctorsRoute = currentPath === '/doctors'
   const isAuthRoute = currentPath === '/login' || currentPath === '/register'
   const isHomeRoute = currentPath === '/' || currentPath === '/Home'
   const activeRole = session?.role || loginValues.role
@@ -146,6 +149,34 @@ export default function App() {
       },
     ]
   }, [activeRole, doctorDirectory.length, session])
+
+  const doctorSpecialtyOptions = useMemo(() => {
+    const specialties = Array.from(
+      new Set(
+        doctorDirectory
+          .map((doctor) => doctor.specialization || 'General Practice')
+          .filter(Boolean),
+      ),
+    )
+
+    return ['all', ...specialties.sort((left, right) => left.localeCompare(right))]
+  }, [doctorDirectory])
+
+  const filteredPublicDoctors = useMemo(() => {
+    const query = String(doctorSearch || '').toLowerCase().trim()
+
+    return doctorDirectory.filter((doctor) => {
+      const name = String(doctor.name || '').toLowerCase()
+      const specialization = String(doctor.specialization || 'General Practice').toLowerCase()
+      const matchesSearch =
+        !query || name.includes(query) || specialization.includes(query)
+      const matchesSpecialty =
+        doctorSpecialtyFilter === 'all' ||
+        (doctor.specialization || 'General Practice') === doctorSpecialtyFilter
+
+      return matchesSearch && matchesSpecialty
+    })
+  }, [doctorDirectory, doctorSearch, doctorSpecialtyFilter])
 
   useEffect(() => {
     const handlePopState = () => {
@@ -592,40 +623,164 @@ export default function App() {
   }
 
   const renderDoctorsPage = () => (
-    <SectionCard
-      title="Doctor Directory"
-      subtitle="Approved doctor profiles from doctor-service, presented as the live discovery surface for the patient journey."
-    >
-      {directoryState === 'loading' ? <p className="empty-state">Loading doctors...</p> : null}
-      {directoryState === 'error' ? (
-        <p className="empty-state">Doctor directory is not available yet.</p>
-      ) : null}
-      {directoryState === 'success' && doctorDirectory.length === 0 ? (
-        <p className="empty-state">No approved doctors are available yet.</p>
-      ) : null}
+    <section className="public-doctors-page">
+      <div className="public-doctors-shell">
+        <section className="public-doctors-hero">
+          <div className="public-doctors-hero-copy">
+            <p className="public-doctors-kicker">Doctor directory</p>
+            <h1>Find verified specialists with a cleaner, faster booking path.</h1>
+            <p>
+              Explore approved doctors across the platform, search by name or specialty, and move
+              into booking from a discovery surface that matches the rest of Arogya.
+            </p>
+          </div>
 
-      <div className="doctor-list">
-        {doctorDirectory.map((doctor) => (
-          <article key={doctor.doctor_id} className="doctor-card">
-            <div className="doctor-topline">
-              <StatusPill
-                status={doctor.verification_status === 'approved' ? 'ok' : 'warn'}
-                label={doctor.verification_status === 'approved' ? 'Verified Doctor' : 'Unverified'}
-              />
-              <span className="doctor-id">{doctor.doctor_id}</span>
+          <div className="public-doctors-hero-stats">
+            <article className="public-doctors-stat-card">
+              <span>Listed doctors</span>
+              <strong>{doctorDirectory.length}</strong>
+            </article>
+            <article className="public-doctors-stat-card">
+              <span>Visible now</span>
+              <strong>{filteredPublicDoctors.length}</strong>
+            </article>
+            <article className="public-doctors-stat-card">
+              <span>Verified</span>
+              <strong>
+                {
+                  doctorDirectory.filter(
+                    (doctor) => doctor.verification_status === 'approved',
+                  ).length
+                }
+              </strong>
+            </article>
+          </div>
+        </section>
+
+        <section className="public-doctors-toolbar">
+          <label className="public-doctors-search">
+            <span>Search doctors</span>
+            <input
+              type="text"
+              value={doctorSearch}
+              onChange={(event) => setDoctorSearch(event.target.value)}
+              placeholder="Search by doctor name or specialization..."
+            />
+          </label>
+
+          <label className="public-doctors-filter">
+            <span>Specialty</span>
+            <select
+              value={doctorSpecialtyFilter}
+              onChange={(event) => setDoctorSpecialtyFilter(event.target.value)}
+            >
+              {doctorSpecialtyOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option === 'all' ? 'All specialties' : option}
+                </option>
+              ))}
+            </select>
+          </label>
+        </section>
+
+        {directoryState === 'loading' ? (
+          <section className="public-doctors-empty">
+            <strong>Loading doctors...</strong>
+            <p>The live directory is being prepared now.</p>
+          </section>
+        ) : null}
+
+        {directoryState === 'error' ? (
+          <section className="public-doctors-empty">
+            <strong>Doctor directory is not available yet.</strong>
+            <p>Please try again in a moment while the service reconnects.</p>
+          </section>
+        ) : null}
+
+        {directoryState === 'success' && doctorDirectory.length === 0 ? (
+          <section className="public-doctors-empty">
+            <strong>No approved doctors are available yet.</strong>
+            <p>Once doctors complete verification, they will appear here automatically.</p>
+          </section>
+        ) : null}
+
+        {directoryState === 'success' && doctorDirectory.length > 0 && filteredPublicDoctors.length === 0 ? (
+          <section className="public-doctors-empty">
+            <strong>No doctors match this search.</strong>
+            <p>Try a broader search or switch the specialty filter back to all.</p>
+          </section>
+        ) : null}
+
+        {directoryState === 'success' && filteredPublicDoctors.length > 0 ? (
+          <section className="public-doctors-results">
+            <div className="public-doctors-results-topline">
+              <div>
+                <p className="public-doctors-kicker">Available doctors</p>
+                <h2>Browse approved doctors and move into booking.</h2>
+              </div>
+              <span className="public-doctors-results-count">{filteredPublicDoctors.length} results</span>
             </div>
-            <div>
-              <h3>{doctor.name || 'Doctor'}</h3>
-              <p>{doctor.specialization || 'General Practice'}</p>
+
+            <div className="public-doctors-grid">
+              {filteredPublicDoctors.map((doctor) => (
+                <article key={doctor.doctor_id} className="public-doctor-card">
+                  <div className="public-doctor-card-head">
+                    <div className="public-doctor-avatar">
+                      <span>
+                        {String(doctor.name || 'Doctor')
+                          .split(' ')
+                          .map((part) => part[0])
+                          .join('')
+                          .slice(0, 2)
+                          .toUpperCase()}
+                      </span>
+                    </div>
+
+                    <div className="public-doctor-head-copy">
+                      <strong>{doctor.name || 'Doctor'}</strong>
+                      <span>{doctor.specialization || 'General Practice'}</span>
+                    </div>
+                  </div>
+
+                  <div className="public-doctor-card-topline">
+                    <StatusPill
+                      status={doctor.verification_status === 'approved' ? 'ok' : 'warn'}
+                      label={doctor.verification_status === 'approved' ? 'Verified Doctor' : 'Unverified'}
+                    />
+                    <span className="public-doctor-id">ID {doctor.doctor_id}</span>
+                  </div>
+
+                  <p className="public-doctor-card-copy">
+                    Approved doctors can be selected immediately in the patient booking flow.
+                  </p>
+
+                  <div className="public-doctor-meta-grid">
+                    <article className="public-doctor-meta-card">
+                      <span>Consultation fee</span>
+                      <strong>{doctor.consultation_fee ?? 'N/A'}</strong>
+                    </article>
+                    <article className="public-doctor-meta-card">
+                      <span>Specialty</span>
+                      <strong>{doctor.specialization || 'General Practice'}</strong>
+                    </article>
+                  </div>
+
+                  <div className="public-doctor-card-footer">
+                    <button
+                      type="button"
+                      className="public-doctor-button"
+                      onClick={() => navigateTo('/login')}
+                    >
+                      Book appointment
+                    </button>
+                  </div>
+                </article>
+              ))}
             </div>
-            <div className="doctor-meta">
-              <span>Consultation fee</span>
-              <strong>{doctor.consultation_fee ?? 'N/A'}</strong>
-            </div>
-          </article>
-        ))}
+          </section>
+        ) : null}
       </div>
-    </SectionCard>
+    </section>
   )
 
   const renderAiPage = () => (
@@ -721,6 +876,8 @@ export default function App() {
       className={`app-shell ${isDoctorPortalRoute ? 'doctor-route-shell' : ''} ${
         isPatientPortalRoute ? 'patient-route-shell' : ''
       } ${isAdminPortalRoute ? 'admin-route-shell' : ''} ${
+        isPublicDoctorsRoute ? 'public-directory-shell' : ''
+      } ${
         isAuthRoute ? 'app-shell--auth' : ''
       } ${isHomeRoute ? 'home-route-shell' : ''
       }`.trim()}

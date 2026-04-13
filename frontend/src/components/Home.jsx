@@ -119,9 +119,6 @@ export default function Home({
           <button type="button" className="hp-nav-link" onClick={() => navigateTo('/doctors')}>
             Doctors
           </button>
-          <button type="button" className="hp-nav-link" onClick={() => navigateTo('/patient/ai-symptoms')}>
-            AI Symptom Checker
-          </button>
           <button type="button" className="hp-nav-link" onClick={() => navigateTo('/login')}>
             Sign in
           </button>

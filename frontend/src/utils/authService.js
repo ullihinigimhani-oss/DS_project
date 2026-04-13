@@ -1,13 +1,35 @@
 import { gatewayBaseUrl } from './api'
 
-async function handleAuthResponse(response) {
-  const data = await response.json()
+function getAuthHeaders(token, extraHeaders = {}) {
+  return {
+    Authorization: `Bearer ${token}`,
+    ...extraHeaders,
+  }
+}
+
+async function readJson(response) {
+  const raw = await response.text()
+  let data = null
+
+  try {
+    data = raw ? JSON.parse(raw) : null
+  } catch {
+    data = null
+  }
 
   if (!response.ok) {
-    throw new Error(data.message || data.error || 'Authentication request failed')
+    throw new Error(data?.message || data?.error || 'Authentication request failed')
+  }
+
+  if (!data) {
+    throw new Error('Authentication service returned an unexpected response format')
   }
 
   return data
+}
+
+async function handleAuthResponse(response) {
+  return readJson(response)
 }
 
 /**
@@ -65,4 +87,48 @@ export async function registerUser(payload) {
   })
 
   return handleAuthResponse(response)
+}
+
+export async function fetchAdminUsers(token, options = {}) {
+  const search = new URLSearchParams()
+
+  Object.entries(options).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '' && value !== 'all') {
+      search.set(key, String(value))
+    }
+  })
+
+  const response = await fetch(`${gatewayBaseUrl}/api/admin/users?${search.toString()}`, {
+    headers: getAuthHeaders(token),
+  })
+
+  return readJson(response)
+}
+
+export async function toggleAdminUserStatus(token, userId, isActive) {
+  const response = await fetch(`${gatewayBaseUrl}/api/admin/users/${encodeURIComponent(userId)}/status`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(token, {
+      'Content-Type': 'application/json',
+    }),
+    body: JSON.stringify({ is_active: isActive }),
+  })
+
+  return readJson(response)
+}
+
+export async function fetchAdminAuditLogs(token, options = {}) {
+  const search = new URLSearchParams()
+
+  Object.entries(options).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '' && value !== 'all') {
+      search.set(key, String(value))
+    }
+  })
+
+  const response = await fetch(`${gatewayBaseUrl}/api/admin/audit-logs?${search.toString()}`, {
+    headers: getAuthHeaders(token),
+  })
+
+  return readJson(response)
 }

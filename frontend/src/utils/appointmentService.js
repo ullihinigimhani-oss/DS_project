@@ -93,3 +93,35 @@ export async function cancelPatientBooking(token, appointmentId) {
 
   return readJson(response)
 }
+
+export async function fetchAdminAppointmentStats(token, filters = {}) {
+  const search = new URLSearchParams()
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '' && value !== 'all') {
+      search.set(key, String(value))
+    }
+  })
+
+  const response = await fetch(`${appointmentApiBase}/admin/stats?${search.toString()}`, {
+    headers: getAuthHeaders(token),
+  })
+
+  return readJson(response)
+}
+
+export async function fetchAdminAppointments(token, options = {}) {
+  const search = new URLSearchParams()
+
+  Object.entries(options).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '' && value !== 'all') {
+      search.set(key, String(value))
+    }
+  })
+
+  const response = await fetch(`${appointmentApiBase}/admin/all?${search.toString()}`, {
+    headers: getAuthHeaders(token),
+  })
+
+  return readJson(response)
+}

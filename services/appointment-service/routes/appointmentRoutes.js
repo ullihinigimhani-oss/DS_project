@@ -9,6 +9,7 @@ router.get('/doctors/:doctorId/slots', appointmentController.getDoctorAvailableS
 
 // Admin stats
 router.get('/admin/stats', authMiddleware, requireRole('admin'), appointmentController.getAdminStats);
+router.get('/admin/all', authMiddleware, requireRole('admin'), appointmentController.getAllAppointmentsForAdmin);
 
 // Doctor-facing — must be authenticated
 router.get('/doctor', authMiddleware, appointmentController.getDoctorAppointments);

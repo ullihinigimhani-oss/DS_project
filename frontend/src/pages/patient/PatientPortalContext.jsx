@@ -7,6 +7,7 @@ import {
 } from '../../utils/appointmentService'
 
 const PatientPortalContext = createContext(null)
+const patientPortalStateStorageKey = 'patient-portal-state'
 
 export const patientSidebarItems = [
   { id: 'overview', label: 'Overview', path: '/patient' },
@@ -57,6 +58,87 @@ export function getInitials(name) {
     .toUpperCase()
 }
 
+function readPersistedPortalState(userId) {
+  if (!userId || typeof window === 'undefined') {
+    return {}
+  }
+
+  try {
+    const raw = window.sessionStorage.getItem(patientPortalStateStorageKey)
+    if (!raw) return {}
+
+    const parsed = JSON.parse(raw)
+    if (parsed?.userId !== userId) {
+      return {}
+    }
+
+    return parsed.state || {}
+  } catch {
+    return {}
+  }
+}
+
+function normalizeText(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function buildSpecialistKeywords(specialist) {
+  const normalized = normalizeText(specialist)
+
+  if (!normalized) {
+    return ['general']
+  }
+
+  if (
+    normalized.includes('general physician') ||
+    normalized.includes('general practitioner') ||
+    normalized.includes('general practice')
+  ) {
+    return ['general']
+  }
+
+  if (normalized.includes('cardiolog')) return ['cardio']
+  if (normalized.includes('pulmonolog')) return ['pulmo', 'respir']
+  if (normalized.includes('neurolog')) return ['neuro']
+  if (normalized.includes('gastro')) return ['gastro']
+  if (normalized.includes('dermatolog')) return ['derma', 'skin']
+  if (normalized.includes('ent')) return ['ent', 'ear', 'nose', 'throat']
+
+  return normalized.split(' ').filter(Boolean)
+}
+
+function doctorMatchesSpecialist(doctor, specialist) {
+  const specialization = normalizeText(doctor?.specialization)
+  const keywords = buildSpecialistKeywords(specialist)
+
+  if (!specialization) {
+    return keywords.includes('general')
+  }
+
+  return keywords.some((keyword) => specialization.includes(keyword))
+}
+
+function buildBookingReason({ analysis, topCondition, symptoms, recommendedSpecialist, carePriority }) {
+  const summary = topCondition?.name || 'Needs more clinical review'
+  const detectedSymptoms = Array.isArray(analysis?.detectedSymptoms)
+    ? analysis.detectedSymptoms.join(', ')
+    : ''
+  const symptomNarrative = symptoms?.trim() || detectedSymptoms
+
+  return [
+    `AI symptom checker summary: ${summary}.`,
+    `Recommended specialist: ${recommendedSpecialist}.`,
+    `Care priority: ${carePriority}.`,
+    symptomNarrative ? `Reported symptoms: ${symptomNarrative}` : null,
+  ]
+    .filter(Boolean)
+    .join('\n')
+}
+
 export function usePatientPortal() {
   const value = useContext(PatientPortalContext)
 
@@ -76,14 +158,15 @@ export function PatientPortalProvider({
   topCondition,
   children,
 }) {
+  const persistedState = readPersistedPortalState(session?.userId)
   const isConnectedPatient =
     activeRole === 'patient' &&
     session?.role === 'patient' &&
     session?.mode === 'connected' &&
     session?.token
 
-  const [selectedDoctorId, setSelectedDoctorId] = useState('')
-  const [weekStart, setWeekStart] = useState(getMondayString())
+  const [selectedDoctorId, setSelectedDoctorId] = useState(persistedState.selectedDoctorId || '')
+  const [weekStart, setWeekStart] = useState(persistedState.weekStart || getMondayString())
   const [availability, setAvailability] = useState([])
   const [availabilityLoading, setAvailabilityLoading] = useState(false)
   const [bookings, setBookings] = useState([])
@@ -91,8 +174,9 @@ export function PatientPortalProvider({
   const [bookingError, setBookingError] = useState('')
   const [bookingMessage, setBookingMessage] = useState('')
   const [bookingBusyId, setBookingBusyId] = useState('')
-  const [reason, setReason] = useState('')
-  const [isTelemedicine, setIsTelemedicine] = useState(false)
+  const [reason, setReason] = useState(persistedState.reason || '')
+  const [isTelemedicine, setIsTelemedicine] = useState(Boolean(persistedState.isTelemedicine))
+  const [bookingDraft, setBookingDraft] = useState(persistedState.bookingDraft || null)
 
   const verifiedDoctors = useMemo(
     () => doctorDirectory.filter((doctor) => doctor.verification_status === 'approved'),
@@ -106,6 +190,29 @@ export function PatientPortalProvider({
       setSelectedDoctorId(verifiedDoctors[0]?.doctor_id || '')
     }
   }, [selectedDoctorId, verifiedDoctors])
+
+  useEffect(() => {
+    if (!session?.userId || typeof window === 'undefined') {
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.removeItem(patientPortalStateStorageKey)
+      }
+      return
+    }
+
+    window.sessionStorage.setItem(
+      patientPortalStateStorageKey,
+      JSON.stringify({
+        userId: session.userId,
+        state: {
+          selectedDoctorId,
+          weekStart,
+          reason,
+          isTelemedicine,
+          bookingDraft,
+        },
+      }),
+    )
+  }, [bookingDraft, isTelemedicine, reason, selectedDoctorId, session?.userId, weekStart])
 
   const loadBookings = async () => {
     if (!isConnectedPatient) {
@@ -157,6 +264,8 @@ export function PatientPortalProvider({
   const recentHistory = history.slice(0, 4)
   const selectedDoctor = verifiedDoctors.find((doctor) => doctor.doctor_id === selectedDoctorId) || null
   const availableSlots = availability.filter((slot) => !slot.isBooked)
+  const suggestedDoctor =
+    verifiedDoctors.find((doctor) => doctor.doctor_id === bookingDraft?.matchedDoctorId) || null
 
   const bookingSummary = useMemo(() => {
     const today = new Date().toISOString().split('T')[0]
@@ -200,6 +309,47 @@ export function PatientPortalProvider({
     },
   ]
 
+  const clearBookingDraft = () => {
+    setBookingDraft(null)
+    setReason('')
+    setBookingMessage('')
+  }
+
+  const prepareBookingFromAnalysis = ({ analysis: nextAnalysis, topCondition: nextTopCondition, symptoms: nextSymptoms }) => {
+    const recommendedSpecialist =
+      nextAnalysis?.recommendedSpecialist ||
+      nextAnalysis?.primaryModel?.recommendedSpecialist ||
+      'General Physician'
+    const carePriority =
+      nextAnalysis?.consultationAdvice?.level || nextAnalysis?.severity || 'routine'
+    const matchedDoctor = verifiedDoctors.find((doctor) =>
+      doctorMatchesSpecialist(doctor, recommendedSpecialist),
+    )
+    const nextReason = buildBookingReason({
+      analysis: nextAnalysis,
+      topCondition: nextTopCondition,
+      symptoms: nextSymptoms,
+      recommendedSpecialist,
+      carePriority,
+    })
+
+    setSelectedDoctorId(matchedDoctor?.doctor_id || verifiedDoctors[0]?.doctor_id || '')
+    setReason(nextReason)
+    setIsTelemedicine(false)
+    setWeekStart(getMondayString())
+    setBookingError('')
+    setBookingMessage('Appointment booking was prefilled from your latest symptom guidance.')
+    setBookingDraft({
+      source: nextAnalysis?.source || 'analysis',
+      topConditionName: nextTopCondition?.name || 'Needs more clinical review',
+      recommendedSpecialist,
+      carePriority,
+      matchedDoctorId: matchedDoctor?.doctor_id || null,
+      matchedDoctorName: matchedDoctor?.name || '',
+      symptomSummary: nextReason,
+    })
+  }
+
   const handleCreateBooking = async (slot) => {
     if (!isConnectedPatient || !selectedDoctor) {
       setBookingError('Sign in as a patient to create a real booking.')
@@ -227,6 +377,7 @@ export function PatientPortalProvider({
 
       setReason('')
       setIsTelemedicine(false)
+      setBookingDraft(null)
       await Promise.all([loadBookings(), loadAvailability()])
       setBookingMessage('Appointment request created successfully.')
       return true
@@ -279,9 +430,11 @@ export function PatientPortalProvider({
     bookingBusyId,
     reason,
     isTelemedicine,
+    bookingDraft,
     verifiedDoctors,
     recentHistory,
     selectedDoctor,
+    suggestedDoctor,
     availableSlots,
     bookingSummary,
     patientMetrics,
@@ -289,6 +442,8 @@ export function PatientPortalProvider({
     setWeekStart,
     setReason,
     setIsTelemedicine,
+    clearBookingDraft,
+    prepareBookingFromAnalysis,
     handleCreateBooking,
     handleCancelBooking,
     handleDoctorSelect,

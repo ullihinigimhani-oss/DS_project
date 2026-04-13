@@ -7,9 +7,11 @@ function BookAppointmentContent({ onNavigate }) {
     availableSlots,
     availabilityLoading,
     bookingBusyId,
+    bookingDraft,
     selectedDoctorId,
     verifiedDoctors,
     selectedDoctor,
+    suggestedDoctor,
     weekStart,
     isTelemedicine,
     reason,
@@ -17,6 +19,7 @@ function BookAppointmentContent({ onNavigate }) {
     setWeekStart,
     setIsTelemedicine,
     setReason,
+    clearBookingDraft,
     handleCreateBooking,
   } = usePatientPortal()
 
@@ -27,6 +30,53 @@ function BookAppointmentContent({ onNavigate }) {
           <h3>Book an appointment</h3>
           <span className="patient-mini-badge">{availableSlots.length} open slots</span>
         </div>
+
+        {bookingDraft ? (
+          <div className="patient-booking-draft">
+            <div className="patient-booking-draft-topline">
+              <div>
+                <span>Prepared from AI symptom guidance</span>
+                <strong>{bookingDraft.topConditionName}</strong>
+              </div>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={clearBookingDraft}
+              >
+                Clear draft
+              </button>
+            </div>
+            <div className="patient-booking-draft-grid">
+              <article className="patient-booking-draft-card">
+                <span>Recommended specialist</span>
+                <strong>{bookingDraft.recommendedSpecialist}</strong>
+                <p>We used the latest AI guidance to suggest the most relevant clinician.</p>
+              </article>
+              <article className="patient-booking-draft-card">
+                <span>Care priority</span>
+                <strong>{bookingDraft.carePriority}</strong>
+                <p>
+                  {bookingDraft.carePriority === 'urgent'
+                    ? 'Try to arrange care as soon as possible.'
+                    : 'You can use the available slot list below to choose a suitable visit.'}
+                </p>
+              </article>
+              <article className="patient-booking-draft-card">
+                <span>Suggested doctor</span>
+                <strong>{suggestedDoctor?.name || selectedDoctor?.name || 'Select a doctor'}</strong>
+                <p>
+                  {suggestedDoctor
+                    ? `${suggestedDoctor.specialization || 'General Practice'} matched the recommended specialty.`
+                    : 'No exact specialist match was found, so you can choose any verified doctor.'}
+                </p>
+              </article>
+            </div>
+            <div className="patient-booking-draft-notes">
+              <strong>Visit summary</strong>
+              <p>{bookingDraft.symptomSummary}</p>
+            </div>
+          </div>
+        ) : null}
 
         {!isConnectedPatient ? (
           <p className="empty-state">

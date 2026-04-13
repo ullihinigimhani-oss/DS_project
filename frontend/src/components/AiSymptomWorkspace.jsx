@@ -49,6 +49,8 @@ export default function AiSymptomWorkspace({
   onAnalyze,
   onRefreshHistory,
   onNavigate,
+  onPrimaryAction,
+  primaryActionLabel,
   contextLabel = 'Your Symptom Workspace',
   contextSubtitle = 'A private symptom-check journey for the signed-in account, with personal history and preliminary guidance.',
 }) {
@@ -218,9 +220,16 @@ export default function AiSymptomWorkspace({
                 <button
                   type="button"
                   className="analysis-primary-cta"
-                  onClick={() => onNavigate(getPrimaryActionPath(session))}
+                  onClick={() => {
+                    if (onPrimaryAction) {
+                      onPrimaryAction({ analysis, topCondition, symptoms, session })
+                      return
+                    }
+
+                    onNavigate(getPrimaryActionPath(session))
+                  }}
                 >
-                  Book appointment
+                  {primaryActionLabel || 'Book appointment'}
                 </button>
               </div>
 

@@ -1127,6 +1127,67 @@ button:disabled {
   margin-top: 12px;
 }
 
+.patient-booking-draft {
+  margin-top: 16px;
+  padding: 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(31, 122, 111, 0.14);
+  background: linear-gradient(180deg, rgba(233, 247, 244, 0.92), rgba(255, 255, 255, 0.9));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.patient-booking-draft-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.patient-booking-draft-topline span,
+.patient-booking-draft-card span,
+.patient-booking-draft-notes strong {
+  display: block;
+  color: #5e7d7c;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+.patient-booking-draft-topline strong,
+.patient-booking-draft-card strong {
+  display: block;
+  margin-top: 8px;
+  color: #1f4851;
+}
+
+.patient-booking-draft-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.patient-booking-draft-card {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(46, 70, 98, 0.08);
+}
+
+.patient-booking-draft-notes {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(46, 70, 98, 0.08);
+}
+
+.patient-booking-draft-notes p {
+  margin: 10px 0 0;
+  white-space: pre-line;
+}
+
 .patient-booking-form,
 .patient-slot-panel {
   display: grid;
@@ -2978,7 +3039,8 @@ button:disabled {
   }
 
   .patient-booking-shell,
-  .patient-directory-grid {
+  .patient-directory-grid,
+  .patient-booking-draft-grid {
     grid-template-columns: 1fr;
   }
 
@@ -3163,6 +3225,7 @@ button:disabled {
   .doctor-topline,
   .doctor-card-topline,
   .patient-card-topline,
+  .patient-booking-draft-topline,
   .preview-card-top,
   .home-spotlight-header,
   .history-header,

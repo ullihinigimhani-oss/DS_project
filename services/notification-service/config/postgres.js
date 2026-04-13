@@ -20,7 +20,9 @@ const initializeDatabase = async (retries = 10, delayMs = 3000) => {
         CREATE TABLE IF NOT EXISTS notifications (
           id SERIAL PRIMARY KEY,
           user_id VARCHAR(255) NOT NULL,
+          role VARCHAR(50),
           type VARCHAR(50) NOT NULL,
+          priority VARCHAR(20) DEFAULT 'normal',
           title VARCHAR(255) NOT NULL,
           message TEXT NOT NULL,
           read BOOLEAN DEFAULT FALSE,
@@ -29,8 +31,16 @@ const initializeDatabase = async (retries = 10, delayMs = 3000) => {
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
+        ALTER TABLE notifications
+          ADD COLUMN IF NOT EXISTS role VARCHAR(50);
+
+        ALTER TABLE notifications
+          ADD COLUMN IF NOT EXISTS priority VARCHAR(20) DEFAULT 'normal';
+
         CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
         CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(user_id, read);
+        CREATE INDEX IF NOT EXISTS idx_notifications_role ON notifications(role);
+        CREATE INDEX IF NOT EXISTS idx_notifications_type ON notifications(type);
       `);
 
       console.log('[DB] Notifications table ready');

@@ -16,6 +16,7 @@ export const patientSidebarItems = [
   { id: 'doctors', label: 'Doctors', path: '/patient/doctors' },
   { id: 'Consultations', label: 'Join Consultation', path: '/patient' },
   { id: 'symptoms', label: 'Symptom History', path: '/patient/symptom-history' },
+  { id: 'notifications', label: 'Notifications', path: '/patient/notifications' },
   { id: 'profile', label: 'Profile', path: '/patient/profile' },
 ]
 

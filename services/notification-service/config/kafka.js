@@ -97,9 +97,11 @@ const handleEvent = async (event) => {
         if (data.userId) {
           await Notification.create({
             userId: data.userId,
+            role: data.userType || 'patient',
             type: 'registration',
-            title: 'Welcome to MediConnect',
-            message: 'Your account has been successfully created',
+            priority: 'normal',
+            title: 'Welcome to Arogya',
+            message: 'Your account has been created successfully. We will keep important updates here.',
             data: { email: data.email },
           });
         }
@@ -116,7 +118,9 @@ const handleEvent = async (event) => {
         if (data.patientId) {
           await Notification.create({
             userId: data.patientId,
+            role: 'patient',
             type: 'appointment_pending',
+            priority: 'normal',
             title: 'Appointment Request Received',
             message: `Your appointment request with ${data.doctorName || 'Dr. ...'} on ${formatDate(data.appointmentDate)} at ${formatTime(data.startTime)} is pending approval`,
             data: {
@@ -129,7 +133,9 @@ const handleEvent = async (event) => {
         if (data.doctorId) {
           await Notification.create({
             userId: data.doctorId,
+            role: 'doctor',
             type: 'appointment_new_request',
+            priority: 'normal',
             title: 'New Appointment Request',
             message: `${data.patientName || 'A patient'} has requested an appointment on ${formatDate(data.appointmentDate)} at ${formatTime(data.startTime)}`,
             data: {
@@ -145,7 +151,9 @@ const handleEvent = async (event) => {
         if (data.doctorId) {
           await Notification.create({
             userId: data.doctorId,
+            role: 'doctor',
             type: 'appointment_cancelled',
+            priority: 'normal',
             title: 'Appointment Cancelled',
             message: `${data.patientName || 'A patient'} has cancelled their appointment on ${formatDate(data.appointmentDate)} at ${formatTime(data.startTime)}`,
             data: {
@@ -158,7 +166,9 @@ const handleEvent = async (event) => {
         if (data.patientId) {
           await Notification.create({
             userId: data.patientId,
+            role: 'patient',
             type: 'appointment_cancelled',
+            priority: 'normal',
             title: 'Appointment Cancelled',
             message: `Your appointment with ${data.doctorName || 'Dr. ...'} on ${formatDate(data.appointmentDate)} at ${formatTime(data.startTime)} has been cancelled`,
             data: {
@@ -177,7 +187,9 @@ const handleEvent = async (event) => {
             : `Your appointment request with ${data.doctorName || 'Dr. ...'} on ${formatDate(data.appointmentDate)} was declined`;
           await Notification.create({
             userId: data.patientId,
+            role: 'patient',
             type: 'appointment_rejected',
+            priority: 'normal',
             title: 'Appointment Request Declined',
             message,
             data: {
@@ -193,7 +205,9 @@ const handleEvent = async (event) => {
         if (data.patientId) {
           await Notification.create({
             userId: data.patientId,
+            role: 'patient',
             type: 'appointment',
+            priority: data.isTelemedicine ? 'high' : 'normal',
             title: 'Appointment Confirmed',
             message: `Your appointment with ${data.doctorName || 'Dr. ...'} is confirmed on ${formatDate(data.appointmentDate)} at ${formatTime(data.startTime)}`,
             data: {
@@ -218,7 +232,9 @@ const handleEvent = async (event) => {
         if (data.patientId) {
           await Notification.create({
             userId: data.patientId,
+            role: 'patient',
             type: 'reminder',
+            priority: 'high',
             title: 'Upcoming Appointment',
             message: `Reminder: You have an appointment with ${data.doctorName || 'Dr. ...'} on ${formatDate(data.appointmentDate)} at ${formatTime(data.startTime)}`,
             data: {
@@ -243,7 +259,9 @@ const handleEvent = async (event) => {
         if (data.userId) {
           await Notification.create({
             userId: data.userId,
+            role: data.userType || 'patient',
             type: 'payment',
+            priority: 'normal',
             title: 'Payment Successful',
             message: `Payment of $${data.amount} has been processed successfully`,
             data: {
@@ -258,7 +276,9 @@ const handleEvent = async (event) => {
         if (data.userId) {
           await Notification.create({
             userId: data.userId,
+            role: data.userType || 'patient',
             type: 'payment_failed',
+            priority: 'high',
             title: 'Payment Failed',
             message: `Payment of $${data.amount} could not be processed. Please try again.`,
             data: {
@@ -274,7 +294,9 @@ const handleEvent = async (event) => {
         if (data.patientId) {
           await Notification.create({
             userId: data.patientId,
+            role: 'patient',
             type: 'prescription',
+            priority: 'normal',
             title: 'New Prescription',
             message: `A new prescription has been issued by ${data.doctorName || 'Dr. ...'}`,
             data: {

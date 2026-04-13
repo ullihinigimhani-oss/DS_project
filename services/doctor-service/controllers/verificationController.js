@@ -6,6 +6,7 @@
 
 const VerificationModel = require('../models/VerificationModel');
 const { saveFile, deleteFile } = require('../utils/fileStorage');
+const { sendInternalNotification } = require('../services/notificationService');
 
 /**
  * Upload a verification document (file-based)
@@ -182,6 +183,34 @@ exports.submitForVerification = async (req, res) => {
     }
 
     const updatedStatus = await VerificationModel.submitForVerification(doctorId);
+    await sendInternalNotification({
+      notifications: [
+        {
+          userId: doctorId,
+          role: 'doctor',
+          type: 'verification',
+          priority: 'normal',
+          title: 'Verification submitted',
+          message: 'Your verification documents were submitted successfully and are now waiting for admin review.',
+          data: {
+            doctorId,
+            status: updatedStatus.status,
+          },
+        },
+        {
+          userId: 'admin-broadcast',
+          role: 'admin',
+          type: 'verification',
+          priority: 'high',
+          title: 'New doctor verification request',
+          message: `Doctor ${doctorId} submitted verification documents and is waiting for review.`,
+          data: {
+            doctorId,
+            status: updatedStatus.status,
+          },
+        },
+      ],
+    });
 
     res.status(200).json({
       success: true,
@@ -237,6 +266,34 @@ exports.approveVerification = async (req, res) => {
 
     // Approve verification (keep document records and files so admins retain an audit trail)
     const approvedStatus = await VerificationModel.approveVerification(doctorId);
+    await sendInternalNotification({
+      notifications: [
+        {
+          userId: doctorId,
+          role: 'doctor',
+          type: 'verification',
+          priority: 'normal',
+          title: 'Verification approved',
+          message: 'Your doctor account has been verified. Patients can now see you as a verified doctor.',
+          data: {
+            doctorId,
+            status: approvedStatus.status,
+          },
+        },
+        {
+          userId: 'admin-broadcast',
+          role: 'admin',
+          type: 'verification',
+          priority: 'normal',
+          title: 'Doctor verification approved',
+          message: `Doctor ${doctorId} was approved successfully.`,
+          data: {
+            doctorId,
+            status: approvedStatus.status,
+          },
+        },
+      ],
+    });
 
     res.status(200).json({
       success: true,
@@ -277,6 +334,36 @@ exports.rejectVerification = async (req, res) => {
       doctorId,
       reason || 'No reason provided'
     );
+    await sendInternalNotification({
+      notifications: [
+        {
+          userId: doctorId,
+          role: 'doctor',
+          type: 'verification',
+          priority: 'high',
+          title: 'Verification needs attention',
+          message: `Your verification was rejected. Reason: ${reason || 'No reason provided'}`,
+          data: {
+            doctorId,
+            status: rejectedStatus.status,
+            reason: reason || 'No reason provided',
+          },
+        },
+        {
+          userId: 'admin-broadcast',
+          role: 'admin',
+          type: 'verification',
+          priority: 'normal',
+          title: 'Doctor verification rejected',
+          message: `Doctor ${doctorId} was rejected. Reason: ${reason || 'No reason provided'}`,
+          data: {
+            doctorId,
+            status: rejectedStatus.status,
+            reason: reason || 'No reason provided',
+          },
+        },
+      ],
+    });
 
     res
       .status(200)

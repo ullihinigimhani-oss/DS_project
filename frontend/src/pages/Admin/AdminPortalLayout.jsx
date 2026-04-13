@@ -1,4 +1,5 @@
 import { adminSidebarItems, getInitials, useAdminPortal } from './AdminPortalContext'
+import NotificationBell from '../../components/NotificationBell'
 
 export default function AdminPortalLayout({
   currentPath,
@@ -80,11 +81,19 @@ export default function AdminPortalLayout({
             <p className="admin-portal-section-label">{activeNavItem?.label || 'Overview'}</p>
             <h1>{activeNavItem?.label || 'Overview'}</h1>
           </div>
-          <div className="admin-portal-header-user">
-            <div className="admin-avatar small">{getInitials(session?.name)}</div>
-            <div>
-              <strong>{session?.name || 'Admin'}</strong>
-              <span>System operations</span>
+          <div className="portal-header-tools">
+            <NotificationBell
+              token={session?.token}
+              scope="all"
+              pagePath="/admin/notifications"
+              onNavigate={onNavigate}
+            />
+            <div className="admin-portal-header-user">
+              <div className="admin-avatar small">{getInitials(session?.name)}</div>
+              <div>
+                <strong>{session?.name || 'Admin'}</strong>
+                <span>System operations</span>
+              </div>
             </div>
           </div>
         </header>

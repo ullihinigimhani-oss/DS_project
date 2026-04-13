@@ -13,6 +13,13 @@ function formatDateTime(value) {
   return date.toLocaleString()
 }
 
+function formatCompactId(value) {
+  const raw = String(value || '').trim()
+  if (!raw) return 'Not available'
+  if (raw.length <= 12) return raw
+  return `${raw.slice(0, 8)}...${raw.slice(-4)}`
+}
+
 function parseMedicationList(value) {
   if (!value) return []
 
@@ -380,29 +387,39 @@ function PrescriptionsContent() {
 
           <form className="analysis-form" onSubmit={handleIssuePrescription}>
             <div className="doctor-prescription-form-grid">
-              <label>
+              <label className="doctor-select-field">
                 Patient
                 <select value={prescriptionValues.patientId} onChange={handlePatientSelect}>
                   <option value="">Select patient</option>
                   {patientOptions.map((patient) => (
                     <option key={patient.id} value={patient.id}>
-                      {patient.name} ({patient.id})
+                      {patient.name} ({formatCompactId(patient.id)})
                     </option>
                   ))}
                 </select>
+                <small className="doctor-field-hint">
+                  {prescriptionValues.patientId
+                    ? `Patient ID: ${prescriptionValues.patientId}`
+                    : 'Choose the patient who should receive this prescription.'}
+                </small>
               </label>
 
-              <label>
+              <label className="doctor-select-field">
                 Appointment
                 <select value={prescriptionValues.appointmentId} onChange={handleAppointmentSelect}>
                   <option value="">Standalone prescription</option>
                   {selectedPatientAppointments.map((appointment) => (
                     <option key={appointment.id} value={appointment.id}>
                       {formatDate(appointment.appointment_date)} | {formatTime(appointment.start_time)} |{' '}
-                      {appointment.status}
+                      {(appointment.status || 'pending').replace(/_/g, ' ')}
                     </option>
                   ))}
                 </select>
+                <small className="doctor-field-hint">
+                  {prescriptionValues.appointmentId
+                    ? 'This prescription will stay linked to the selected visit.'
+                    : 'Keep this as a standalone prescription if no visit should be attached.'}
+                </small>
               </label>
             </div>
 

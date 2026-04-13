@@ -13,6 +13,7 @@ export const patientSidebarItems = [
   { id: 'overview', label: 'Overview', path: '/patient' },
   { id: 'book', label: 'Book Appointment', path: '/patient/book-appointment' },
   { id: 'bookings', label: 'My Bookings', path: '/patient/my-bookings' },
+  { id: 'prescriptions', label: 'My Prescriptions', path: '/patient/prescriptions' },
   { id: 'doctors', label: 'Doctors', path: '/patient/doctors' },
   { id: 'consultations', label: 'Join Consultation', path: '/patient/consultations' },
   { id: 'symptoms', label: 'Symptom History', path: '/patient/symptom-history' },

@@ -19,6 +19,7 @@ import DoctorProfilePage from './pages/doctor/Profile'
 import PatientBookAppointmentPage from './pages/patient/BookAppointment'
 import PatientConsultationsPage from './pages/patient/Consultations'
 import PatientMyBookingsPage from './pages/patient/MyBookings'
+import PatientPrescriptionsPage from './pages/patient/Prescriptions'
 import PatientDoctorsPage from './pages/patient/Doctors'
 import PatientSymptomHistoryPage from './pages/patient/SymptomHistory'
 import PatientNotificationsPage from './pages/patient/Notifications'
@@ -849,6 +850,8 @@ export default function App() {
         return renderPatientRoutePage(PatientConsultationsPage)
       case '/patient/my-bookings':
         return renderPatientRoutePage(PatientMyBookingsPage)
+      case '/patient/prescriptions':
+        return renderPatientRoutePage(PatientPrescriptionsPage)
       case '/patient/doctors':
         return renderPatientRoutePage(PatientDoctorsPage)
       case '/patient/ai-symptoms':

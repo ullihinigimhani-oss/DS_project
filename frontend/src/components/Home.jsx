@@ -92,7 +92,7 @@ export default function Home({
   getRouteForRole,
 }) {
   const heroDoctorCount = doctorDirectory.length
-  const workspaceRoute = session ? getRouteForRole(activeRole) : '/login'
+  const workspaceRoute = session ? getRouteForRole(activeRole) : '/register'
   const gatewayStatusLabel = serviceHealthy ? 'Platform live' : 'Gateway needs review'
 
   return (

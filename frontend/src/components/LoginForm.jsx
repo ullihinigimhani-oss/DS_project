@@ -144,6 +144,12 @@ export default function LoginForm({
               Create one — it's free
             </button>
           </p>
+
+          <div className="auth-bottom-actions">
+            <button type="button" className="auth-home-link auth-home-link--bottom" onClick={() => navigateTo('/')}>
+              Back to home
+            </button>
+          </div>
         </div>
       </div>
 

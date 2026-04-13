@@ -416,6 +416,32 @@
   animation: auth-fade-up 0.5s ease-out 0.2s both;
 }
 
+.auth-home-link {
+  padding: 0.6rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--auth-accent-rgb), 0.16);
+  background: rgba(var(--auth-accent-rgb), 0.06);
+  color: var(--auth-accent-mid);
+  font-size: 0.88rem;
+  font-weight: 700;
+  box-shadow: none;
+}
+
+.auth-home-link:hover {
+  transform: translateY(-1px);
+  background: rgba(var(--auth-accent-rgb), 0.1);
+}
+
+.auth-bottom-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.auth-home-link--bottom {
+  min-width: 152px;
+}
+
 .auth-form-eyebrow {
   display: inline-flex;
   align-items: center;
@@ -949,6 +975,7 @@
   .auth-form-title {
     font-size: 2.2rem;
   }
+
 }
 
 /* Login redesign */

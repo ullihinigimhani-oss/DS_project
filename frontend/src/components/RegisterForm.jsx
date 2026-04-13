@@ -303,6 +303,12 @@ export default function RegisterForm({
               Sign in here
             </button>
           </p>
+
+          <div className="auth-bottom-actions">
+            <button type="button" className="auth-home-link auth-home-link--bottom" onClick={() => navigateTo('/')}>
+              Back to home
+            </button>
+          </div>
         </div>
       </div>
     </div>

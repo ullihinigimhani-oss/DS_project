@@ -29,3 +29,11 @@ export async function fetchPatientMedicalRecords(token, patientId) {
 
   return readJson(response)
 }
+
+export async function fetchPatientLatestSymptomAnalysis(token, patientId) {
+  const response = await fetch(`${gatewayBaseUrl}/api/ai-symptoms/history/${patientId}/latest`, {
+    headers: getAuthHeaders(token),
+  })
+
+  return readJson(response)
+}

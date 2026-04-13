@@ -70,6 +70,62 @@ const trackGatewayRequest = (route) => (req, res, next) => {
   next();
 };
 
+const forwardAiRequest = async (req, res) => {
+  try {
+    const targetUrl = new URL(`${services.ai}${req.originalUrl}`);
+
+    if (req.method === 'GET' && req.query && Object.keys(req.query).length > 0) {
+      Object.entries(req.query).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          value.forEach((item) => targetUrl.searchParams.append(key, item));
+        } else if (value !== undefined && value !== null) {
+          targetUrl.searchParams.set(key, String(value));
+        }
+      });
+    }
+
+    const headers = {
+      Accept: 'application/json',
+    };
+
+    if (req.headers.authorization) {
+      headers.authorization = req.headers.authorization;
+    }
+
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    const upstreamResponse = await fetch(targetUrl, {
+      method: req.method,
+      headers,
+      body:
+        req.method === 'GET' || req.method === 'HEAD'
+          ? undefined
+          : JSON.stringify(req.body || {}),
+    });
+
+    const rawBody = await upstreamResponse.text();
+    const contentType = upstreamResponse.headers.get('content-type') || 'application/json';
+
+    res.status(upstreamResponse.status);
+    res.set('Content-Type', contentType);
+
+    try {
+      return res.send(rawBody ? JSON.parse(rawBody) : {});
+    } catch {
+      return res.send(rawBody);
+    }
+  } catch (error) {
+    console.error('Gateway AI proxy error:', error.message);
+    return res.status(502).json({
+      success: false,
+      message: 'Upstream AI service unavailable',
+      error: error.message,
+    });
+  }
+};
+
 const createProxy = (serviceUrl) => proxy(serviceUrl, {
   proxyReqPathResolver(req) {
     return req.originalUrl;
@@ -176,7 +232,7 @@ app.use('/api/appointments', trackGatewayRequest('/api/appointments'), createPro
 app.use('/api/telemedicine', trackGatewayRequest('/api/telemedicine'), createProxy(services.telemedicine));
 app.use('/api/payments', trackGatewayRequest('/api/payments'), createProxy(services.payment));
 app.use('/api/notifications', trackGatewayRequest('/api/notifications'), createProxy(services.notification));
-app.use('/api/ai-symptoms', trackGatewayRequest('/api/ai-symptoms'), createProxy(services.ai));
+app.use('/api/ai-symptoms', trackGatewayRequest('/api/ai-symptoms'), forwardAiRequest);
 
 app.use((req, res) => {
   res.status(404).json({

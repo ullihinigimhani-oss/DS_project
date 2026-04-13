@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import StatusPill from '../../components/StatusPill'
+import { fetchPatientLatestSymptomAnalysis } from '../../utils/patientService'
 import DoctorPortalPage from './DoctorPortalPage'
 import { formatDate, formatTime, useDoctorPortal } from './DoctorPortalContext'
 
@@ -43,8 +44,33 @@ function parseMedicationList(value) {
   return []
 }
 
+function formatCarePriority(level) {
+  switch (level) {
+    case 'urgent':
+      return 'Urgent'
+    case 'soon':
+      return 'Soon'
+    case 'self_care':
+      return 'Self care'
+    default:
+      return 'Routine'
+  }
+}
+
+function formatConditionHeading(name) {
+  const value = String(name || '').trim()
+
+  if (!value) return 'Needs more review'
+  if (/^(possible|needs|unclear|suspected)/i.test(value)) {
+    return value
+  }
+
+  return `Possible ${value}`
+}
+
 function PrescriptionsContent() {
   const {
+    session,
     prescriptions,
     appointments,
     prescriptionValues,
@@ -55,6 +81,8 @@ function PrescriptionsContent() {
   } = useDoctorPortal()
   const [selectedPrescriptionId, setSelectedPrescriptionId] = useState('')
   const [historyFilter, setHistoryFilter] = useState('')
+  const [latestAiSummary, setLatestAiSummary] = useState(null)
+  const [latestAiLoading, setLatestAiLoading] = useState(false)
 
   const patientOptions = useMemo(() => {
     const patientMap = new Map()
@@ -153,6 +181,39 @@ function PrescriptionsContent() {
     }
   }, [filteredPrescriptions, selectedPrescriptionId])
 
+  useEffect(() => {
+    if (!session?.token || !prescriptionValues.patientId) {
+      setLatestAiSummary(null)
+      return
+    }
+
+    let cancelled = false
+
+    const loadLatestAiSummary = async () => {
+      setLatestAiLoading(true)
+      try {
+        const response = await fetchPatientLatestSymptomAnalysis(session.token, prescriptionValues.patientId)
+        if (!cancelled) {
+          setLatestAiSummary(response.data || null)
+        }
+      } catch {
+        if (!cancelled) {
+          setLatestAiSummary(null)
+        }
+      } finally {
+        if (!cancelled) {
+          setLatestAiLoading(false)
+        }
+      }
+    }
+
+    loadLatestAiSummary()
+
+    return () => {
+      cancelled = true
+    }
+  }, [prescriptionValues.patientId, session?.token])
+
   const selectedPrescription =
     filteredPrescriptions.find((prescription) => prescription.id === selectedPrescriptionId) ||
     prescriptions.find((prescription) => prescription.id === selectedPrescriptionId) ||
@@ -163,6 +224,7 @@ function PrescriptionsContent() {
   )
 
   const draftMedicationList = parseMedicationList(prescriptionValues.medications)
+  const aiTopCondition = latestAiSummary?.possibleConditions?.[0] || null
   const linkedPrescriptionCount = prescriptions.filter((prescription) => prescription.appointment_id).length
   const uniquePatientsWithPrescriptions = new Set(
     prescriptions.map((prescription) => prescription.patient_id || prescription.patient_name).filter(Boolean),
@@ -207,6 +269,25 @@ function PrescriptionsContent() {
       medications: '',
       notes: '',
     })
+  }
+
+  const appendAiSummaryToNotes = () => {
+    if (!latestAiSummary) return
+
+    const nextSummaryLines = [
+      'AI symptom guidance',
+      `Condition: ${formatConditionHeading(aiTopCondition?.name)}`,
+      `Confidence: ${Math.round((latestAiSummary.confidence || 0) * 100)}%`,
+      `Recommended specialist: ${latestAiSummary.recommendedSpecialist || 'General Physician'}`,
+      `Care priority: ${formatCarePriority(latestAiSummary.consultationAdvice?.level || latestAiSummary.severity)}`,
+    ]
+
+    setPrescriptionValues((current) => ({
+      ...current,
+      notes: [current.notes?.trim(), nextSummaryLines.join('\n')]
+        .filter(Boolean)
+        .join('\n\n'),
+    }))
   }
 
   return (
@@ -334,6 +415,39 @@ function PrescriptionsContent() {
                 onChange={handlePrescriptionChange}
               />
             </label>
+
+            <div className="doctor-note-panel doctor-ai-inline-panel">
+              <strong>Latest AI symptom guidance</strong>
+              {latestAiLoading ? (
+                <p>Loading the patient&apos;s latest symptom summary...</p>
+              ) : latestAiSummary ? (
+                <>
+                  <p>
+                    <strong>{formatConditionHeading(aiTopCondition?.name)}</strong>
+                    {' '}| {Math.round((latestAiSummary.confidence || 0) * 100)}% confidence
+                  </p>
+                  <p>
+                    {latestAiSummary.recommendedSpecialist || 'General Physician'} recommended
+                    {' '}| {formatCarePriority(latestAiSummary.consultationAdvice?.level || latestAiSummary.severity)} priority
+                  </p>
+                  <p>
+                    {latestAiSummary.consultationAdvice?.message ||
+                      latestAiSummary.recommendation}
+                  </p>
+                  <div className="doctor-toolbar">
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={appendAiSummaryToNotes}
+                    >
+                      Add AI summary to notes
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <p>No saved AI symptom guidance is available for this patient yet.</p>
+              )}
+            </div>
 
             <label>
               Medications

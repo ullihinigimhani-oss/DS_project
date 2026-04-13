@@ -4,8 +4,10 @@ import RegisterForm from './components/RegisterForm'
 import SectionCard from './components/SectionCard'
 import StatusPill from './components/StatusPill'
 import Home from './components/Home'
+import AiSymptomWorkspace from './components/AiSymptomWorkspace'
 import DoctorDashboard from './components/dashboards/DoctorDashboard'
 import PatientDashboard from './components/dashboards/PatientDashboard'
+import AdminDashboard from './components/dashboards/AdminDashboard'
 import DoctorAppointmentsPage from './pages/doctor/Appointments'
 import DoctorSchedulePage from './pages/doctor/Schedule'
 import DoctorPatientsPage from './pages/doctor/Patients'
@@ -36,38 +38,8 @@ import './App.css'
 import './styles/post-login-creative.css'
 
 const defaultSymptoms = 'I have fever, cough, headache and runny nose'
-const defaultUserId = 'patient-001'
 const sessionStorageKey = 'healthcare-auth-shell-session'
 const authTokenStorageKey = 'token'
-
-const roleSummaries = {
-  patient: {
-    title: 'Patient workspace',
-    subtitle: 'Symptom checks, care guidance, and doctor discovery are centered here now.',
-  },
-  doctor: {
-    title: 'Doctor workspace',
-    subtitle: 'Schedule, verification, prescriptions, and profile editing will sit here next.',
-  },
-  admin: {
-    title: 'Admin workspace',
-    subtitle: 'Audit views, user management, and platform operations will plug in here later.',
-  },
-}
-
-
-
-function createPreviewSession(base) {
-  return {
-    userId: base.id || base.userId || base.user?.id || base.email?.split('@')[0] || null,
-    name: base.name || base.email?.split('@')[0] || 'Preview user',
-    email: base.email || 'preview@health.local',
-    phone: base.phone || '',
-    role: base.userType || base.role || 'patient',
-    mode: 'preview',
-    token: null,
-  }
-}
 
 function getInitialPath() {
   const path = window.location.pathname || '/'
@@ -79,7 +51,7 @@ function getRouteForRole(role) {
     case 'doctor':
       return '/doctor/dashboard'
     case 'admin':
-      return '/admin'
+      return '/admin/dashboard'
     case 'patient':
     default:
       return '/patient'
@@ -111,7 +83,6 @@ export default function App() {
   const [gatewayHealth, setGatewayHealth] = useState(null)
   const [doctorDirectory, setDoctorDirectory] = useState([])
   const [directoryState, setDirectoryState] = useState('idle')
-  const [userId, setUserId] = useState(defaultUserId)
   const [symptoms, setSymptoms] = useState(defaultSymptoms)
   const [analysis, setAnalysis] = useState(null)
   const [history, setHistory] = useState([])
@@ -123,28 +94,30 @@ export default function App() {
   const [authError, setAuthError] = useState('')
   const [session, setSession] = useState(null)
   const [loginValues, setLoginValues] = useState({
-    email: 'patient@example.com',
-    password: 'password123',
+    email: '',
+    password: '',
     role: 'patient',
   })
   const [registerValues, setRegisterValues] = useState({
-    name: 'New User',
-    email: 'newuser@example.com',
+    name: '',
+    email: '',
     phone: '',
-    password: 'password123',
+    password: '',
     userType: 'patient',
     licenseDocument: null,
     governmentIdDocument: null,
     credentialsDocument: null,
     insuranceDocument: null,
   })
+  const [registerEmailHint, setRegisterEmailHint] = useState('')
+  const [registerEmailChecking, setRegisterEmailChecking] = useState(false)
 
   const serviceHealthy = gatewayHealth?.status === 'running'
   const isDoctorPortalRoute = currentPath.startsWith('/doctor/')
   const isPatientPortalRoute = currentPath.startsWith('/patient')
+  const isAdminPortalRoute = currentPath === '/admin' || currentPath.startsWith('/admin/')
   const isAuthRoute = currentPath === '/login' || currentPath === '/register'
   const activeRole = session?.role || loginValues.role
-  const roleSummary = roleSummaries[activeRole] || roleSummaries.patient
   const topCondition = analysis?.possibleConditions?.[0] || null
 
   const quickStats = useMemo(() => {
@@ -155,7 +128,7 @@ export default function App() {
       },
       {
         label: 'Auth mode',
-        value: session?.mode === 'preview' ? 'Preview shell' : session ? 'Connected' : 'Signed out',
+        value: session?.mode === 'connected' ? 'Connected' : session ? 'Session' : 'Signed out',
       },
       {
         label: 'Role focus',
@@ -217,6 +190,42 @@ export default function App() {
   }, [session])
 
   useEffect(() => {
+    const raw = registerValues.email?.trim() || ''
+    const looksValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)
+
+    if (!raw || !looksValid) {
+      setRegisterEmailHint('')
+      setRegisterEmailChecking(false)
+      return undefined
+    }
+
+    setRegisterEmailChecking(true)
+    const timerId = window.setTimeout(async () => {
+      try {
+        const res = await checkEmailAvailability(raw)
+        setRegisterEmailChecking(false)
+        if (!res.success || !res.data) {
+          setRegisterEmailHint('')
+          return
+        }
+        if (!res.data.available) {
+          const ut = res.data.existingUserType || 'user'
+          setRegisterEmailHint(
+            `This email is already registered as a ${ut}. Sign in with that account or choose a different email.`,
+          )
+        } else {
+          setRegisterEmailHint('')
+        }
+      } catch {
+        setRegisterEmailChecking(false)
+        setRegisterEmailHint('')
+      }
+    }, 450)
+
+    return () => window.clearTimeout(timerId)
+  }, [registerValues.email])
+
+  useEffect(() => {
     const loadGatewayHealth = async () => {
       try {
         const data = await fetchGatewayHealth()
@@ -245,10 +254,15 @@ export default function App() {
     loadDoctorDirectory()
   }, [])
 
-  const loadHistory = async (nextUserId = userId) => {
+  const loadHistory = async () => {
+    if (!session?.userId) {
+      setHistory([])
+      return
+    }
+
     setHistoryLoading(true)
     try {
-      const data = await fetchAnalysisHistory(nextUserId)
+      const data = await fetchAnalysisHistory()
       setHistory(Array.isArray(data.data) ? data.data : [])
     } catch (_error) {
       setHistory([])
@@ -258,8 +272,13 @@ export default function App() {
   }
 
   useEffect(() => {
-    loadHistory(defaultUserId)
-  }, [])
+    if (session?.userId) {
+      loadHistory()
+      return
+    }
+
+    setHistory([])
+  }, [session])
 
   const navigateTo = (path) => {
     if (path === currentPath) return
@@ -352,6 +371,19 @@ export default function App() {
     setAuthMessage('')
     clearPersistedAuth()
 
+    const regEmail = registerValues.email?.trim() || ''
+    if (!regEmail) {
+      setAuthBusy(false)
+      setAuthError('Please enter your email address.')
+      return
+    }
+
+    if (registerEmailHint) {
+      setAuthBusy(false)
+      setAuthError(registerEmailHint)
+      return
+    }
+
     if (registerValues.userType === 'doctor') {
       const missingDocuments = getDoctorRegistrationDocuments().filter((document) => !document.file)
 
@@ -363,6 +395,16 @@ export default function App() {
     }
 
     try {
+      const availability = await checkEmailAvailability(regEmail)
+      if (availability.success && availability.data && !availability.data.available) {
+        const ut = availability.data.existingUserType || 'user'
+        setAuthBusy(false)
+        setAuthError(
+          `This email is already registered as a ${ut}. Sign in with that account or use a different email.`,
+        )
+        return
+      }
+
       const data = await registerUser(registerValues)
 
       if (!data?.success || !data?.data?.accessToken) {
@@ -402,13 +444,12 @@ export default function App() {
 
     try {
       const data = await analyzeSymptoms({
-        userId,
         symptoms,
         sessionSymptoms: [],
       })
 
       setAnalysis(data.data)
-      await loadHistory(userId)
+      await loadHistory()
     } catch (error) {
       setAnalysisError(error.message)
       setAnalysis(null)
@@ -421,7 +462,7 @@ export default function App() {
     const wasDoctor = session?.role === 'doctor'
     clearPersistedAuth()
     setSession(null)
-    setAuthMessage(wasDoctor ? 'Doctor session signed out.' : 'You have left preview mode.')
+    setAuthMessage('You have been signed out.')
     setAuthError('')
     navigateTo(wasDoctor ? '/login' : '/')
   }
@@ -433,6 +474,7 @@ export default function App() {
       onSubmit={handleLogin}
       loading={authBusy}
       roleHint={loginValues.role}
+      roleLabel="Sign in as"
       navigateTo={navigateTo}
       bannerError={authError}
       bannerMessage={authMessage}
@@ -449,6 +491,8 @@ export default function App() {
       navigateTo={navigateTo}
       bannerError={authError}
       bannerMessage={authMessage}
+      emailAvailabilityMessage={registerEmailHint}
+      emailChecking={registerEmailChecking}
     />
   )
 
@@ -491,7 +535,23 @@ export default function App() {
     )
   }
 
-  const renderPatientRoutePage = (RoutePage) => {
+  const renderAdminRoutePage = (RoutePage) => {
+    const Component = RoutePage
+
+    return (
+      <AdminPortalPage
+        session={session}
+        currentPath={currentPath === '/admin' ? '/admin/dashboard' : currentPath}
+        onNavigate={navigateTo}
+        onRequireLogin={navigateTo}
+        onSignOut={handleSignOut}
+      >
+        <Component />
+      </AdminPortalPage>
+    )
+  }
+
+  const renderPatientRoutePage = (RoutePage, extraProps = {}) => {
     const Component = RoutePage
 
     return (
@@ -506,6 +566,15 @@ export default function App() {
         onSignOut={handleSignOut}
         onRequireLogin={navigateTo}
         onNavigate={navigateTo}
+        analysis={analysis}
+        symptoms={symptoms}
+        analysisLoading={analysisLoading}
+        historyLoading={historyLoading}
+        analysisError={analysisError}
+        onSymptomsChange={setSymptoms}
+        onAnalyze={handleAnalyze}
+        onRefreshHistory={loadHistory}
+        {...extraProps}
       />
     )
   }
@@ -548,121 +617,20 @@ export default function App() {
   )
 
   const renderAiPage = () => (
-    <div className="page-stack">
-      <SectionCard
-        title="AI Symptom Analyzer"
-        subtitle="A live symptom triage screen that feeds directly into the patient journey."
-      >
-        <form className="analysis-form" onSubmit={handleAnalyze}>
-          <label>
-            User ID
-            <input value={userId} onChange={(event) => setUserId(event.target.value)} />
-          </label>
-          <label>
-            Symptoms
-            <textarea
-              rows="5"
-              value={symptoms}
-              onChange={(event) => setSymptoms(event.target.value)}
-            />
-          </label>
-          <div className="form-actions">
-            <button type="submit" disabled={analysisLoading}>
-              {analysisLoading ? 'Analyzing...' : 'Analyze symptoms'}
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => loadHistory(userId)}
-              disabled={historyLoading}
-            >
-              {historyLoading ? 'Refreshing...' : 'Refresh history'}
-            </button>
-          </div>
-        </form>
-
-        {analysisError ? <p className="error-text">{analysisError}</p> : null}
-
-        {analysis ? (
-          <div className="analysis-result">
-            <div className="result-banner">
-              <strong>{topCondition?.name || 'No diagnosis'}</strong>
-              <span>
-                Confidence: {analysis.confidence ? `${Math.round(analysis.confidence * 100)}%` : '0%'}
-              </span>
-            </div>
-            <p>{analysis.recommendation}</p>
-
-            <div className="chip-group">
-              {(analysis.detectedSymptoms || []).map((symptom) => (
-                <span key={symptom} className="chip">
-                  {symptom}
-                </span>
-              ))}
-            </div>
-
-            {(analysis.possibleConditions || []).length ? (
-              <div className="conditions-list">
-                {analysis.possibleConditions.map((condition) => (
-                  <div key={condition.name} className="condition-row">
-                    <span>{condition.name}</span>
-                    <strong>{condition.confidencePercent}%</strong>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-
-            {analysis.consultationAdvice ? (
-              <div className="consult-box">
-                <strong>{analysis.consultationAdvice.message}</strong>
-                <span>Risk score: {analysis.consultationAdvice.risk}</span>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-      </SectionCard>
-
-      <SectionCard
-        title="Analysis History"
-        subtitle="Recent AI analyses stay visible so this route can evolve into a fuller care timeline."
-      >
-        {historyLoading ? <p className="empty-state">Loading history...</p> : null}
-        {!historyLoading && history.length === 0 ? (
-          <p className="empty-state">No history for this user yet.</p>
-        ) : null}
-
-        <div className="history-list">
-          {history.map((item) => (
-            <article key={item.id} className="history-card">
-              <div className="history-header">
-                <strong>{item.user_id}</strong>
-                <span>{new Date(item.analyzed_at).toLocaleString()}</span>
-              </div>
-              <p>{item.symptoms}</p>
-              <div className="chip-group compact">
-                {(item.detected_symptoms || []).map((symptom) => (
-                  <span key={symptom} className="chip">
-                    {symptom}
-                  </span>
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
-      </SectionCard>
-    </div>
-  )
-
-  const renderPlaceholderPage = () => (
-    <SectionCard
-      title={`${activeRole.charAt(0).toUpperCase() + activeRole.slice(1)} Route Preview`}
-      subtitle="This route is reserved so the next role-based frontend branches can land cleanly."
-    >
-      <div className="placeholder-page">
-        <strong>{roleSummary.title}</strong>
-        <p>{roleSummary.subtitle}</p>
-      </div>
-    </SectionCard>
+    <AiSymptomWorkspace
+      session={session}
+      history={history}
+      analysis={analysis}
+      topCondition={topCondition}
+      symptoms={symptoms}
+      analysisLoading={analysisLoading}
+      historyLoading={historyLoading}
+      analysisError={analysisError}
+      onSymptomsChange={setSymptoms}
+      onAnalyze={handleAnalyze}
+      onRefreshHistory={loadHistory}
+      onNavigate={navigateTo}
+    />
   )
 
   const renderCurrentPage = () => {
@@ -687,6 +655,17 @@ export default function App() {
         return renderDoctorRoutePage(DoctorVerificationPage)
       case '/doctor/profile':
         return renderDoctorRoutePage(DoctorProfilePage)
+      case '/admin':
+      case '/admin/dashboard':
+        return renderAdminRoutePage(AdminDashboard)
+      case '/admin/users':
+        return renderAdminRoutePage(AdminUsersPage)
+      case '/admin/doctors':
+        return renderAdminRoutePage(AdminDoctorsPage)
+      case '/admin/appointments':
+        return renderAdminRoutePage(AdminAppointmentsPage)
+      case '/admin/settings':
+        return renderAdminRoutePage(AdminSettingsPage)
       case '/patient':
         return renderPatientPage()
       case '/patient/book-appointment':
@@ -695,6 +674,7 @@ export default function App() {
         return renderPatientRoutePage(PatientMyBookingsPage)
       case '/patient/doctors':
         return renderPatientRoutePage(PatientDoctorsPage)
+      case '/patient/ai-symptoms':
       case '/patient/symptom-history':
         return renderPatientRoutePage(PatientSymptomHistoryPage)
       case '/patient/profile':
@@ -705,8 +685,6 @@ export default function App() {
         return renderDoctorsPage()
       case '/ai-symptoms':
         return renderAiPage()
-      case '/admin':
-        return renderPlaceholderPage()
       case '/Home':
       case '/':
       default:
@@ -730,7 +708,9 @@ export default function App() {
     <div
       className={`app-shell ${isDoctorPortalRoute ? 'doctor-route-shell' : ''} ${
         isPatientPortalRoute ? 'patient-route-shell' : ''
-      } ${isAuthRoute ? 'app-shell--auth' : ''}`.trim()}
+      } ${isAdminPortalRoute ? 'admin-route-shell' : ''} ${
+        isAuthRoute ? 'app-shell--auth' : ''
+      }`.trim()}
     >
       {renderCurrentPage()}
     </div>

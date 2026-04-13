@@ -87,9 +87,9 @@ function OverviewContent({ onNavigate }) {
             <button
               type="button"
               className="patient-chip-button"
-              onClick={() => onNavigate('/patient/symptom-history')}
+              onClick={() => onNavigate('/patient/ai-symptoms')}
             >
-              View symptom history
+              Run symptom check
             </button>
           </div>
         </article>

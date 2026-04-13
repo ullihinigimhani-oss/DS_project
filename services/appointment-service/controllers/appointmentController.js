@@ -503,3 +503,44 @@ exports.getAdminStats = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+/* ── GET /api/v1/appointments/admin/all ───────────────────────────────────── */
+exports.getAllAppointmentsForAdmin = async (req, res) => {
+    try {
+        const { status = '', search = '', limit = 100 } = req.query;
+        const cappedLimit = Math.min(200, Math.max(1, parseInt(limit, 10) || 100));
+        const params = [];
+        const conditions = [];
+
+        if (status && status !== 'all') {
+            params.push(status);
+            conditions.push(`status = $${params.length}`);
+        }
+
+        if (search) {
+            params.push(`%${String(search).trim().toLowerCase()}%`);
+            conditions.push(`(
+                LOWER(COALESCE(patient_name, '')) LIKE $${params.length}
+                OR LOWER(COALESCE(doctor_name, '')) LIKE $${params.length}
+                OR LOWER(COALESCE(patient_id, '')) LIKE $${params.length}
+                OR LOWER(COALESCE(doctor_id, '')) LIKE $${params.length}
+            )`);
+        }
+
+        params.push(cappedLimit);
+        const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+        const result = await db.query(
+            `SELECT *
+             FROM appointments
+             ${whereClause}
+             ORDER BY appointment_date DESC, start_time DESC
+             LIMIT $${params.length}`,
+            params
+        );
+
+        res.status(200).json({ success: true, data: result.rows });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

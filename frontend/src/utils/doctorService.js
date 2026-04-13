@@ -167,6 +167,35 @@ export async function submitDoctorVerification(token) {
   return readJson(response)
 }
 
+export async function fetchAdminVerificationQueue(token) {
+  const response = await fetch(`${doctorApiBase}/verification/all`, {
+    headers: getAuthHeaders(token),
+  })
+
+  return readJson(response)
+}
+
+export async function approveDoctorVerification(token, doctorId) {
+  const response = await fetch(`${doctorApiBase}/verification/approve/${encodeURIComponent(doctorId)}`, {
+    method: 'POST',
+    headers: getAuthHeaders(token),
+  })
+
+  return readJson(response)
+}
+
+export async function rejectDoctorVerification(token, doctorId, reason) {
+  const response = await fetch(`${doctorApiBase}/verification/reject/${encodeURIComponent(doctorId)}`, {
+    method: 'POST',
+    headers: getAuthHeaders(token, {
+      'Content-Type': 'application/json',
+    }),
+    body: JSON.stringify({ reason }),
+  })
+
+  return readJson(response)
+}
+
 export async function fetchDoctorPrescriptions(token) {
   const response = await fetch(`${doctorApiBase}/prescriptions/my`, {
     headers: getAuthHeaders(token),

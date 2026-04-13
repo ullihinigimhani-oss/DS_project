@@ -1,10 +1,57 @@
 import { gatewayBaseUrl } from './api'
 
-async function handleAuthResponse(response) {
-  const data = await response.json()
+function getAuthHeaders(token, extraHeaders = {}) {
+  return {
+    Authorization: `Bearer ${token}`,
+    ...extraHeaders,
+  }
+}
+
+async function readJson(response) {
+  const raw = await response.text()
+  let data = null
+
+  try {
+    data = raw ? JSON.parse(raw) : null
+  } catch {
+    data = null
+  }
 
   if (!response.ok) {
-    throw new Error(data.message || data.error || 'Authentication request failed')
+    throw new Error(data?.message || data?.error || 'Authentication request failed')
+  }
+
+  if (!data) {
+    throw new Error('Authentication service returned an unexpected response format')
+  }
+
+  return data
+}
+
+async function handleAuthResponse(response) {
+  return readJson(response)
+}
+
+/**
+ * Ask auth-service whether this email is already registered (any role: patient, doctor, etc.).
+ */
+export async function checkEmailAvailability(email) {
+  const trimmed = String(email || '').trim()
+  if (!trimmed) {
+    return { success: true, data: { available: true, existingUserType: null } }
+  }
+
+  const response = await fetch(
+    `${gatewayBaseUrl}/api/auth/email-availability?email=${encodeURIComponent(trimmed)}`,
+  )
+  const data = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    return {
+      success: false,
+      message: data.message || data.error || 'Unable to check email',
+      data: null,
+    }
   }
 
   return data

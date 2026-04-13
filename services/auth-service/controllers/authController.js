@@ -8,9 +8,87 @@ const {
 const { sendAuthEvent } = require('../config/kafka');
 const { logAuditEvent } = require('../services/auditLogService');
 
+async function fetchDoctorLoginEligibility(doctorId) {
+  const base = (process.env.DOCTOR_SERVICE_URL || 'http://localhost:3003').replace(/\/$/, '');
+  const key = process.env.INTERNAL_SERVICE_KEY || 'healthcare-internal-dev';
+  const url = `${base}/api/v1/internal/verification/login-eligibility/${encodeURIComponent(doctorId)}`;
+
+  try {
+    const response = await fetch(url, {
+      headers: { 'x-internal-service-key': key },
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      return {
+        allowed: false,
+        message: data.message || 'Unable to confirm doctor verification status.',
+      };
+    }
+
+    return {
+      allowed: Boolean(data.data?.allowed),
+      message: data.data?.message,
+    };
+  } catch (error) {
+    console.error('[auth] doctor eligibility fetch failed:', error.message);
+    return {
+      allowed: false,
+      message: 'Unable to reach doctor verification service. Please try again later.',
+    };
+  }
+}
+
+const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
+
+const checkEmailAvailability = async (req, res) => {
+  try {
+    const raw = req.query.email;
+    if (!raw || typeof raw !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Email query parameter is required',
+      });
+    }
+
+    const email = normalizeEmail(raw);
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required',
+      });
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid email format',
+      });
+    }
+
+    const existing = await User.findByEmail(email);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        available: !existing,
+        existingUserType: existing ? existing.user_type : null,
+      },
+    });
+  } catch (error) {
+    console.error('Email availability check error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Unable to check email availability',
+      error: error.message,
+    });
+  }
+};
+
 const register = async (req, res) => {
   try {
-    const { email, password, name, phone, userType } = req.body;
+    const { password, name, phone, userType } = req.body;
+    const email = normalizeEmail(req.body.email);
 
     if (!email || !password || !name) {
       return res.status(400).json({
@@ -28,9 +106,10 @@ const register = async (req, res) => {
 
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
+      const role = String(existingUser.user_type || 'user').toLowerCase();
       return res.status(409).json({
         success: false,
-        message: 'User with this email already exists',
+        message: `This email is already registered as a ${role}. Sign in with that account or use a different email.`,
       });
     }
 
@@ -95,7 +174,8 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { password, role } = req.body;
+    const email = normalizeEmail(req.body.email);
 
     if (!email || !password) {
       return res.status(400).json({
@@ -118,6 +198,23 @@ const login = async (req, res) => {
         success: false,
         message: 'Invalid email or password',
       });
+    }
+
+    if (role && String(role).toLowerCase() !== String(user.user_type).toLowerCase()) {
+      return res.status(403).json({
+        success: false,
+        message: 'The selected role does not match this account.',
+      });
+    }
+
+    if (user.user_type === 'doctor') {
+      const eligibility = await fetchDoctorLoginEligibility(user.id);
+      if (!eligibility.allowed) {
+        return res.status(403).json({
+          success: false,
+          message: eligibility.message || 'Doctor login is not available until your account is verified.',
+        });
+      }
     }
 
     const { accessToken, refreshToken } = generateTokens(
@@ -298,6 +395,16 @@ const refreshToken = async (req, res) => {
       });
     }
 
+    if (user.user_type === 'doctor') {
+      const eligibility = await fetchDoctorLoginEligibility(user.id);
+      if (!eligibility.allowed) {
+        return res.status(403).json({
+          success: false,
+          message: eligibility.message || 'Doctor session is not allowed until verification is complete.',
+        });
+      }
+    }
+
     const { accessToken, refreshToken: newRefreshToken } = generateTokens(
       user.id,
       user.email,
@@ -453,6 +560,7 @@ const updateProfile = async (req, res) => {
 };
 
 module.exports = {
+  checkEmailAvailability,
   register,
   login,
   logout,

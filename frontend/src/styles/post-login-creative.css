@@ -119,17 +119,17 @@
   padding: 18px 14px 20px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, transparent 28%),
-    linear-gradient(145deg, #7a5f4f 0%, #5c4639 42%, #3d3028 100%);
-  border-right: 1px solid var(--pl-patient-line);
+    linear-gradient(180deg, var(--sidebar-gradient-top), var(--sidebar-gradient-mid) 58%, var(--sidebar-gradient-bottom));
+  border-right: 1px solid var(--sidebar-border);
   box-shadow:
-    4px 0 32px rgba(34, 24, 18, 0.25),
-    inset -1px 0 0 rgba(255, 200, 170, 0.06);
+    4px 0 32px rgba(22, 23, 38, 0.28),
+    inset -1px 0 0 rgba(212, 206, 255, 0.08);
 }
 
 .patient-brand-mark {
   border-radius: 16px;
-  background: linear-gradient(135deg, #ff8a65 0%, #ffb088 40%, #ffd08a 100%);
-  box-shadow: 0 8px 24px rgba(233, 111, 100, 0.35);
+  background: var(--sidebar-brand-gradient);
+  box-shadow: 0 8px 24px rgba(92, 97, 170, 0.35);
 }
 
 .patient-portal-nav {
@@ -160,13 +160,13 @@
   width: 4px;
   height: 0;
   border-radius: 0 4px 4px 0;
-  background: linear-gradient(180deg, #ffb088, #ff8a65);
+  background: linear-gradient(180deg, #d8c6ff, #8c6ef6);
   opacity: 0;
   transition: height 0.22s ease, opacity 0.2s ease;
 }
 
 .patient-portal-link:hover {
-  background: rgba(255, 236, 220, 0.12);
+  background: var(--sidebar-link-hover);
   transform: translateX(2px);
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
 }
@@ -177,9 +177,9 @@
 }
 
 .patient-portal-link.active {
-  background: linear-gradient(90deg, rgba(255, 210, 170, 0.22), rgba(255, 244, 236, 0.08));
+  background: var(--sidebar-link-active);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 215, 185, 0.35),
+    inset 0 0 0 1px var(--sidebar-link-active-border),
     0 6px 20px rgba(0, 0, 0, 0.12);
   color: #fff;
 }
@@ -192,8 +192,8 @@
 
 .patient-portal-user {
   border-radius: 20px;
-  background: rgba(0, 0, 0, 0.12);
-  border: 1px solid rgba(255, 220, 190, 0.12);
+  background: var(--sidebar-user-bg);
+  border: 1px solid rgba(226, 223, 255, 0.08);
   backdrop-filter: blur(8px);
 }
 
@@ -203,12 +203,12 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   font-size: 0.72rem;
-  background: linear-gradient(135deg, rgba(255, 160, 120, 0.35), rgba(255, 200, 160, 0.2));
-  border: 1px solid rgba(255, 200, 170, 0.25);
+  background: var(--sidebar-signout-bg);
+  border: 1px solid rgba(212, 206, 255, 0.14);
 }
 
 .patient-signout-button:hover {
-  background: linear-gradient(135deg, rgba(255, 180, 140, 0.45), rgba(255, 210, 180, 0.28));
+  background: var(--sidebar-signout-hover);
 }
 
 .patient-portal-main {
@@ -329,17 +329,17 @@
   padding: 18px 14px 20px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, transparent 30%),
-    linear-gradient(155deg, #3d5c54 0%, #2d4540 45%, #1e2f2c 100%);
-  border-right: 1px solid var(--pl-doctor-line);
+    linear-gradient(180deg, var(--sidebar-gradient-top), var(--sidebar-gradient-mid) 58%, var(--sidebar-gradient-bottom));
+  border-right: 1px solid var(--sidebar-border);
   box-shadow:
-    4px 0 36px rgba(12, 28, 24, 0.35),
-    inset -1px 0 0 rgba(180, 230, 210, 0.05);
+    4px 0 36px rgba(22, 23, 38, 0.3),
+    inset -1px 0 0 rgba(212, 206, 255, 0.08);
 }
 
 .doctor-brand-mark {
   border-radius: 16px;
-  background: linear-gradient(135deg, #ff6b8a 0%, #ff9c66 45%, #ffc56d 100%);
-  box-shadow: 0 8px 26px rgba(243, 91, 122, 0.35);
+  background: var(--sidebar-brand-gradient);
+  box-shadow: 0 8px 26px rgba(92, 97, 170, 0.35);
 }
 
 .doctor-portal-nav {
@@ -368,13 +368,13 @@
   width: 4px;
   height: 0;
   border-radius: 0 4px 4px 0;
-  background: linear-gradient(180deg, #7fd4c1, #38a897);
+  background: linear-gradient(180deg, #d8c6ff, #8c6ef6);
   opacity: 0;
   transition: height 0.22s ease, opacity 0.2s ease;
 }
 
 .doctor-portal-link:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--sidebar-link-hover);
   transform: translateX(2px);
 }
 
@@ -384,10 +384,11 @@
 }
 
 .doctor-portal-link.active {
-  background: linear-gradient(90deg, rgba(127, 212, 193, 0.2), rgba(255, 255, 255, 0.06));
+  background: var(--sidebar-link-active);
   box-shadow:
-    inset 0 0 0 1px rgba(180, 230, 210, 0.25),
+    inset 0 0 0 1px var(--sidebar-link-active-border),
     0 6px 20px rgba(0, 0, 0, 0.15);
+  color: #fff;
 }
 
 .doctor-portal-link.active::before {
@@ -397,8 +398,8 @@
 
 .doctor-portal-user {
   border-radius: 20px;
-  background: rgba(0, 0, 0, 0.14);
-  border: 1px solid rgba(180, 230, 210, 0.12);
+  background: var(--sidebar-user-bg);
+  border: 1px solid rgba(226, 223, 255, 0.08);
 }
 
 .doctor-signout-button {
@@ -407,8 +408,8 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   font-size: 0.72rem;
-  background: linear-gradient(135deg, rgba(255, 200, 140, 0.3), rgba(255, 220, 180, 0.15));
-  border: 1px solid rgba(255, 210, 170, 0.2);
+  background: var(--sidebar-signout-bg);
+  border: 1px solid rgba(212, 206, 255, 0.14);
 }
 
 .doctor-portal-main {

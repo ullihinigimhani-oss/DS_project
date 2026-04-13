@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import StatusPill from '../../components/StatusPill'
 import { fetchDoctorPatientPrescriptions } from '../../utils/doctorService'
-import { fetchPatientMedicalRecords, fetchPatientProfileById } from '../../utils/patientService'
+import {
+  fetchPatientLatestSymptomAnalysis,
+  fetchPatientMedicalRecords,
+  fetchPatientProfileById,
+} from '../../utils/patientService'
 import DoctorPortalPage from './DoctorPortalPage'
 import { formatTime, useDoctorPortal } from './DoctorPortalContext'
 
@@ -51,12 +55,39 @@ function normalizeMedications(medications) {
   return []
 }
 
+function formatAnalysisSource(source) {
+  switch (source) {
+    case 'custom-model':
+      return 'Internal AI model'
+    case 'gemini-fallback':
+      return 'Gemini fallback'
+    case 'fallback':
+      return 'Safe fallback'
+    default:
+      return source || 'Unknown'
+  }
+}
+
+function formatCarePriority(level) {
+  switch (level) {
+    case 'urgent':
+      return 'Urgent'
+    case 'soon':
+      return 'Soon'
+    case 'self_care':
+      return 'Self care'
+    default:
+      return 'Routine'
+  }
+}
+
 function PatientsContent() {
   const { patientCount, prescriptions, appointments, session } = useDoctorPortal()
   const [selectedPatientId, setSelectedPatientId] = useState('')
   const [patientProfile, setPatientProfile] = useState(null)
   const [patientMedicalRecords, setPatientMedicalRecords] = useState([])
   const [patientPrescriptionHistory, setPatientPrescriptionHistory] = useState([])
+  const [patientLatestAnalysis, setPatientLatestAnalysis] = useState(null)
   const [patientDetailLoading, setPatientDetailLoading] = useState(false)
   const [patientDetailError, setPatientDetailError] = useState('')
 
@@ -133,6 +164,7 @@ function PatientsContent() {
       setPatientProfile(null)
       setPatientMedicalRecords([])
       setPatientPrescriptionHistory([])
+      setPatientLatestAnalysis(null)
       return
     }
 
@@ -143,10 +175,11 @@ function PatientsContent() {
       setPatientDetailError('')
 
       try {
-        const [profileResponse, medicalRecordsResponse, prescriptionsResponse] = await Promise.all([
+        const [profileResponse, medicalRecordsResponse, prescriptionsResponse, latestAnalysisResponse] = await Promise.all([
           fetchPatientProfileById(selectedPatientId).catch(() => ({ data: null })),
           fetchPatientMedicalRecords(session.token, selectedPatientId).catch(() => ({ data: [] })),
           fetchDoctorPatientPrescriptions(session.token, selectedPatientId).catch(() => ({ data: [] })),
+          fetchPatientLatestSymptomAnalysis(session.token, selectedPatientId).catch(() => ({ data: null })),
         ])
 
         if (cancelled) return
@@ -156,6 +189,7 @@ function PatientsContent() {
         setPatientPrescriptionHistory(
           Array.isArray(prescriptionsResponse.data) ? prescriptionsResponse.data : [],
         )
+        setPatientLatestAnalysis(latestAnalysisResponse.data || null)
       } catch (error) {
         if (!cancelled) {
           setPatientDetailError(error.message)
@@ -175,6 +209,10 @@ function PatientsContent() {
   }, [selectedPatientId, session?.token])
 
   const selectedPatient = patientRecords.find((patient) => patient.id === selectedPatientId) || null
+  const latestAiCondition = patientLatestAnalysis?.possibleConditions?.[0] || null
+  const latestAiConfidence = patientLatestAnalysis?.confidence
+    ? Math.round(patientLatestAnalysis.confidence * 100)
+    : 0
 
   const patientAppointments = useMemo(
     () =>
@@ -355,6 +393,68 @@ function PatientsContent() {
                     </strong>
                   </div>
                 </div>
+              </section>
+
+              <section className="doctor-surface-card doctor-ai-summary-card">
+                <div className="doctor-card-topline">
+                  <h3>Latest AI symptom guidance</h3>
+                  <StatusPill
+                    status={patientLatestAnalysis ? 'ok' : 'pending'}
+                    label={patientLatestAnalysis ? 'Latest summary ready' : 'No AI history'}
+                  />
+                </div>
+
+                {patientLatestAnalysis ? (
+                  <div className="doctor-page-stack">
+                    <div className="doctor-detail-list">
+                      <div className="doctor-detail-row">
+                        <span>Analysis source</span>
+                        <strong>{formatAnalysisSource(patientLatestAnalysis.source)}</strong>
+                      </div>
+                      <div className="doctor-detail-row">
+                        <span>Recorded at</span>
+                        <strong>{formatDateTime(patientLatestAnalysis.analyzedAt)}</strong>
+                      </div>
+                      <div className="doctor-detail-row">
+                        <span>Recommended specialist</span>
+                        <strong>{patientLatestAnalysis.recommendedSpecialist || 'General Physician'}</strong>
+                      </div>
+                      <div className="doctor-detail-row">
+                        <span>Care priority</span>
+                        <strong>{formatCarePriority(patientLatestAnalysis.consultationAdvice?.level || patientLatestAnalysis.severity)}</strong>
+                      </div>
+                    </div>
+
+                    <div className="doctor-callout doctor-ai-callout">
+                      <strong>{latestAiCondition?.name || 'Needs more clinical review'}</strong>
+                      <p>
+                        {latestAiCondition?.reason ||
+                          patientLatestAnalysis.recommendation ||
+                          'The patient has a saved preliminary symptom guidance record to review.'}
+                      </p>
+                    </div>
+
+                    <div className="doctor-chip-row">
+                      <span className="doctor-chip">{latestAiConfidence}% confidence</span>
+                      {(patientLatestAnalysis.detectedSymptoms || []).slice(0, 5).map((symptom) => (
+                        <span key={symptom} className="doctor-chip">
+                          {symptom}
+                        </span>
+                      ))}
+                    </div>
+
+                    {patientLatestAnalysis.consultationAdvice?.message ? (
+                      <div className="doctor-note-panel">
+                        <strong>Care guidance</strong>
+                        <p>{patientLatestAnalysis.consultationAdvice.message}</p>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <p className="empty-state">
+                    This patient has not saved a symptom-check result yet, so there is no AI summary to review.
+                  </p>
+                )}
               </section>
 
               <div className="doctor-content-grid">

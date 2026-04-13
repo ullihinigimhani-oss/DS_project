@@ -5,5 +5,6 @@ const { authMiddleware } = require('../middlewares/authMiddleware');
 
 router.post('/analyze', authMiddleware, aiSymptomController.analyzeSymptoms);
 router.get('/history', authMiddleware, aiSymptomController.getAnalysisHistory);
+router.get('/history/:patientId/latest', authMiddleware, aiSymptomController.getLatestPatientAnalysis);
 
 module.exports = router;

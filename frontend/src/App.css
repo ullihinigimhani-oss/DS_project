@@ -2937,6 +2937,19 @@ button:disabled {
   outline-offset: 2px;
 }
 
+.doctor-ai-summary-card {
+  background: linear-gradient(180deg, rgba(244, 249, 252, 0.96), rgba(255, 255, 255, 0.92));
+}
+
+.doctor-ai-callout {
+  border-left: 4px solid rgba(43, 112, 181, 0.42);
+}
+
+.doctor-appointment-ai-panel {
+  background: rgba(246, 250, 253, 0.9);
+  border: 1px solid rgba(43, 112, 181, 0.12);
+}
+
 .consult-box {
   padding: 14px 16px;
   border-radius: 18px;

@@ -2,7 +2,7 @@ import StatusPill from '../../components/StatusPill'
 import PatientPortalPage from './PatientPortalPage'
 import { formatDate, formatTime, getBookingTone, usePatientPortal } from './PatientPortalContext'
 
-function MyBookingsContent() {
+function MyBookingsContent({ onNavigate }) {
   const {
     bookings,
     bookingsLoading,
@@ -53,6 +53,14 @@ function MyBookingsContent() {
               </div>
               {booking.status === 'pending' || booking.status === 'confirmed' ? (
                 <div className="patient-booking-actions">
+                  {booking.is_telemedicine && booking.status === 'confirmed' ? (
+                    <button
+                      type="button"
+                      onClick={() => onNavigate('/patient/consultations')}
+                    >
+                      Join consultation
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     className="secondary-button"
@@ -74,7 +82,7 @@ function MyBookingsContent() {
 export default function MyBookings(props) {
   return (
     <PatientPortalPage {...props}>
-      <MyBookingsContent />
+      <MyBookingsContent onNavigate={props.onNavigate} />
     </PatientPortalPage>
   )
 }

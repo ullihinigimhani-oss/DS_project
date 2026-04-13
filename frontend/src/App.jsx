@@ -7,6 +7,7 @@ import Home from './components/Home'
 import AiSymptomWorkspace from './components/AiSymptomWorkspace'
 import DoctorDashboard from './components/dashboards/DoctorDashboard'
 import PatientDashboard from './components/dashboards/PatientDashboard'
+import AdminDashboard from './components/dashboards/AdminDashboard'
 import DoctorAppointmentsPage from './pages/doctor/Appointments'
 import DoctorSchedulePage from './pages/doctor/Schedule'
 import DoctorPatientsPage from './pages/doctor/Patients'
@@ -19,7 +20,11 @@ import PatientMyBookingsPage from './pages/patient/MyBookings'
 import PatientDoctorsPage from './pages/patient/Doctors'
 import PatientSymptomHistoryPage from './pages/patient/SymptomHistory'
 import PatientProfilePage from './pages/patient/Profile'
-import AdminVerifications from './pages/Admin/AdminVerifications'
+import AdminPortalPage from './pages/Admin/AdminPortalPage'
+import AdminUsersPage from './pages/Admin/Users'
+import AdminDoctorsPage from './pages/Admin/Doctors'
+import AdminAppointmentsPage from './pages/Admin/Appointments'
+import AdminSettingsPage from './pages/Admin/Settings'
 import { checkEmailAvailability, loginUser, registerUser } from './utils/authService'
 import {
   submitDoctorVerification,
@@ -51,7 +56,7 @@ function getRouteForRole(role) {
     case 'doctor':
       return '/doctor/dashboard'
     case 'admin':
-      return '/admin'
+      return '/admin/dashboard'
     case 'patient':
     default:
       return '/patient'
@@ -115,6 +120,7 @@ export default function App() {
   const serviceHealthy = gatewayHealth?.status === 'running'
   const isDoctorPortalRoute = currentPath.startsWith('/doctor/')
   const isPatientPortalRoute = currentPath.startsWith('/patient')
+  const isAdminPortalRoute = currentPath === '/admin' || currentPath.startsWith('/admin/')
   const isAuthRoute = currentPath === '/login' || currentPath === '/register'
   const activeRole = session?.role || loginValues.role
   const topCondition = analysis?.possibleConditions?.[0] || null
@@ -527,6 +533,22 @@ export default function App() {
     )
   }
 
+  const renderAdminRoutePage = (RoutePage) => {
+    const Component = RoutePage
+
+    return (
+      <AdminPortalPage
+        session={session}
+        currentPath={currentPath === '/admin' ? '/admin/dashboard' : currentPath}
+        onNavigate={navigateTo}
+        onRequireLogin={navigateTo}
+        onSignOut={handleSignOut}
+      >
+        <Component />
+      </AdminPortalPage>
+    )
+  }
+
   const renderPatientRoutePage = (RoutePage, extraProps = {}) => {
     const Component = RoutePage
 
@@ -631,6 +653,17 @@ export default function App() {
         return renderDoctorRoutePage(DoctorVerificationPage)
       case '/doctor/profile':
         return renderDoctorRoutePage(DoctorProfilePage)
+      case '/admin':
+      case '/admin/dashboard':
+        return renderAdminRoutePage(AdminDashboard)
+      case '/admin/users':
+        return renderAdminRoutePage(AdminUsersPage)
+      case '/admin/doctors':
+        return renderAdminRoutePage(AdminDoctorsPage)
+      case '/admin/appointments':
+        return renderAdminRoutePage(AdminAppointmentsPage)
+      case '/admin/settings':
+        return renderAdminRoutePage(AdminSettingsPage)
       case '/patient':
         return renderPatientPage()
       case '/patient/book-appointment':
@@ -650,14 +683,6 @@ export default function App() {
         return renderDoctorsPage()
       case '/ai-symptoms':
         return renderAiPage()
-      case '/admin':
-        return (
-          <AdminVerifications
-            session={session}
-            onRequireLogin={navigateTo}
-            onNavigate={navigateTo}
-          />
-        )
       case '/Home':
       case '/':
       default:
@@ -681,7 +706,9 @@ export default function App() {
     <div
       className={`app-shell ${isDoctorPortalRoute ? 'doctor-route-shell' : ''} ${
         isPatientPortalRoute ? 'patient-route-shell' : ''
-      } ${isAuthRoute ? 'app-shell--auth' : ''}`.trim()}
+      } ${isAdminPortalRoute ? 'admin-route-shell' : ''} ${
+        isAuthRoute ? 'app-shell--auth' : ''
+      }`.trim()}
     >
       {renderCurrentPage()}
     </div>

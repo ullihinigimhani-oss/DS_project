@@ -20,7 +20,12 @@ import PatientMyBookingsPage from './pages/patient/MyBookings'
 import PatientDoctorsPage from './pages/patient/Doctors'
 import PatientSymptomHistoryPage from './pages/patient/SymptomHistory'
 import PatientProfilePage from './pages/patient/Profile'
-import { loginUser, registerUser, verifyUser } from './utils/authService'
+import AdminPortalPage from './pages/Admin/AdminPortalPage'
+import AdminUsersPage from './pages/Admin/Users'
+import AdminDoctorsPage from './pages/Admin/Doctors'
+import AdminAppointmentsPage from './pages/Admin/Appointments'
+import AdminSettingsPage from './pages/Admin/Settings'
+import { checkEmailAvailability, loginUser, registerUser, verifyUser } from './utils/authService'
 import {
   submitDoctorVerification,
   updateDoctorProfile,
@@ -537,20 +542,26 @@ export default function App() {
   }
 
   const renderAdminRoutePage = (RoutePage) => {
-    const Component = RoutePage
+  const Component = RoutePage
 
-    return (
-      <AdminPortalPage
+  return (
+    <AdminPortalPage
+      session={session}
+      currentPath={currentPath === '/admin' ? '/admin/dashboard' : currentPath}
+      onNavigate={navigateTo}
+      onRequireLogin={navigateTo}
+      onSignOut={handleSignOut}
+    >
+      <Component
         session={session}
-        currentPath={currentPath === '/admin' ? '/admin/dashboard' : currentPath}
+        currentPath={currentPath}
         onNavigate={navigateTo}
         onRequireLogin={navigateTo}
         onSignOut={handleSignOut}
-      >
-        <Component />
-      </AdminPortalPage>
-    )
-  }
+      />
+    </AdminPortalPage>
+  )
+}
 
   const renderPatientRoutePage = (RoutePage, extraProps = {}) => {
     const Component = RoutePage

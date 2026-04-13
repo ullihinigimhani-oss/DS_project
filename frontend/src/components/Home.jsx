@@ -2,12 +2,12 @@ import './Home.css'
 import StatusPill from './StatusPill'
 
 const prioritySpecialties = [
-  { name: 'General Practice', note: 'Primary care and follow-up visits', count: 42 },
-  { name: 'Cardiology', note: 'Chest pain, heart checks, hypertension', count: 18 },
-  { name: 'Dermatology', note: 'Skin, hair, and allergy concerns', count: 24 },
-  { name: 'Pediatrics', note: 'Child health, fever, and development', count: 15 },
-  { name: 'Neurology', note: 'Headaches, nerves, and dizziness', count: 11 },
-  { name: 'Orthopedics', note: 'Bones, joints, back pain, injuries', count: 20 },
+  { name: 'General Practice', note: 'Primary care and follow-up visits', count: 42, icon: 'GP' },
+  { name: 'Cardiology', note: 'Chest pain, heart checks, hypertension', count: 18, icon: 'CV' },
+  { name: 'Dermatology', note: 'Skin, hair, and allergy concerns', count: 24, icon: 'DR' },
+  { name: 'Pediatrics', note: 'Child health, fever, and development', count: 15, icon: 'PD' },
+  { name: 'Neurology', note: 'Headaches, nerves, and dizziness', count: 11, icon: 'NR' },
+  { name: 'Orthopedics', note: 'Bones, joints, back pain, injuries', count: 20, icon: 'OR' },
 ]
 
 const journeySteps = [
@@ -18,6 +18,7 @@ const journeySteps = [
       'Describe what you feel in plain language and get a structured summary with care priority and recommended specialist guidance.',
     action: 'Open AI Symptom Checker',
     route: '/patient/ai-symptoms',
+    icon: 'AI',
   },
   {
     id: '02',
@@ -26,6 +27,7 @@ const journeySteps = [
       'Browse specialists, compare availability, and review live profile details before you commit to a booking.',
     action: 'Browse Doctors',
     route: '/doctors',
+    icon: 'MD',
   },
   {
     id: '03',
@@ -34,6 +36,7 @@ const journeySteps = [
       'Book visits, track appointments, and keep prescriptions and follow-up history in one coordinated workspace.',
     action: 'Go to Login',
     route: '/login',
+    icon: 'BK',
   },
 ]
 
@@ -42,28 +45,32 @@ const capabilityCards = [
     title: 'Verified clinician network',
     body: 'Doctors are reviewed before they appear in the platform, so discovery feels trustworthy from the first click.',
     accent: 'trust',
+    icon: 'VD',
   },
   {
     title: 'AI-assisted intake',
     body: 'Symptom guidance, urgency cues, and specialist matching help patients arrive better prepared for the real consultation.',
     accent: 'intelligence',
+    icon: 'AI',
   },
   {
     title: 'Live operational flow',
     body: 'Appointments, patient dashboards, doctor workspaces, and admin tools are connected as one coherent system.',
     accent: 'operations',
+    icon: 'OP',
   },
   {
     title: 'Designed for continuity',
     body: 'The experience supports ongoing care, not just one booking, with patient history and doctor workflows living together.',
     accent: 'continuity',
+    icon: 'CC',
   },
 ]
 
 const floatingSignals = [
-  { label: 'Patient care journeys', value: 'Unified' },
-  { label: 'AI symptom guidance', value: 'Live' },
-  { label: 'Verified doctor workflow', value: 'Ready' },
+  { label: 'Patient care journeys', value: 'Unified', icon: 'PJ' },
+  { label: 'AI symptom guidance', value: 'Live', icon: 'AI' },
+  { label: 'Verified doctor workflow', value: 'Ready', icon: 'VD' },
 ]
 
 const accentClassMap = {
@@ -174,7 +181,10 @@ export default function Home({
 
               <div className="hp-stage-grid">
                 <article className="hp-stage-card hp-stage-card--wide">
-                  <p className="hp-stage-label">Patient journey</p>
+                  <div className="hp-card-head">
+                    <span className="hp-card-icon">PT</span>
+                    <p className="hp-stage-label">Patient journey</p>
+                  </div>
                   <h2>AI guidance to booking</h2>
                   <p>
                     Symptom analysis can hand off directly into appointment booking with specialist
@@ -183,12 +193,18 @@ export default function Home({
                 </article>
 
                 <article className="hp-stage-card">
-                  <p className="hp-stage-label">Doctor workspace</p>
+                  <div className="hp-card-head">
+                    <span className="hp-card-icon">DR</span>
+                    <p className="hp-stage-label">Doctor workspace</p>
+                  </div>
                   <strong>Patients, appointments, prescriptions, schedule</strong>
                 </article>
 
                 <article className="hp-stage-card">
-                  <p className="hp-stage-label">Admin control</p>
+                  <div className="hp-card-head">
+                    <span className="hp-card-icon">AD</span>
+                    <p className="hp-stage-label">Admin control</p>
+                  </div>
                   <strong>Verification, users, monitoring, operations</strong>
                 </article>
               </div>
@@ -202,7 +218,10 @@ export default function Home({
             <div className="hp-floating-rail">
               {floatingSignals.map((signal) => (
                 <article key={signal.label} className="hp-floating-card">
-                  <span>{signal.label}</span>
+                  <div className="hp-card-head">
+                    <span className="hp-card-icon">{signal.icon}</span>
+                    <span>{signal.label}</span>
+                  </div>
                   <strong>{signal.value}</strong>
                 </article>
               ))}
@@ -249,6 +268,10 @@ export default function Home({
                 className="hp-specialty-card"
                 onClick={() => navigateTo('/doctors')}
               >
+                <div className="hp-card-head">
+                  <span className="hp-card-icon">{specialty.icon}</span>
+                  <span className="hp-card-micro">Specialty</span>
+                </div>
                 <div className="hp-specialty-topline">
                   <span>{specialty.name}</span>
                   <strong>{specialty.count}</strong>
@@ -268,7 +291,10 @@ export default function Home({
           <div className="hp-journey-grid">
             {journeySteps.map((step) => (
               <article key={step.id} className="hp-journey-card">
-                <div className="hp-journey-step">{step.id}</div>
+                <div className="hp-card-head">
+                  <span className="hp-card-icon">{step.icon}</span>
+                  <div className="hp-journey-step">{step.id}</div>
+                </div>
                 <h3>{step.title}</h3>
                 <p>{step.description}</p>
                 <button type="button" className="hp-inline-link" onClick={() => navigateTo(step.route)}>
@@ -294,7 +320,10 @@ export default function Home({
           <div className="hp-capability-grid">
             {capabilityCards.map((card) => (
               <article key={card.title} className="hp-capability-card">
-                <span className={`hp-tag ${accentClassMap[card.accent]}`}>{card.accent}</span>
+                <div className="hp-card-head">
+                  <span className="hp-card-icon">{card.icon}</span>
+                  <span className={`hp-tag ${accentClassMap[card.accent]}`}>{card.accent}</span>
+                </div>
                 <h3>{card.title}</h3>
                 <p>{card.body}</p>
               </article>

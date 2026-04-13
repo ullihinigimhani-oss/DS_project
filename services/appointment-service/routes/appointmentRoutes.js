@@ -18,6 +18,7 @@ router.put('/:id/reject', authMiddleware, appointmentController.rejectAppointmen
 
 // Authenticated — patient manages their own bookings
 router.post('/', authMiddleware, appointmentController.createBooking);
+router.put('/:id/payment-confirmed', authMiddleware, appointmentController.confirmBookingPayment);
 router.get('/', authMiddleware, appointmentController.getMyBookings);
 router.put('/:id/cancel', authMiddleware, appointmentController.cancelBooking);
 

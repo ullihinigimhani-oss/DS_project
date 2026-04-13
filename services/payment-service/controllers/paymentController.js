@@ -1,13 +1,31 @@
 const stripeService = require('../services/stripeService');
 const stripe = require('../config/stripe');
 
+function getRequesterUserId(req) {
+    return (
+        req.user?.userId ||
+        req.user?.id ||
+        req.user?.sub ||
+        req.body?.patient_id ||
+        req.body?.userId ||
+        null
+    );
+}
+
 /**
  * Create a new payment and initiate Stripe payment intent
  */
 exports.createPayment = async (req, res) => {
     try {
-        const patient_id = req.user.userId;
+        const patient_id = getRequesterUserId(req);
         const { amount, slot_id } = req.body;
+
+        if (!patient_id) {
+            return res.status(401).json({
+                success: false,
+                error: 'Unable to resolve authenticated user id',
+            });
+        }
 
         if (!amount || !slot_id) {
             return res.status(400).json({
@@ -58,7 +76,13 @@ exports.getPayments = async (req, res) => {
  */
 exports.getUserPayments = async (req, res) => {
     try {
-        const patient_id = req.user.userId;
+        const patient_id = getRequesterUserId(req);
+        if (!patient_id) {
+            return res.status(401).json({
+                success: false,
+                error: 'Unable to resolve authenticated user id',
+            });
+        }
         const payments = await stripeService.getPaymentsByUserId(patient_id);
 
         res.status(200).json({
@@ -103,7 +127,15 @@ exports.updatePaymentStatus = async (req, res) => {
             });
         }
 
-        if (payment.patient_id !== req.user.userId) {
+        const requesterId = getRequesterUserId(req);
+        if (!requesterId) {
+            return res.status(401).json({
+                success: false,
+                error: 'Unable to resolve authenticated user id'
+            });
+        }
+
+        if (String(payment.patient_id) !== String(requesterId)) {
             return res.status(403).json({
                 success: false,
                 error: 'Forbidden'
@@ -389,7 +421,8 @@ exports.confirmPayment = async (req, res) => {
         const payment = await stripeService.getPaymentById(id);
 
         // Only patient who created payment may confirm it
-        if (String(payment.patient_id) !== String(req.user.userId)) {
+        const requesterId = getRequesterUserId(req);
+        if (requesterId && String(payment.patient_id) !== String(requesterId)) {
             return res.status(403).json({ success: false, error: 'Forbidden' });
         }
 

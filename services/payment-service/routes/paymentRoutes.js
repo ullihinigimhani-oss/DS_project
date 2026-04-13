@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { authMiddleware } = require('../middlewares/auth');
+const { authMiddleware, optionalAuthMiddleware } = require('../middlewares/auth');
 const { createPayment, getPayments, getUserPayments, getPayment,
     getAppointmentPayment, handleStripeWebhook, getPaymentsByStatus, deletePayment,
     getAdminStats, confirmPayment, getDoctorRevenue } = require('../controllers/paymentController');
@@ -14,8 +14,8 @@ router.get('/admin/stats', authMiddleware, getAdminStats);
 router.get('/doctor/revenue', authMiddleware, getDoctorRevenue);
 
 // Post requests
-router.post('/insertPayment', authMiddleware, createPayment);
-router.patch('/payments/:id/confirm', authMiddleware, confirmPayment);
+router.post('/insertPayment', optionalAuthMiddleware, createPayment);
+router.patch('/payments/:id/confirm', optionalAuthMiddleware, confirmPayment);
 
 // Get requests
 router.get('/getPayments', authMiddleware, getPayments);

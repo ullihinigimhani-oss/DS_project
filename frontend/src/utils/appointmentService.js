@@ -94,6 +94,15 @@ export async function cancelPatientBooking(token, appointmentId) {
   return readJson(response)
 }
 
+export async function confirmPatientBookingPayment(token, appointmentId) {
+  const response = await fetch(`${appointmentApiBase}/${appointmentId}/payment-confirmed`, {
+    method: 'PUT',
+    headers: getAuthHeaders(token),
+  })
+
+  return readJson(response)
+}
+
 export async function fetchAdminAppointmentStats(token, filters = {}) {
   const search = new URLSearchParams()
 

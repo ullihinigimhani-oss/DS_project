@@ -43,7 +43,7 @@ class User {
    */
   static async findById(id) {
     const query = `
-      SELECT id, email, name, phone, birthdate, address, emergency_contact, weight, gender, user_type, is_active, created_at
+      SELECT id, email, name, phone, birthdate, address, emergency_contact, emergency_contact_name, emergency_contact_number, weight, gender, blood_type, allergies, last_visit_date, user_type, is_active, created_at
       FROM users
       WHERE id = $1
     `;
@@ -55,7 +55,7 @@ class User {
    * Update user
    */
   static async update(id, userData) {
-    const { name, phone, birthdate, address, emergency_contact, weight, gender } = userData;
+    const { name, phone, birthdate, address, emergency_contact_name, emergency_contact_number, weight, gender, blood_type, allergies, last_visit_date } = userData;
 
     const query = `
       UPDATE users
@@ -63,15 +63,19 @@ class User {
           phone = COALESCE($3, phone),
           birthdate = COALESCE($4, birthdate),
           address = COALESCE($5, address),
-          emergency_contact = COALESCE($6, emergency_contact),
-          weight = COALESCE($7, weight),
-          gender = COALESCE($8, gender),
+          emergency_contact_name = COALESCE($6, emergency_contact_name),
+          emergency_contact_number = COALESCE($7, emergency_contact_number),
+          weight = COALESCE($8, weight),
+          gender = COALESCE($9, gender),
+          blood_type = COALESCE($10, blood_type),
+          allergies = COALESCE($11, allergies),
+          last_visit_date = COALESCE($12, last_visit_date),
           updated_at = CURRENT_TIMESTAMP
       WHERE id = $1
-      RETURNING id, email, name, phone, birthdate, address, emergency_contact, weight, gender, user_type, updated_at
+      RETURNING id, email, name, phone, birthdate, address, emergency_contact_name, emergency_contact_number, weight, gender, blood_type, allergies, last_visit_date, user_type, updated_at
     `;
 
-    const result = await db.query(query, [id, name, phone, birthdate, address, emergency_contact, weight, gender]);
+    const result = await db.query(query, [id, name, phone, birthdate, address, emergency_contact_name, emergency_contact_number, weight, gender, blood_type, allergies, last_visit_date]);
     return result.rows[0];
   }
 

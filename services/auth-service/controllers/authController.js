@@ -257,16 +257,34 @@ const login = async (req, res) => {
       },
     });
 
+    let fullUser = await User.findById(user.id);
+    if (!fullUser) {
+        fullUser = user;
+    }
+
+    if (fullUser.user_type === 'patient') {
+      const todayDate = new Date().toISOString().split('T')[0];
+      await User.update(fullUser.id, { last_visit_date: todayDate });
+      fullUser.last_visit_date = todayDate;
+    }
+
     res.status(200).json({
       success: true,
       message: 'Login successful',
       data: {
         user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          phone: user.phone,
-          userType: user.user_type,
+          id: fullUser.id,
+          email: fullUser.email,
+          name: fullUser.name,
+          phone: fullUser.phone,
+          userType: fullUser.user_type,
+          birthdate: fullUser.birthdate,
+          gender: fullUser.gender,
+          blood_type: fullUser.blood_type,
+          allergies: fullUser.allergies,
+          emergency_contact_name: fullUser.emergency_contact_name,
+          emergency_contact_number: fullUser.emergency_contact_number,
+          last_visit_date: fullUser.last_visit_date,
         },
         accessToken,
         refreshToken,
@@ -490,32 +508,43 @@ const updateProfile = async (req, res) => {
       });
     }
 
-    const { name, phone, password } = req.body;
-
-    if (!name || !phone || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Name, phone, and password are required',
-      });
-    }
-
-    const isPasswordValid = await User.verifyPassword(password, userWithPassword.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid password. Please try again.',
-      });
-    }
-
-    const { birthdate, address, emergency_contact, weight, gender } = req.body;
-    const updatedUser = await User.update(decoded.userId, {
+    const {
       name,
       phone,
+      password,
       birthdate,
       address,
-      emergency_contact,
+      emergency_contact_name,
+      emergency_contact_number,
       weight,
       gender,
+      blood_type,
+      allergies,
+      last_visit_date,
+    } = req.body;
+
+    if (password) {
+      const isPasswordValid = await User.verifyPassword(password, userWithPassword.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid password. Please try again.',
+        });
+      }
+    }
+
+    const updatedUser = await User.update(decoded.userId, {
+      name: name || userWithPassword.name,
+      phone: phone || userWithPassword.phone,
+      birthdate,
+      address,
+      emergency_contact_name,
+      emergency_contact_number,
+      weight,
+      gender,
+      blood_type,
+      allergies,
+      last_visit_date,
     });
 
     await sendAuthEvent('USER_PROFILE_UPDATED', {
@@ -525,7 +554,8 @@ const updateProfile = async (req, res) => {
       phone: updatedUser.phone,
       birthdate: updatedUser.birthdate,
       address: updatedUser.address,
-      emergency_contact: updatedUser.emergency_contact,
+      emergency_contact_name: updatedUser.emergency_contact_name,
+      emergency_contact_number: updatedUser.emergency_contact_number,
       weight: updatedUser.weight,
       gender: updatedUser.gender,
       updatedAt: updatedUser.updated_at,
@@ -542,9 +572,13 @@ const updateProfile = async (req, res) => {
           phone: updatedUser.phone,
           birthdate: updatedUser.birthdate,
           address: updatedUser.address,
-          emergency_contact: updatedUser.emergency_contact,
+          emergency_contact_name: updatedUser.emergency_contact_name,
+          emergency_contact_number: updatedUser.emergency_contact_number,
           weight: updatedUser.weight,
           gender: updatedUser.gender,
+          blood_type: updatedUser.blood_type,
+          allergies: updatedUser.allergies,
+          last_visit_date: updatedUser.last_visit_date,
           userType: updatedUser.user_type,
         },
       },

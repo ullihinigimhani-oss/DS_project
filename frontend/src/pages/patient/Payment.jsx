@@ -13,6 +13,8 @@ function PaymentForm({ onNavigate }) {
     pendingPaymentBooking,
     handleCreatePaymentIntent,
     handleConfirmPaymentAndBooking,
+    session,
+    isConnectedPatient,
   } = usePatientPortal()
 
   const [clientSecret, setClientSecret] = useState('')
@@ -24,6 +26,12 @@ function PaymentForm({ onNavigate }) {
   useEffect(() => {
     const createIntent = async () => {
       if (!pendingPaymentBooking?.appointmentId) {
+        setError('No appointment found for payment.')
+        return
+      }
+
+      if (!isConnectedPatient || !session?.token) {
+        setError('Please sign in to complete payment.')
         return
       }
 
@@ -34,14 +42,19 @@ function PaymentForm({ onNavigate }) {
         setClientSecret(paymentData.clientSecret || '')
         setPaymentId(paymentData.payment?.id || '')
       } catch (paymentError) {
-        setError(paymentError.message)
+        console.error('Payment intent creation error:', paymentError)
+        if (paymentError.message?.includes('401') || paymentError.message?.includes('token') || paymentError.message?.includes('unauthorized')) {
+          setError('Session expired. Please sign out and sign in again.')
+        } else {
+          setError(paymentError.message || 'Payment setup failed. Please try again.')
+        }
       } finally {
         setBusy(false)
       }
     }
 
     createIntent()
-  }, [pendingPaymentBooking?.appointmentId])
+  }, [pendingPaymentBooking?.appointmentId, isConnectedPatient, session?.token])
 
   const appointmentAmount = useMemo(
     () => Number(pendingPaymentBooking?.amount || 0).toFixed(2),
@@ -78,10 +91,13 @@ function PaymentForm({ onNavigate }) {
         paymentId,
         transactionId: result.paymentIntent?.id,
       })
-      setMessage('Payment completed and appointment moved to doctor appointments.')
-      onNavigate('/patient/my-bookings')
+      setMessage('Payment completed successfully! Redirecting to your appointments...')
+      setTimeout(() => {
+        onNavigate('/patient/my-bookings')
+      }, 2000)
     } catch (confirmError) {
-      setError(confirmError.message)
+      console.error('Payment confirmation error:', confirmError)
+      setError(confirmError.message || 'Payment confirmation failed. Please contact support.')
     } finally {
       setBusy(false)
     }

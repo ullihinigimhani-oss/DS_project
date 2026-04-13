@@ -20,7 +20,7 @@ import PatientMyBookingsPage from './pages/patient/MyBookings'
 import PatientDoctorsPage from './pages/patient/Doctors'
 import PatientSymptomHistoryPage from './pages/patient/SymptomHistory'
 import PatientProfilePage from './pages/patient/Profile'
-import { loginUser, registerUser, verifyUser } from './utils/authService'
+import { checkEmailAvailability, loginUser, registerUser, verifyUser } from './utils/authService'
 import {
   submitDoctorVerification,
   updateDoctorProfile,

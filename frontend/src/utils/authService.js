@@ -99,3 +99,56 @@ export async function verifyUser(token) {
 
   return handleAuthResponse(response)
 }
+
+/**
+ * Admin: List all users with search, role filter, and pagination
+ */
+export async function fetchAdminUsers(token, params = {}) {
+  const search = new URLSearchParams()
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '' && value !== 'all') {
+      search.set(key, String(value))
+    }
+  })
+
+  const response = await fetch(`${gatewayBaseUrl}/api/admin/users?${search.toString()}`, {
+    headers: getAuthHeaders(token),
+  })
+
+  return handleAuthResponse(response)
+}
+
+/**
+ * Admin: Retrieve paginated audit logs
+ */
+export async function fetchAdminAuditLogs(token, params = {}) {
+  const search = new URLSearchParams()
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '' && value !== 'all') {
+      search.set(key, String(value))
+    }
+  })
+
+  const response = await fetch(`${gatewayBaseUrl}/api/admin/audit-logs?${search.toString()}`, {
+    headers: getAuthHeaders(token),
+  })
+
+  return handleAuthResponse(response)
+}
+
+/**
+ * Admin: Toggle user status (active/inactive)
+ */
+export async function toggleAdminUserStatus(token, userId, isActive) {
+  const response = await fetch(`${gatewayBaseUrl}/api/admin/users/${userId}/status`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(token, {
+      'Content-Type': 'application/json',
+    }),
+    body: JSON.stringify({ isActive }),
+  })
+
+  return handleAuthResponse(response)
+}

@@ -20,12 +20,7 @@ import PatientMyBookingsPage from './pages/patient/MyBookings'
 import PatientDoctorsPage from './pages/patient/Doctors'
 import PatientSymptomHistoryPage from './pages/patient/SymptomHistory'
 import PatientProfilePage from './pages/patient/Profile'
-import AdminPortalPage from './pages/Admin/AdminPortalPage'
-import AdminUsersPage from './pages/Admin/Users'
-import AdminDoctorsPage from './pages/Admin/Doctors'
-import AdminAppointmentsPage from './pages/Admin/Appointments'
-import AdminSettingsPage from './pages/Admin/Settings'
-import { checkEmailAvailability, loginUser, registerUser } from './utils/authService'
+import { loginUser, registerUser, verifyUser } from './utils/authService'
 import {
   submitDoctorVerification,
   updateDoctorProfile,
@@ -156,29 +151,38 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(sessionStorageKey)
-      if (saved) {
+    const restoreSession = async () => {
+      try {
+        const saved = window.localStorage.getItem(sessionStorageKey)
+        if (!saved) return
+
         const parsed = JSON.parse(saved)
 
-        if (parsed?.mode === 'connected' && !parsed?.token) {
+        // Reject persisted sessions that have no token (old preview-mode data)
+        if (!parsed?.token) {
           clearPersistedAuth()
           setSession(null)
           return
         }
 
-        if (parsed?.token) {
+        // Re-verify the stored token against the auth service
+        try {
+          await verifyUser(parsed.token)
+          // Token is still valid — restore the session
           window.localStorage.setItem(authTokenStorageKey, parsed.token)
-        } else {
-          window.localStorage.removeItem(authTokenStorageKey)
+          setSession(parsed)
+        } catch {
+          // Token is expired or invalid — force a clean sign-in
+          clearPersistedAuth()
+          setSession(null)
         }
-
-        setSession(parsed)
+      } catch {
+        // Ignore bad local data and continue with a clean session.
+        clearPersistedAuth()
       }
-    } catch {
-      // Ignore bad local data and continue with a clean session.
-      clearPersistedAuth()
     }
+
+    restoreSession()
   }, [])
 
   useEffect(() => {
@@ -343,17 +347,18 @@ export default function App() {
     try {
       const data = await loginUser(loginValues)
 
-      if (data?.success && data?.data?.accessToken) {
-        const nextSession = createConnectedSession(data, loginValues)
-        persistSession(nextSession)
-        setSession(nextSession)
-        setAuthMessage('Signed in successfully.')
-        navigateTo(getRouteForRole(nextSession.role))
-      } else {
-        setAuthError(data?.message || 'Login failed. Please check your credentials.')
+      if (!data?.success || !data?.data?.accessToken) {
+        setAuthError(data?.message || 'Login failed. Please check your credentials and try again.')
+        return
       }
+
+      const nextSession = createConnectedSession(data, loginValues)
+      persistSession(nextSession)
+      setSession(nextSession)
+      setAuthMessage('Signed in successfully.')
+      navigateTo(getRouteForRole(loginValues.role))
     } catch (error) {
-      setAuthError(error.message || 'Login failed. Please check your credentials.')
+      setAuthError(error.message || 'Login failed. Please check your credentials and try again.')
     } finally {
       setAuthBusy(false)
     }
@@ -402,34 +407,31 @@ export default function App() {
 
       const data = await registerUser(registerValues)
 
-      if (data?.success && data?.data?.accessToken) {
-        const nextSession = createConnectedSession(data, registerValues)
+      if (!data?.success || !data?.data?.accessToken) {
+        setAuthError(data?.message || 'Registration failed. Please try again.')
+        return
+      }
 
-        if (nextSession.role === 'doctor') {
-          try {
-            await completeDoctorRegistration(nextSession.token)
-            setAuthMessage(
-              'Doctor account created and documents were submitted for admin review. Sign in after an administrator approves your account.',
-            )
-          } catch (doctorSetupError) {
-            setAuthError(
-              `Doctor account was created, but verification could not be completed: ${doctorSetupError.message}`,
-            )
-          }
-          clearPersistedAuth()
-          setSession(null)
-          navigateTo('/login')
-        } else {
-          setAuthMessage(data.message || 'Account created and signed in successfully.')
-          persistSession(nextSession)
-          setSession(nextSession)
-          navigateTo(getRouteForRole(registerValues.userType))
+      const nextSession = createConnectedSession(data, registerValues)
+
+      if (nextSession.role === 'doctor') {
+        try {
+          await completeDoctorRegistration(nextSession.token)
+          setAuthMessage('Doctor account created and verification documents were sent to admin review.')
+        } catch (doctorSetupError) {
+          setAuthError(
+            `Doctor account was created, but the verification package could not be submitted: ${doctorSetupError.message}`,
+          )
         }
       } else {
-        setAuthError(data?.message || 'Registration failed.')
+        setAuthMessage(data.message || 'Account created and signed in successfully.')
       }
+
+      persistSession(nextSession)
+      setSession(nextSession)
+      navigateTo(getRouteForRole(registerValues.userType))
     } catch (error) {
-      setAuthError(error.message || 'Registration failed.')
+      setAuthError(error.message || 'Registration failed. Please try again.')
     } finally {
       setAuthBusy(false)
     }

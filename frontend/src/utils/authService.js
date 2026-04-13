@@ -89,46 +89,13 @@ export async function registerUser(payload) {
   return handleAuthResponse(response)
 }
 
-export async function fetchAdminUsers(token, options = {}) {
-  const search = new URLSearchParams()
-
-  Object.entries(options).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '' && value !== 'all') {
-      search.set(key, String(value))
-    }
+export async function verifyUser(token) {
+  const response = await fetch(`${gatewayBaseUrl}/api/auth/verify`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
   })
 
-  const response = await fetch(`${gatewayBaseUrl}/api/admin/users?${search.toString()}`, {
-    headers: getAuthHeaders(token),
-  })
-
-  return readJson(response)
-}
-
-export async function toggleAdminUserStatus(token, userId, isActive) {
-  const response = await fetch(`${gatewayBaseUrl}/api/admin/users/${encodeURIComponent(userId)}/status`, {
-    method: 'PATCH',
-    headers: getAuthHeaders(token, {
-      'Content-Type': 'application/json',
-    }),
-    body: JSON.stringify({ is_active: isActive }),
-  })
-
-  return readJson(response)
-}
-
-export async function fetchAdminAuditLogs(token, options = {}) {
-  const search = new URLSearchParams()
-
-  Object.entries(options).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '' && value !== 'all') {
-      search.set(key, String(value))
-    }
-  })
-
-  const response = await fetch(`${gatewayBaseUrl}/api/admin/audit-logs?${search.toString()}`, {
-    headers: getAuthHeaders(token),
-  })
-
-  return readJson(response)
+  return handleAuthResponse(response)
 }

@@ -851,6 +851,8 @@ export default function App() {
         return renderPatientRoutePage(PatientConsultationsPage)
       case '/patient/my-bookings':
         return renderPatientRoutePage(PatientMyBookingsPage)
+      case '/patient/payment':
+        return renderPatientRoutePage(PatientPaymentPage)
       case '/patient/prescriptions':
         return renderPatientRoutePage(PatientPrescriptionsPage)
       case '/patient/doctors':

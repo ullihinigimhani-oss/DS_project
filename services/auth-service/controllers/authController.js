@@ -97,11 +97,10 @@ const register = async (req, res) => {
       });
     }
 
-    const requestedType = (userType || 'patient').toLowerCase();
-    if (requestedType === 'admin') {
+    if (userType === 'admin') {
       return res.status(403).json({
         success: false,
-        message: 'Administrator accounts cannot be created from the public registration form.',
+        message: 'Admin accounts cannot be created via registration',
       });
     }
 

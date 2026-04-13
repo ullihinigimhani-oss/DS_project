@@ -918,6 +918,19 @@ button:disabled {
   background: var(--sidebar-user-bg);
 }
 
+.patient-portal-user--clickable {
+  width: 100%;
+  text-align: left;
+  box-shadow: none;
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.15s ease;
+}
+
+.patient-portal-user--clickable:hover {
+  background: var(--sidebar-link-hover);
+  transform: translateX(3px);
+}
+
 .patient-avatar {
   display: inline-flex;
   align-items: center;
@@ -991,6 +1004,20 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.patient-portal-header-user--clickable {
+  padding: 8px 12px;
+  border-radius: 14px;
+  box-shadow: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.patient-portal-header-user--clickable:hover {
+  background: rgba(46, 70, 98, 0.07);
 }
 
 .patient-portal-header-user strong {
@@ -1825,6 +1852,19 @@ button:disabled {
   padding: 14px 12px;
   border-radius: 18px;
   background: var(--sidebar-user-bg);
+}
+
+.doctor-portal-user--clickable {
+  width: 100%;
+  text-align: left;
+  box-shadow: none;
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.15s ease;
+}
+
+.doctor-portal-user--clickable:hover {
+  background: var(--sidebar-link-hover);
+  transform: translateX(3px);
 }
 
 .doctor-avatar {
@@ -4114,6 +4154,19 @@ button:disabled {
   padding: 14px 12px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.06);
+}
+
+.admin-portal-user--clickable {
+  width: 100%;
+  text-align: left;
+  box-shadow: none;
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.15s ease;
+}
+
+.admin-portal-user--clickable:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateX(3px);
 }
 
 .admin-portal-footnote {

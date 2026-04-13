@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import ModernSelect from './ModernSelect'
+import ModernSearchBar from './ModernSearchBar'
 import {
   fetchNotifications,
   markAllNotificationsRead,
@@ -121,38 +123,37 @@ export default function NotificationCenter({
         </div>
 
         <div className="notification-filter-grid">
-          <label className="doctor-compact-field">
-            <span>Search</span>
-            <input
-              type="search"
+          <div className="doctor-compact-field">
+            <span>Search notifications</span>
+            <ModernSearchBar
               value={search}
               onChange={(event) => setSearch(event.target.value)}
+              onReset={() => setSearch('')}
               placeholder="Search notifications"
             />
-          </label>
+          </div>
 
-          <label className="doctor-compact-field">
+          <div className="doctor-compact-field">
             <span>Status</span>
-            <select value={readFilter} onChange={(event) => setReadFilter(event.target.value)}>
-              {readOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
+            <ModernSelect
+              value={readFilter}
+              onChange={(event) => setReadFilter(event.target.value)}
+              options={readOptions}
+            />
+          </div>
 
           {scope === 'all' ? (
-            <label className="doctor-compact-field">
+            <div className="doctor-compact-field">
               <span>Role</span>
-              <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
-                {availableRoles.map((role) => (
-                  <option key={role} value={role}>
-                    {role === 'all' ? 'All roles' : role}
-                  </option>
-                ))}
-              </select>
-            </label>
+              <ModernSelect
+                value={roleFilter}
+                onChange={(event) => setRoleFilter(event.target.value)}
+                options={availableRoles.map((role) => ({
+                  value: role,
+                  label: role === 'all' ? 'All roles' : role,
+                }))}
+              />
+            </div>
           ) : null}
         </div>
 

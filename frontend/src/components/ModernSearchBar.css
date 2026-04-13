@@ -1,0 +1,103 @@
+/* ModernSearchBar.css */
+
+.modern-search-form button {
+  border: none;
+  background: none;
+  color: #8b8ba7;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.modern-search-form.modern-search-form {
+  --timing: 0.3s;
+  --width-of-input: 100%;
+  --height-of-input: 44px;
+  --border-height: 2px;
+  --input-bg: rgba(255, 255, 255, 0.05); /* Slightly transparent for glassmorphism */
+  --border-color: #4f46e5; /* Modern Indigo */
+  --border-radius: 12px;
+  --after-border-radius: 4px;
+  
+  position: relative;
+  width: var(--width-of-input);
+  height: var(--height-of-input);
+  display: flex !important;
+  align-items: center !important;
+  padding-inline: 1rem !important;
+  border-radius: var(--border-radius) !important;
+  transition: border-radius 0.5s ease, background 0.3s ease !important;
+  background: var(--input-bg) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.modern-search-form .modern-search-input.modern-search-input {
+  font-size: 0.95rem !important;
+  background-color: transparent !important;
+  background-image: none !important; /* Remove legacy search icon */
+  width: 100% !important;
+  height: 100% !important;
+  padding-inline: 0.75rem !important;
+  padding-block: 0 !important;
+  border: none !important;
+  color: inherit !important;
+  box-shadow: none !important;
+}
+
+.modern-search-input::placeholder {
+  color: #8b8ba7;
+  opacity: 0.7;
+}
+
+/* styling of animated border */
+.modern-search-form:before {
+  content: "";
+  position: absolute;
+  background: linear-gradient(90deg, var(--border-color), #818cf8);
+  transform: scaleX(0);
+  transform-origin: center;
+  width: calc(100% - 2px);
+  height: var(--border-height);
+  left: 1px;
+  bottom: 0;
+  border-radius: 1px;
+  transition: transform var(--timing) ease;
+}
+
+/* Hover on Input */
+.modern-search-form:focus-within {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--after-border-radius);
+}
+
+.modern-search-input:focus {
+  outline: none;
+}
+
+/* here is code of animated border */
+.modern-search-form:focus-within:before {
+  transform: scaleX(1);
+}
+
+/* styling of close button */
+.modern-search-reset {
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.modern-search-reset:hover {
+  color: #ef4444; /* Red on hover */
+}
+
+/* sizing svg icons */
+.modern-search-form svg {
+  width: 18px;
+  height: 18px;
+}
+
+.search-icon-btn {
+  pointer-events: none; /* Make the button non-clickable as it's just an icon */
+}

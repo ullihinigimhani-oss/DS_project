@@ -1,4 +1,5 @@
 import StatusPill from '../../components/StatusPill'
+import ModernSelect from '../../components/ModernSelect'
 import DoctorPortalPage from './DoctorPortalPage'
 import {
   dayLabels,
@@ -95,16 +96,17 @@ function ScheduleContent() {
 
           <form className="analysis-form" onSubmit={handleAddSlot}>
             <div className="doctor-inline-grid">
-              <label>
-                Day
-                <select name="dayOfWeek" value={slotValues.dayOfWeek} onChange={handleSlotChange}>
-                  {dayLabels.map((label, index) => (
-                    <option key={label} value={index}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div className="doctor-compact-field">
+                <span>Day</span>
+                <ModernSelect
+                  value={slotValues.dayOfWeek}
+                  onChange={(event) => handleSlotChange({ target: { name: 'dayOfWeek', value: event.target.value } })}
+                  options={dayLabels.map((label, index) => ({
+                    value: String(index),
+                    label: label,
+                  }))}
+                />
+              </div>
               <label>
                 Start
                 <input name="startTime" type="time" value={slotValues.startTime} onChange={handleSlotChange} />

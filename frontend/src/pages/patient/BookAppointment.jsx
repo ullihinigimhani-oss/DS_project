@@ -1,4 +1,5 @@
 import PatientPortalPage from './PatientPortalPage'
+import ModernSelect from '../../components/ModernSelect'
 import { formatDate, formatTime, usePatientPortal } from './PatientPortalContext'
 
 function BookAppointmentContent({ onNavigate }) {
@@ -87,19 +88,18 @@ function BookAppointmentContent({ onNavigate }) {
 
         <div className="patient-booking-shell">
           <div className="patient-booking-form">
-            <label className="patient-field">
+            <div className="patient-field">
               Select doctor
-              <select
+              <ModernSelect
                 value={selectedDoctorId}
                 onChange={(event) => setSelectedDoctorId(event.target.value)}
-              >
-                {verifiedDoctors.map((doctor) => (
-                  <option key={doctor.doctor_id} value={doctor.doctor_id}>
-                    {doctor.name || 'Doctor'} - {doctor.specialization || 'General Practice'}
-                  </option>
-                ))}
-              </select>
-            </label>
+                placeholder="Choose a verified doctor"
+                options={verifiedDoctors.map((doctor) => ({
+                  value: doctor.doctor_id,
+                  label: `${doctor.name || 'Doctor'} - ${doctor.specialization || 'General Practice'}`,
+                }))}
+              />
+            </div>
 
             {selectedDoctor ? (
               <div className="patient-doctor-spotlight">

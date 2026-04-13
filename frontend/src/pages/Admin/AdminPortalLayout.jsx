@@ -1,4 +1,5 @@
 import { adminSidebarItems, getInitials, useAdminPortal } from './AdminPortalContext'
+import NotificationBell from '../../components/NotificationBell'
 
 export default function AdminPortalLayout({
   currentPath,
@@ -58,18 +59,13 @@ export default function AdminPortalLayout({
         </nav>
 
         <div className="admin-portal-footer">
-          <button
-            type="button"
-            className="admin-portal-user admin-portal-user--clickable"
-            onClick={() => onNavigate('/admin/settings')}
-            title="Account settings"
-          >
+          <div className="admin-portal-user">
             <div className="admin-avatar">{getInitials(session?.name)}</div>
             <div>
               <strong>{session?.name || 'Admin'}</strong>
               <span>{session?.email || 'admin@arogya.com'}</span>
             </div>
-          </button>
+          </div>
           <div className="admin-portal-footnote">
             <span>{overview.pendingDoctors} pending verifications</span>
           </div>
@@ -85,18 +81,21 @@ export default function AdminPortalLayout({
             <p className="admin-portal-section-label">{activeNavItem?.label || 'Overview'}</p>
             <h1>{activeNavItem?.label || 'Overview'}</h1>
           </div>
-          <button
-            type="button"
-            className="admin-portal-header-user admin-portal-header-user--clickable"
-            onClick={() => onNavigate('/admin/settings')}
-            title="Account settings"
-          >
-            <div className="admin-avatar small">{getInitials(session?.name)}</div>
-            <div>
-              <strong>{session?.name || 'Admin'}</strong>
-              <span>System operations</span>
+          <div className="portal-header-tools">
+            <NotificationBell
+              token={session?.token}
+              scope="all"
+              pagePath="/admin/notifications"
+              onNavigate={onNavigate}
+            />
+            <div className="admin-portal-header-user">
+              <div className="admin-avatar small">{getInitials(session?.name)}</div>
+              <div>
+                <strong>{session?.name || 'Admin'}</strong>
+                <span>System operations</span>
+              </div>
             </div>
-          </button>
+          </div>
         </header>
 
         {loading ? <p className="empty-state">Loading admin dashboard...</p> : null}

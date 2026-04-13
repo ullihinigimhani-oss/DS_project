@@ -1,4 +1,5 @@
 import { getInitials, patientSidebarItems, usePatientPortal } from './PatientPortalContext'
+import NotificationBell from '../../components/NotificationBell'
 
 export default function PatientPortalLayout({
   currentPath,
@@ -65,18 +66,13 @@ export default function PatientPortalLayout({
         </nav>
 
         <div className="patient-portal-footer">
-          <button
-            type="button"
-            className="patient-portal-user patient-portal-user--clickable"
-            onClick={() => onNavigate('/patient/profile')}
-            title="View your profile"
-          >
+          <div className="patient-portal-user">
             <div className="patient-avatar">{getInitials(session?.name)}</div>
             <div>
               <strong>{session?.name || 'Patient'}</strong>
               <span>{session?.email || 'patient@example.com'}</span>
             </div>
-          </button>
+          </div>
           <button type="button" className="patient-signout-button" onClick={onSignOut}>
             Sign out
           </button>
@@ -89,18 +85,21 @@ export default function PatientPortalLayout({
             <p className="patient-portal-section-label">{activeNavItem?.label || 'Overview'}</p>
             <h1>{activeNavItem?.label || 'Overview'}</h1>
           </div>
-          <button
-            type="button"
-            className="patient-portal-header-user patient-portal-header-user--clickable"
-            onClick={() => onNavigate('/patient/profile')}
-            title="View your profile"
-          >
-            <div className="patient-avatar small">{getInitials(session?.name)}</div>
-            <div>
-              <strong>{session?.name || 'Patient'}</strong>
-              <span>{topCondition?.name || 'Care plan in progress'}</span>
+          <div className="portal-header-tools">
+            <NotificationBell
+              token={session?.token}
+              scope="mine"
+              pagePath="/patient/notifications"
+              onNavigate={onNavigate}
+            />
+            <div className="patient-portal-header-user">
+              <div className="patient-avatar small">{getInitials(session?.name)}</div>
+              <div>
+                <strong>{session?.name || 'Patient'}</strong>
+                <span>{topCondition?.name || 'Care plan in progress'}</span>
+              </div>
             </div>
-          </button>
+          </div>
         </header>
 
         {bookingError ? <p className="error-text">{bookingError}</p> : null}

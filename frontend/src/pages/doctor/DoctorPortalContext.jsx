@@ -35,6 +35,7 @@ export const sidebarItems = [
   { id: 'consultations', label: 'Consultations', path: '/doctor/consultations' },
   { id: 'prescriptions', label: 'Prescriptions', path: '/doctor/prescriptions' },
   { id: 'verification', label: 'Verification', path: '/doctor/verification' },
+  { id: 'notifications', label: 'Notifications', path: '/doctor/notifications' },
   { id: 'profile', label: 'Profile', path: '/doctor/profile' },
 ]
 

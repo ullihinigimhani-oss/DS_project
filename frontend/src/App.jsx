@@ -15,16 +15,19 @@ import DoctorPatientsPage from './pages/doctor/Patients'
 import DoctorConsultationsPage from './pages/doctor/Consultations'
 import DoctorPrescriptionsPage from './pages/doctor/Prescriptions'
 import DoctorVerificationPage from './pages/doctor/Verification'
+import DoctorNotificationsPage from './pages/doctor/Notifications'
 import DoctorProfilePage from './pages/doctor/Profile'
 import PatientBookAppointmentPage from './pages/patient/BookAppointment'
 import PatientMyBookingsPage from './pages/patient/MyBookings'
 import PatientDoctorsPage from './pages/patient/Doctors'
 import PatientSymptomHistoryPage from './pages/patient/SymptomHistory'
+import PatientNotificationsPage from './pages/patient/Notifications'
 import PatientProfilePage from './pages/patient/Profile'
 import AdminPortalPage from './pages/Admin/AdminPortalPage'
 import AdminUsersPage from './pages/Admin/Users'
 import AdminDoctorsPage from './pages/Admin/Doctors'
 import AdminAppointmentsPage from './pages/Admin/Appointments'
+import AdminNotificationsPage from './pages/Admin/Notifications'
 import AdminSettingsPage from './pages/Admin/Settings'
 import { checkEmailAvailability, loginUser, registerUser, verifyUser } from './utils/authService'
 import {
@@ -820,6 +823,8 @@ export default function App() {
         return renderDoctorRoutePage(DoctorPrescriptionsPage)
       case '/doctor/verification':
         return renderDoctorRoutePage(DoctorVerificationPage)
+      case '/doctor/notifications':
+        return renderDoctorRoutePage(DoctorNotificationsPage)
       case '/doctor/profile':
         return renderDoctorRoutePage(DoctorProfilePage)
       case '/admin':
@@ -831,6 +836,8 @@ export default function App() {
         return renderAdminRoutePage(AdminDoctorsPage)
       case '/admin/appointments':
         return renderAdminRoutePage(AdminAppointmentsPage)
+      case '/admin/notifications':
+        return renderAdminRoutePage(AdminNotificationsPage)
       case '/admin/settings':
         return renderAdminRoutePage(AdminSettingsPage)
       case '/patient':
@@ -844,6 +851,8 @@ export default function App() {
       case '/patient/ai-symptoms':
       case '/patient/symptom-history':
         return renderPatientRoutePage(PatientSymptomHistoryPage)
+      case '/patient/notifications':
+        return renderPatientRoutePage(PatientNotificationsPage)
       case '/patient/profile':
         return renderPatientRoutePage(PatientProfilePage)
       case '/doctor':

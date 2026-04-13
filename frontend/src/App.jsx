@@ -117,6 +117,7 @@ export default function App() {
   const isPatientPortalRoute = currentPath.startsWith('/patient')
   const isAdminPortalRoute = currentPath === '/admin' || currentPath.startsWith('/admin/')
   const isAuthRoute = currentPath === '/login' || currentPath === '/register'
+  const isHomeRoute = currentPath === '/' || currentPath === '/Home'
   const activeRole = session?.role || loginValues.role
   const topCondition = analysis?.possibleConditions?.[0] || null
 
@@ -710,6 +711,7 @@ export default function App() {
         isPatientPortalRoute ? 'patient-route-shell' : ''
       } ${isAdminPortalRoute ? 'admin-route-shell' : ''} ${
         isAuthRoute ? 'app-shell--auth' : ''
+      } ${isHomeRoute ? 'home-route-shell' : ''
       }`.trim()}
     >
       {renderCurrentPage()}

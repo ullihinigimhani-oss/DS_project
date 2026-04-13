@@ -99,3 +99,51 @@ export async function verifyUser(token) {
 
   return handleAuthResponse(response)
 }
+
+export async function fetchAdminUsers(token, options = {}) {
+  const params = new URLSearchParams()
+
+  Object.entries(options).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value).trim() !== '' && value !== 'all') {
+      params.set(key, String(value))
+    }
+  })
+
+  const query = params.toString()
+  const response = await fetch(`${gatewayBaseUrl}/api/admin/users${query ? `?${query}` : ''}`, {
+    method: 'GET',
+    headers: getAuthHeaders(token),
+  })
+
+  return readJson(response)
+}
+
+export async function toggleAdminUserStatus(token, userId, isActive) {
+  const response = await fetch(`${gatewayBaseUrl}/api/admin/users/${userId}/status`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(token, {
+      'Content-Type': 'application/json',
+    }),
+    body: JSON.stringify({ isActive }),
+  })
+
+  return readJson(response)
+}
+
+export async function fetchAdminAuditLogs(token, options = {}) {
+  const params = new URLSearchParams()
+
+  Object.entries(options).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value).trim() !== '') {
+      params.set(key, String(value))
+    }
+  })
+
+  const query = params.toString()
+  const response = await fetch(`${gatewayBaseUrl}/api/admin/audit-logs${query ? `?${query}` : ''}`, {
+    method: 'GET',
+    headers: getAuthHeaders(token),
+  })
+
+  return readJson(response)
+}

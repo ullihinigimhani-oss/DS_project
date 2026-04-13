@@ -34,6 +34,13 @@
   padding: 24px 0 56px;
 }
 
+.app-shell.home-route-shell {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
 .app-shell--auth {
   width: 100%;
   max-width: none;

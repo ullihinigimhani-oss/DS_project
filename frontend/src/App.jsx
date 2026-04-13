@@ -103,7 +103,6 @@ export default function App() {
   const [loginValues, setLoginValues] = useState({
     email: '',
     password: '',
-    role: 'patient',
   })
   const [registerValues, setRegisterValues] = useState({
     name: '',
@@ -126,7 +125,7 @@ export default function App() {
   const isPublicDoctorsRoute = currentPath === '/doctors'
   const isAuthRoute = currentPath === '/login' || currentPath === '/register'
   const isHomeRoute = currentPath === '/' || currentPath === '/Home'
-  const activeRole = session?.role || loginValues.role
+  const activeRole = session?.role || 'patient'
   const topCondition = analysis?.possibleConditions?.[0] || null
 
   const quickStats = useMemo(() => {
@@ -389,11 +388,12 @@ export default function App() {
         return
       }
 
+      // Role is determined from the backend response, not from user input
       const nextSession = createConnectedSession(data, loginValues)
       persistSession(nextSession)
       setSession(nextSession)
       setAuthMessage('Signed in successfully.')
-      navigateTo(getRouteForRole(loginValues.role))
+      navigateTo(getRouteForRole(nextSession.role))
     } catch (error) {
       setAuthError(error.message || 'Login failed. Please check your credentials and try again.')
     } finally {
@@ -510,8 +510,7 @@ export default function App() {
       onChange={handleLoginChange}
       onSubmit={handleLogin}
       loading={authBusy}
-      roleHint={loginValues.role}
-      roleLabel="Sign in as"
+      hideRolePicker={true}
       navigateTo={navigateTo}
       bannerError={authError}
       bannerMessage={authMessage}

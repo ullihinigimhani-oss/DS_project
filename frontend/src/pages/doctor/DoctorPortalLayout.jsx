@@ -84,7 +84,12 @@ export default function DoctorPortalLayout({
         </nav>
 
         <div className="doctor-portal-footer">
-          <div className="doctor-portal-user">
+          <button
+            type="button"
+            className="doctor-portal-user doctor-portal-user--clickable"
+            onClick={() => onNavigate('/doctor/profile')}
+            title="View your profile"
+          >
             <div className="doctor-avatar">
               {doctorImageUrl ? (
                 <img src={doctorImageUrl} alt={`Dr. ${profile?.name || session?.name || 'Doctor'}`} />
@@ -96,7 +101,7 @@ export default function DoctorPortalLayout({
               <strong>Dr. {profile?.name || session?.name || 'Doctor'}</strong>
               <span>{session?.email}</span>
             </div>
-          </div>
+          </button>
           <button type="button" className="doctor-signout-button" onClick={onSignOut}>
             Sign out
           </button>
@@ -109,7 +114,12 @@ export default function DoctorPortalLayout({
             <p className="doctor-portal-section-label">{activeNavItem?.label || 'Overview'}</p>
             <h1>{activeNavItem?.label || 'Overview'}</h1>
           </div>
-          <div className="doctor-portal-header-user">
+          <button
+            type="button"
+            className="doctor-portal-header-user doctor-portal-header-user--clickable"
+            onClick={() => onNavigate('/doctor/profile')}
+            title="View your profile"
+          >
             <div className="doctor-avatar small">
               {doctorImageUrl ? (
                 <img src={doctorImageUrl} alt={`Dr. ${profile?.name || session?.name || 'Doctor'}`} />
@@ -121,7 +131,7 @@ export default function DoctorPortalLayout({
               <strong>Dr. {profile?.name || session?.name || 'Doctor'}</strong>
               <span>{profile?.specialization || 'Doctor account'}</span>
             </div>
-          </div>
+          </button>
         </header>
 
         {loading ? <p className="empty-state">Loading doctor dashboard...</p> : null}

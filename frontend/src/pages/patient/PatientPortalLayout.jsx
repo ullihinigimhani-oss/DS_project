@@ -65,13 +65,18 @@ export default function PatientPortalLayout({
         </nav>
 
         <div className="patient-portal-footer">
-          <div className="patient-portal-user">
+          <button
+            type="button"
+            className="patient-portal-user patient-portal-user--clickable"
+            onClick={() => onNavigate('/patient/profile')}
+            title="View your profile"
+          >
             <div className="patient-avatar">{getInitials(session?.name)}</div>
             <div>
               <strong>{session?.name || 'Patient'}</strong>
               <span>{session?.email || 'patient@example.com'}</span>
             </div>
-          </div>
+          </button>
           <button type="button" className="patient-signout-button" onClick={onSignOut}>
             Sign out
           </button>
@@ -84,13 +89,18 @@ export default function PatientPortalLayout({
             <p className="patient-portal-section-label">{activeNavItem?.label || 'Overview'}</p>
             <h1>{activeNavItem?.label || 'Overview'}</h1>
           </div>
-          <div className="patient-portal-header-user">
+          <button
+            type="button"
+            className="patient-portal-header-user patient-portal-header-user--clickable"
+            onClick={() => onNavigate('/patient/profile')}
+            title="View your profile"
+          >
             <div className="patient-avatar small">{getInitials(session?.name)}</div>
             <div>
               <strong>{session?.name || 'Patient'}</strong>
               <span>{topCondition?.name || 'Care plan in progress'}</span>
             </div>
-          </div>
+          </button>
         </header>
 
         {bookingError ? <p className="error-text">{bookingError}</p> : null}

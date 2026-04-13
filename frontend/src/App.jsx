@@ -19,8 +19,11 @@ import DoctorVerificationPage from './pages/doctor/Verification'
 import DoctorNotificationsPage from './pages/doctor/Notifications'
 import DoctorProfilePage from './pages/doctor/Profile'
 import PatientBookAppointmentPage from './pages/patient/BookAppointment'
+import PatientConsultationsPage from './pages/patient/Consultations'
 import PatientMyBookingsPage from './pages/patient/MyBookings'
+import PatientPrescriptionsPage from './pages/patient/Prescriptions'
 import PatientDoctorsPage from './pages/patient/Doctors'
+import PatientPaymentPage from './pages/patient/Payment'
 import PatientSymptomHistoryPage from './pages/patient/SymptomHistory'
 import PatientNotificationsPage from './pages/patient/Notifications'
 import PatientProfilePage from './pages/patient/Profile'
@@ -109,6 +112,7 @@ export default function App() {
   const [loginValues, setLoginValues] = useState({
     email: '',
     password: '',
+    role: 'patient',
   })
   const [registerValues, setRegisterValues] = useState({
     name: '',
@@ -525,7 +529,7 @@ export default function App() {
       onChange={handleLoginChange}
       onSubmit={handleLogin}
       loading={authBusy}
-      hideRolePicker={true}
+      roleHint={loginValues.role || 'patient'}
       navigateTo={navigateTo}
       bannerError={authError}
       bannerMessage={authMessage}
@@ -853,8 +857,12 @@ export default function App() {
         return renderPatientPage()
       case '/patient/book-appointment':
         return renderPatientRoutePage(PatientBookAppointmentPage)
+      case '/patient/consultations':
+        return renderPatientRoutePage(PatientConsultationsPage)
       case '/patient/my-bookings':
         return renderPatientRoutePage(PatientMyBookingsPage)
+      case '/patient/prescriptions':
+        return renderPatientRoutePage(PatientPrescriptionsPage)
       case '/patient/doctors':
         return renderPatientRoutePage(PatientDoctorsPage)
       case '/patient/ai-symptoms':

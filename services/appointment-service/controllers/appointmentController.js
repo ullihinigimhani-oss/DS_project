@@ -4,6 +4,7 @@ const { sendAppointmentEvent } = require('../config/kafka');
 
 const DOCTOR_SERVICE_URL = process.env.DOCTOR_SERVICE_URL || 'http://localhost:3003';
 const TELEMEDICINE_SERVICE_URL = process.env.TELEMEDICINE_SERVICE_URL || 'http://localhost:3005';
+const PAYMENT_SERVICE_URL = process.env.PAYMENT_SERVICE_URL || 'http://localhost:3006';
 
 /* ── helpers ───────────────────────────────────────────────────── */
 
@@ -20,6 +21,17 @@ function toDateStr(date) {
     return date.toISOString().split('T')[0];
 }
 
+function toMinutes(timeValue) {
+    const [hours, minutes] = String(timeValue || '00:00').slice(0, 5).split(':').map(Number);
+    return (hours * 60) + (minutes || 0);
+}
+
+function toTimeString(totalMinutes) {
+    const hours = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
+    const minutes = String(totalMinutes % 60).padStart(2, '0');
+    return `${hours}:${minutes}`;
+}
+
 /* ── GET /api/v1/appointments/doctors ──────────────────────────── */
 // Proxy: list approved doctors from doctor-service (public)
 exports.listDoctors = async (req, res) => {
@@ -33,7 +45,7 @@ exports.listDoctors = async (req, res) => {
 };
 
 /* ── GET /api/v1/appointments/doctors/:doctorId/slots ───────────── */
-// Returns doctor's available slots for a week, annotated with isBooked
+// Returns doctor's available 15-minute slots for a week, annotated with booking usage
 exports.getDoctorAvailableSlots = async (req, res) => {
     try {
         const { doctorId } = req.params;
@@ -66,7 +78,10 @@ exports.getDoctorAvailableSlots = async (req, res) => {
             })
         );
 
-        const annotated = slots.map(slot => {
+        const expandedSlots = [];
+        const groupedUsage = new Map();
+
+        slots.forEach(slot => {
             const dow = slot.day_of_week;
             let offset = dow - 1;
             if (dow === 0) offset = 6;
@@ -74,10 +89,43 @@ exports.getDoctorAvailableSlots = async (req, res) => {
             const slotDate = new Date(monday);
             slotDate.setDate(monday.getDate() + offset);
             const appointmentDate = toDateStr(slotDate);
-            const startHHMM = slot.start_time.substring(0, 5);
-            const isBooked = bookedSet.has(`${appointmentDate}|${startHHMM}`);
+            const slotStart = toMinutes(slot.start_time);
+            const slotEnd = toMinutes(slot.end_time);
+            const key = `${appointmentDate}|${slot.start_time.substring(0, 5)}|${slot.end_time.substring(0, 5)}`;
 
-            return { ...slot, appointmentDate, isBooked };
+            if (!groupedUsage.has(key)) {
+                groupedUsage.set(key, { total: 0, booked: 0 });
+            }
+
+            for (let start = slotStart; start + 15 <= slotEnd; start += 15) {
+                const startHHMM = toTimeString(start);
+                const endHHMM = toTimeString(start + 15);
+                const isBooked = bookedSet.has(`${appointmentDate}|${startHHMM}`);
+                const usage = groupedUsage.get(key);
+                usage.total += 1;
+                if (isBooked) usage.booked += 1;
+
+                expandedSlots.push({
+                    ...slot,
+                    appointmentDate,
+                    start_time: startHHMM,
+                    end_time: endHHMM,
+                    isBooked,
+                    source_slot_start_time: slot.start_time,
+                    source_slot_end_time: slot.end_time,
+                    slot_group_key: key,
+                });
+            }
+        });
+
+        const annotated = expandedSlots.map(slot => {
+            const usage = groupedUsage.get(slot.slot_group_key) || { total: 0, booked: 0 };
+            return {
+                ...slot,
+                totalAppointmentsInWindow: usage.total,
+                bookedAppointmentsInWindow: usage.booked,
+                remainingAppointmentsInWindow: Math.max(usage.total - usage.booked, 0),
+            };
         });
 
         res.status(200).json({
@@ -104,6 +152,20 @@ exports.createBooking = async (req, res) => {
             });
         }
 
+        if (!reason || !String(reason).trim()) {
+            return res.status(400).json({
+                success: false,
+                message: 'reason is required',
+            });
+        }
+
+        if (!patientName || !String(patientName).trim()) {
+            return res.status(400).json({
+                success: false,
+                message: 'patientName is required',
+            });
+        }
+
         // Resolve patientPhone from auth-service if not provided by the frontend
         if (!patientPhone) {
             try {
@@ -114,6 +176,13 @@ exports.createBooking = async (req, res) => {
             } catch (err) {
                 console.warn('Could not resolve patientPhone from auth-service:', err.message);
             }
+        }
+
+        if (!patientPhone || !String(patientPhone).trim()) {
+            return res.status(400).json({
+                success: false,
+                message: 'patientPhone is required',
+            });
         }
 
         const existing = await db.query(
@@ -134,8 +203,8 @@ exports.createBooking = async (req, res) => {
 
         const result = await db.query(
             `INSERT INTO appointments
-                (patient_id, doctor_id, slot_id, appointment_date, start_time, end_time, reason, doctor_name, patient_name, patient_phone, status, is_telemedicine)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending', $11)
+                (patient_id, doctor_id, slot_id, appointment_date, start_time, end_time, reason, doctor_name, patient_name, patient_phone, status, is_telemedicine, payment_status)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending', $11, 'unpaid')
              RETURNING *`,
             [patientId, doctorId, slotId || null, appointmentDate, startTime, endTime, reason || null, doctorName || null, patientName || null, patientPhone || null, isTelemedicine === true]
         );
@@ -168,6 +237,51 @@ exports.createBooking = async (req, res) => {
     }
 };
 
+/* ── PUT /api/v1/appointments/:id/payment-confirmed ───────────── */
+exports.confirmBookingPayment = async (req, res) => {
+    try {
+        const patientId = req.user?.userId || req.user?.id || req.user?.sub;
+        const { id } = req.params;
+
+        if (!patientId) {
+            return res.status(401).json({
+                success: false,
+                message: 'Unable to resolve authenticated user id',
+            });
+        }
+
+        const result = await db.query(
+            `UPDATE appointments
+             SET status = 'pending',
+                 payment_status = 'paid',
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = $1
+               AND patient_id = $2
+               AND status IN ('pending', 'confirmed')
+             RETURNING *`,
+            [id, patientId]
+        );
+
+        if (!result.rows[0]) {
+            return res.status(404).json({
+                success: false,
+                message: 'Appointment not found',
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: {
+                ...result.rows[0],
+                payment_status: 'paid',
+                payment_label: 'paid',
+            },
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 /* ── GET /api/v1/appointments ──────────────────────────────────── */
 exports.getMyBookings = async (req, res) => {
     try {
@@ -187,7 +301,14 @@ exports.getMyBookings = async (req, res) => {
              ORDER BY appointment_date DESC, start_time DESC`,
             params
         );
-        res.status(200).json({ success: true, data: result.rows });
+
+        const enrichedRows = result.rows.map((appointment) => ({
+            ...appointment,
+            payment_status: appointment.payment_status || 'unpaid',
+            payment_label: (appointment.payment_status || 'unpaid') === 'paid' ? 'paid' : 'unpaid',
+        }));
+
+        res.status(200).json({ success: true, data: enrichedRows });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -250,7 +371,9 @@ exports.getDoctorAppointments = async (req, res) => {
 
         const result = await db.query(
             `SELECT * FROM appointments
-             WHERE doctor_id = $1 AND status != 'cancelled'${whereExtra}
+             WHERE doctor_id = $1
+               AND status != 'cancelled'
+               AND payment_status = 'paid'${whereExtra}
              ORDER BY appointment_date ASC, start_time ASC`,
             [doctorId]
         );
@@ -273,7 +396,13 @@ exports.getDoctorAppointments = async (req, res) => {
             })
         );
 
-        const enriched = rows.map(r => ({ ...r, patient_email: emailMap[r.patient_id] || '' }));
+        const enriched = rows.map(r => ({
+            ...r,
+            patient_email: emailMap[r.patient_id] || '',
+            payment_status: r.payment_status || 'unpaid',
+            payment_label: (r.payment_status || 'unpaid') === 'paid' ? 'paid' : 'unpaid',
+        }));
+
         res.status(200).json({ success: true, data: enriched });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

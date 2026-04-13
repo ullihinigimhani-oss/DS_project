@@ -29,6 +29,7 @@ const paymentRoutes = require('./routes/paymentRoutes');
 
 // Mount routes with /api/v1 prefix
 app.use('/api/v1/payments', paymentRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

@@ -15,6 +15,13 @@ function formatDateTime(value) {
   return date.toLocaleString()
 }
 
+function formatCompactId(value) {
+  const raw = String(value || '').trim()
+  if (!raw) return 'Not available'
+  if (raw.length <= 12) return raw
+  return `${raw.slice(0, 8)}...${raw.slice(-4)}`
+}
+
 function parseMedicationList(value) {
   if (!value) return []
 
@@ -383,7 +390,7 @@ function PrescriptionsContent() {
 
           <form className="analysis-form" onSubmit={handleIssuePrescription}>
             <div className="doctor-prescription-form-grid">
-              <div className="doctor-compact-field">
+              <div className="doctor-compact-field doctor-select-field">
                 <span>Patient</span>
                 <ModernSelect
                   value={prescriptionValues.patientId}
@@ -391,12 +398,17 @@ function PrescriptionsContent() {
                   placeholder="Select patient"
                   options={patientOptions.map((patient) => ({
                     value: patient.id,
-                    label: `${patient.name} (${patient.id})`,
+                    label: `${patient.name} (${formatCompactId(patient.id)})`,
                   }))}
                 />
+                <small className="doctor-field-hint">
+                  {prescriptionValues.patientId
+                    ? `Patient ID: ${prescriptionValues.patientId}`
+                    : 'Choose the patient who should receive this prescription.'}
+                </small>
               </div>
 
-              <div className="doctor-compact-field">
+              <div className="doctor-compact-field doctor-select-field">
                 <span>Appointment</span>
                 <ModernSelect
                   value={prescriptionValues.appointmentId}
@@ -406,9 +418,14 @@ function PrescriptionsContent() {
                     value: appointment.id,
                     label: `${formatDate(appointment.appointment_date)} | ${formatTime(
                       appointment.start_time,
-                    )} | ${appointment.status}`,
+                    )} | ${(appointment.status || 'pending').replace(/_/g, ' ')}`,
                   }))}
                 />
+                <small className="doctor-field-hint">
+                  {prescriptionValues.appointmentId
+                    ? 'This prescription will stay linked to the selected visit.'
+                    : 'Keep this as a standalone prescription if no visit should be attached.'}
+                </small>
               </div>
             </div>
 

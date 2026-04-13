@@ -258,6 +258,7 @@ function AppointmentsContent({ onNavigate }) {
                 <div className="doctor-appointment-meta">
                   <span>{appointment.patient_email || appointment.patient_id}</span>
                   <span>{appointment.is_telemedicine ? 'Telemedicine visit' : 'Clinic visit'}</span>
+                  <span>{appointment.payment_label || 'paid'}</span>
                 </div>
 
                 {appointment.reason ? (

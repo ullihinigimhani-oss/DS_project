@@ -6,8 +6,8 @@ const { authMiddleware } = require('../middlewares/authMiddleware');
 // Doctor issues prescription to a patient
 router.post('/', authMiddleware, ctrl.issuePrescription);
 
-// Doctor views their own issued prescriptions
-router.get('/my', authMiddleware, ctrl.getDoctorPrescriptions);
+// Role-aware self prescriptions
+router.get('/my', authMiddleware, ctrl.getMyPrescriptions);
 
 // Doctor views all prescriptions for a patient
 router.get('/patient/:patientId', authMiddleware, ctrl.getPatientPrescriptions);

@@ -42,7 +42,13 @@ class Payment {
      * Find payment by appointment id
      */
     static async findByAppointmentId(appointment_id) {
-        const query = 'SELECT * FROM payments WHERE appointment_id = $1';
+        const query = `
+            SELECT *
+            FROM payments
+            WHERE appointment_id = $1 OR slot_id = $1
+            ORDER BY created_at DESC
+            LIMIT 1
+        `;
         const result = await db.query(query, [appointment_id]);
         return result.rows[0];
     }

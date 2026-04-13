@@ -1,20 +1,31 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import {
   cancelPatientBooking,
+  confirmPatientBookingPayment,
   createPatientBooking,
   fetchDoctorAvailability,
   fetchPatientBookings,
 } from '../../utils/appointmentService'
+import { confirmStripePayment, createStripePayment } from '../../utils/paymentService'
 
 const PatientPortalContext = createContext(null)
 const patientPortalStateStorageKey = 'patient-portal-state'
+const authTokenStorageKey = 'token'
+
+function resolveSessionToken(session) {
+  if (session?.token) return session.token
+  if (typeof window === 'undefined') return ''
+  return window.localStorage.getItem(authTokenStorageKey) || ''
+}
 
 export const patientSidebarItems = [
   { id: 'overview', label: 'Overview', path: '/patient' },
   { id: 'book', label: 'Book Appointment', path: '/patient/book-appointment' },
+  { id: 'payment', label: 'Payment', path: '/patient/payment' },
   { id: 'bookings', label: 'My Bookings', path: '/patient/my-bookings' },
+  { id: 'prescriptions', label: 'My Prescriptions', path: '/patient/prescriptions' },
   { id: 'doctors', label: 'Doctors', path: '/patient/doctors' },
-  { id: 'Consultations', label: 'Join Consultation', path: '/patient' },
+  { id: 'consultations', label: 'Join Consultation', path: '/patient/consultations' },
   { id: 'symptoms', label: 'Symptom History', path: '/patient/symptom-history' },
   { id: 'notifications', label: 'Notifications', path: '/patient/notifications' },
   { id: 'profile', label: 'Profile', path: '/patient/profile' },
@@ -32,7 +43,18 @@ export function getMondayString(baseDate = new Date()) {
 export function formatDate(value) {
   if (!value) return 'Date not set'
 
-  return new Date(`${value}T00:00:00`).toLocaleDateString(undefined, {
+  const normalized = String(value).trim()
+  const parsed = normalized.includes('T')
+    ? new Date(normalized)
+    : /^\d{4}-\d{2}-\d{2}$/.test(normalized)
+      ? new Date(`${normalized}T00:00:00`)
+      : new Date(normalized)
+
+  if (Number.isNaN(parsed.getTime())) {
+    return 'Date not set'
+  }
+
+  return parsed.toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -168,6 +190,7 @@ export function PatientPortalProvider({
 
   const [selectedDoctorId, setSelectedDoctorId] = useState(persistedState.selectedDoctorId || '')
   const [weekStart, setWeekStart] = useState(persistedState.weekStart || getMondayString())
+  const [doctorFilterQuery, setDoctorFilterQuery] = useState('')
   const [availability, setAvailability] = useState([])
   const [availabilityLoading, setAvailabilityLoading] = useState(false)
   const [bookings, setBookings] = useState([])
@@ -176,8 +199,17 @@ export function PatientPortalProvider({
   const [bookingMessage, setBookingMessage] = useState('')
   const [bookingBusyId, setBookingBusyId] = useState('')
   const [reason, setReason] = useState(persistedState.reason || '')
+  const [patientNameInput, setPatientNameInput] = useState(
+    persistedState.patientNameInput || session?.name || '',
+  )
+  const [patientPhoneInput, setPatientPhoneInput] = useState(
+    persistedState.patientPhoneInput || session?.phone || '',
+  )
   const [isTelemedicine, setIsTelemedicine] = useState(Boolean(persistedState.isTelemedicine))
   const [bookingDraft, setBookingDraft] = useState(persistedState.bookingDraft || null)
+  const [pendingPaymentBooking, setPendingPaymentBooking] = useState(
+    persistedState.pendingPaymentBooking || null,
+  )
 
   const verifiedDoctors = useMemo(
     () => doctorDirectory.filter((doctor) => doctor.verification_status === 'approved'),
@@ -208,12 +240,34 @@ export function PatientPortalProvider({
           selectedDoctorId,
           weekStart,
           reason,
+          patientNameInput,
+          patientPhoneInput,
           isTelemedicine,
           bookingDraft,
+          pendingPaymentBooking,
         },
       }),
     )
-  }, [bookingDraft, isTelemedicine, reason, selectedDoctorId, session?.userId, weekStart])
+  }, [
+    bookingDraft,
+    isTelemedicine,
+    patientNameInput,
+    patientPhoneInput,
+    pendingPaymentBooking,
+    reason,
+    selectedDoctorId,
+    session?.userId,
+    weekStart,
+  ])
+
+  useEffect(() => {
+    if (!patientNameInput && session?.name) {
+      setPatientNameInput(session.name)
+    }
+    if (!patientPhoneInput && session?.phone) {
+      setPatientPhoneInput(session.phone)
+    }
+  }, [session?.name, session?.phone])
 
   const loadBookings = async () => {
     if (!isConnectedPatient) {
@@ -224,7 +278,13 @@ export function PatientPortalProvider({
     setBookingsLoading(true)
     try {
       const data = await fetchPatientBookings(session.token)
-      setBookings(Array.isArray(data.data) ? data.data : [])
+      const rawBookings = Array.isArray(data.data) ? data.data : []
+      const normalizedBookings = rawBookings.map((booking) => ({
+        ...booking,
+        payment_status: booking.payment_status || 'unpaid',
+        payment_label: booking.payment_label || ((booking.payment_status || 'unpaid') === 'paid' ? 'paid' : 'unpaid'),
+      }))
+      setBookings(normalizedBookings)
     } catch (error) {
       setBookingError(error.message)
       setBookings([])
@@ -263,7 +323,21 @@ export function PatientPortalProvider({
   }, [selectedDoctorId, weekStart])
 
   const recentHistory = history.slice(0, 4)
-  const selectedDoctor = verifiedDoctors.find((doctor) => doctor.doctor_id === selectedDoctorId) || null
+  const filteredVerifiedDoctors = useMemo(() => {
+    const query = String(doctorFilterQuery || '').toLowerCase().trim()
+    if (!query) return verifiedDoctors
+
+    return verifiedDoctors.filter((doctor) => {
+      const name = String(doctor.name || '').toLowerCase()
+      const specialization = String(doctor.specialization || 'General Practice').toLowerCase()
+      return name.includes(query) || specialization.includes(query)
+    })
+  }, [doctorFilterQuery, verifiedDoctors])
+
+  const selectedDoctor =
+    filteredVerifiedDoctors.find((doctor) => doctor.doctor_id === selectedDoctorId) ||
+    verifiedDoctors.find((doctor) => doctor.doctor_id === selectedDoctorId) ||
+    null
   const availableSlots = availability.filter((slot) => !slot.isBooked)
   const suggestedDoctor =
     verifiedDoctors.find((doctor) => doctor.doctor_id === bookingDraft?.matchedDoctorId) || null
@@ -357,6 +431,11 @@ export function PatientPortalProvider({
       return false
     }
 
+    if (!reason.trim() || !patientNameInput.trim() || !patientPhoneInput.trim()) {
+      setBookingError('Reason, patient name, and patient phone are required before booking.')
+      return false
+    }
+
     const slotKey = slot.id || `${slot.appointmentDate}-${slot.start_time}`
 
     setBookingBusyId(slotKey)
@@ -364,30 +443,84 @@ export function PatientPortalProvider({
     setBookingMessage('')
 
     try {
-      await createPatientBooking(session.token, {
+      const createdBooking = await createPatientBooking(session.token, {
         doctorId: selectedDoctor.doctor_id,
         slotId: slot.id || undefined,
         appointmentDate: slot.appointmentDate,
         startTime: slot.start_time,
         endTime: slot.end_time,
-        reason: reason || undefined,
+        reason: reason.trim(),
         doctorName: selectedDoctor.name || 'Doctor',
-        patientName: session?.name || 'Patient',
+        patientName: patientNameInput.trim(),
+        patientPhone: patientPhoneInput.trim(),
         isTelemedicine,
       })
 
+      setPendingPaymentBooking({
+        appointmentId: createdBooking?.data?.id,
+        doctorId: selectedDoctor.doctor_id,
+        doctorName: selectedDoctor.name || 'Doctor',
+        amount: Number(selectedDoctor.consultation_fee || 0),
+        startTime: slot.start_time,
+        endTime: slot.end_time,
+        appointmentDate: slot.appointmentDate,
+        reason: reason.trim(),
+        patientName: patientNameInput.trim(),
+        patientPhone: patientPhoneInput.trim(),
+        isTelemedicine,
+      })
       setReason('')
       setIsTelemedicine(false)
       setBookingDraft(null)
       await Promise.all([loadBookings(), loadAvailability()])
-      setBookingMessage('Appointment request created successfully.')
-      return true
+      setBookingMessage('Appointment created. Complete payment to send it to doctor queue.')
+      return createdBooking?.data || null
     } catch (error) {
       setBookingError(error.message)
       return false
     } finally {
       setBookingBusyId('')
     }
+  }
+
+  const handleCreatePaymentIntent = async () => {
+    if (!isConnectedPatient || !pendingPaymentBooking?.appointmentId) {
+      throw new Error('No pending booking found for payment.')
+    }
+    const token = resolveSessionToken(session)
+    if (!token) {
+      throw new Error('Patient session missing. Please login again and retry payment.')
+    }
+
+    if (!pendingPaymentBooking.amount || Number(pendingPaymentBooking.amount) <= 0) {
+      throw new Error('Doctor consultation fee is not available for this booking.')
+    }
+
+    const payment = await createStripePayment(token, {
+      amount: Number(pendingPaymentBooking.amount),
+      slot_id: pendingPaymentBooking.appointmentId,
+      patient_id: session?.userId || session?.id || undefined,
+    })
+
+    return payment?.data || {}
+  }
+
+  const handleConfirmPaymentAndBooking = async ({ paymentId, transactionId }) => {
+    if (!isConnectedPatient || !pendingPaymentBooking?.appointmentId) {
+      throw new Error('No pending booking found for payment confirmation.')
+    }
+    const token = resolveSessionToken(session)
+    if (!token) {
+      throw new Error('Patient session missing. Please login again and retry payment.')
+    }
+
+    if (paymentId) {
+      await confirmStripePayment(token, paymentId, transactionId)
+    }
+
+    await confirmPatientBookingPayment(token, pendingPaymentBooking.appointmentId)
+    setPendingPaymentBooking(null)
+    await Promise.all([loadBookings(), loadAvailability()])
   }
 
   const handleCancelBooking = async (appointmentId) => {
@@ -412,6 +545,26 @@ export function PatientPortalProvider({
     setSelectedDoctorId(doctorId)
   }
 
+  const preparePendingPaymentFromBooking = (booking) => {
+    if (!booking?.id) return
+    const doctorForFee = verifiedDoctors.find((doctor) => doctor.doctor_id === booking.doctor_id)
+    setPendingPaymentBooking({
+      appointmentId: booking.id,
+      doctorId: booking.doctor_id,
+      doctorName: booking.doctor_name || doctorForFee?.name || 'Doctor',
+      amount: Number(doctorForFee?.consultation_fee || selectedDoctor?.consultation_fee || 0),
+      startTime: booking.start_time,
+      endTime: booking.end_time,
+      appointmentDate: booking.appointment_date,
+      reason: booking.reason || '',
+      patientName: booking.patient_name || patientNameInput || '',
+      patientPhone: booking.patient_phone || patientPhoneInput || '',
+      isTelemedicine: Boolean(booking.is_telemedicine),
+      paymentStatus: booking.payment_status || 'UNPAID',
+    })
+    setBookingMessage('Payment details loaded from your booking.')
+  }
+
   const value = {
     activeRole,
     session,
@@ -422,6 +575,7 @@ export function PatientPortalProvider({
     isConnectedPatient,
     selectedDoctorId,
     weekStart,
+    doctorFilterQuery,
     availability,
     availabilityLoading,
     bookings,
@@ -430,6 +584,8 @@ export function PatientPortalProvider({
     bookingMessage,
     bookingBusyId,
     reason,
+    patientNameInput,
+    patientPhoneInput,
     isTelemedicine,
     bookingDraft,
     verifiedDoctors,
@@ -437,17 +593,25 @@ export function PatientPortalProvider({
     selectedDoctor,
     suggestedDoctor,
     availableSlots,
+    filteredVerifiedDoctors,
+    pendingPaymentBooking,
     bookingSummary,
     patientMetrics,
     setSelectedDoctorId,
     setWeekStart,
+    setDoctorFilterQuery,
     setReason,
+    setPatientNameInput,
+    setPatientPhoneInput,
     setIsTelemedicine,
     clearBookingDraft,
     prepareBookingFromAnalysis,
     handleCreateBooking,
+    handleCreatePaymentIntent,
+    handleConfirmPaymentAndBooking,
     handleCancelBooking,
     handleDoctorSelect,
+    preparePendingPaymentFromBooking,
   }
 
   return <PatientPortalContext.Provider value={value}>{children}</PatientPortalContext.Provider>

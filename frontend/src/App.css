@@ -1175,6 +1175,104 @@ button:disabled {
   margin-top: 18px;
 }
 
+.patient-prescription-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.patient-prescription-search {
+  flex: 1;
+  min-width: min(100%, 360px);
+}
+
+.patient-prescription-grid {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.patient-prescription-card {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(46, 70, 98, 0.08);
+  background:
+    radial-gradient(circle at top right, rgba(159, 126, 255, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 250, 255, 0.9));
+  box-shadow: 0 14px 32px rgba(31, 53, 80, 0.08);
+}
+
+.patient-prescription-card strong {
+  color: #24405b;
+}
+
+.patient-prescription-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  color: #71869b;
+  font-size: 0.88rem;
+}
+
+.patient-prescription-callout {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(108, 130, 174, 0.14);
+  background: rgba(242, 247, 255, 0.88);
+}
+
+.patient-prescription-callout span,
+.patient-prescription-section h4 {
+  margin: 0;
+  color: #6f8196;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.patient-prescription-callout strong {
+  font-size: 1rem;
+}
+
+.patient-prescription-section {
+  display: grid;
+  gap: 12px;
+}
+
+.patient-prescription-section h4 {
+  margin: 0;
+}
+
+.patient-prescription-section p {
+  margin: 0;
+}
+
+.patient-prescription-list {
+  display: grid;
+  gap: 12px;
+}
+
+.patient-prescription-medication {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(46, 70, 98, 0.08);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.patient-prescription-medication span {
+  color: #6d8094;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
 .patient-detail-row {
   align-items: baseline;
   padding-top: 10px;
@@ -1260,6 +1358,30 @@ button:disabled {
 .patient-booking-draft-notes p {
   margin: 10px 0 0;
   white-space: pre-line;
+}
+
+.patient-section-support {
+  margin: 8px 0 0;
+  color: #6f8296;
+}
+
+.patient-empty-panel {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(247, 250, 255, 0.88);
+  border: 1px solid rgba(20, 52, 82, 0.08);
+}
+
+.patient-empty-panel strong {
+  color: #1d3650;
+}
+
+.patient-empty-panel p {
+  margin: 0;
+  color: #697d92;
 }
 
 .patient-booking-form,
@@ -1391,6 +1513,64 @@ button:disabled {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
   margin-top: 22px;
+}
+
+.patient-telemedicine-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.1fr);
+  gap: 18px;
+}
+
+.patient-telemedicine-stack {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.patient-telemedicine-card {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(20, 52, 82, 0.08);
+  background: rgba(247, 250, 255, 0.86);
+  box-shadow: none;
+}
+
+.patient-telemedicine-card:hover {
+  border-color: rgba(113, 110, 232, 0.2);
+  box-shadow: 0 12px 30px rgba(31, 53, 80, 0.08);
+}
+
+.patient-telemedicine-card.active {
+  border-color: rgba(113, 110, 232, 0.28);
+  background: linear-gradient(180deg, rgba(243, 245, 255, 0.96), rgba(255, 255, 255, 0.92));
+  box-shadow: 0 16px 34px rgba(31, 53, 80, 0.1);
+}
+
+.patient-telemedicine-link-box {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(247, 251, 255, 0.96), rgba(255, 255, 255, 0.92));
+  border: 1px solid rgba(58, 74, 101, 0.1);
+}
+
+.patient-telemedicine-link-box span {
+  color: #7586a1;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.patient-telemedicine-link-box strong {
+  color: #1d3650;
+  word-break: break-word;
 }
 
 .patient-doctor-card-premium {
@@ -2449,6 +2629,47 @@ button:disabled {
   gap: 12px;
 }
 
+.doctor-prescription-form-grid > label,
+.doctor-prescription-layout .analysis-form > label {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  color: #334356;
+  font-weight: 700;
+}
+
+.doctor-select-field {
+  align-content: start;
+}
+
+.doctor-prescription-form-grid select,
+.doctor-prescription-layout .analysis-form > label input,
+.doctor-prescription-layout .analysis-form > label select,
+.doctor-prescription-layout .analysis-form > label textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(52, 69, 93, 0.12);
+  border-radius: 16px;
+  padding: 12px 14px;
+  color: #2e4056;
+  background: rgba(255, 255, 255, 0.84);
+  box-sizing: border-box;
+}
+
+.doctor-prescription-form-grid select,
+.doctor-prescription-layout .analysis-form > label select {
+  min-height: 50px;
+}
+
+.doctor-field-hint {
+  margin: -2px 0 0;
+  color: #71869b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
 .doctor-prescription-pill-list {
   display: flex;
   flex-wrap: wrap;
@@ -2748,6 +2969,29 @@ button:disabled {
 
 .doctor-note-panel p {
   margin: 8px 0 0;
+}
+
+.doctor-telemedicine-link-box {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(245, 248, 255, 0.96), rgba(255, 255, 255, 0.92));
+  border: 1px solid rgba(58, 74, 101, 0.1);
+}
+
+.doctor-telemedicine-link-box span {
+  color: #73859d;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.doctor-telemedicine-link-box strong {
+  color: #1a3651;
+  word-break: break-word;
 }
 
 .doctor-appointment-callout {
@@ -4412,6 +4656,103 @@ button:disabled {
   border-top: 1px solid rgba(46, 56, 74, 0.08);
 }
 
+.video-room-shell {
+  display: grid;
+  gap: 18px;
+  min-height: calc(100vh - 120px);
+  padding: 24px;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top right, rgba(141, 121, 242, 0.18), transparent 24%),
+    linear-gradient(180deg, rgba(33, 35, 57, 0.98), rgba(23, 24, 38, 0.98));
+  box-shadow: 0 28px 80px rgba(10, 12, 23, 0.34);
+}
+
+.video-room-card,
+.video-room-topbar,
+.video-room-frame-shell {
+  border: 1px solid rgba(169, 161, 242, 0.14);
+  background: rgba(31, 33, 52, 0.88);
+  box-shadow: 0 18px 44px rgba(8, 10, 22, 0.24);
+  backdrop-filter: blur(14px);
+}
+
+.video-room-card,
+.video-room-topbar {
+  padding: 22px 24px;
+  border-radius: 24px;
+}
+
+.video-room-kicker {
+  margin: 0;
+  color: #a99bff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.video-room-card h2,
+.video-room-topbar h2 {
+  margin: 10px 0 0;
+  color: #f4f1ff;
+}
+
+.video-room-card p {
+  margin: 10px 0 0;
+  color: #c6c1dc;
+}
+
+.video-room-topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.video-room-status,
+.video-room-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.video-room-status {
+  margin-top: 12px;
+  color: #c6c1dc;
+}
+
+.video-room-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.video-room-status-dot.live {
+  background: #65d68c;
+  box-shadow: 0 0 0 6px rgba(101, 214, 140, 0.12);
+}
+
+.video-room-status-dot.ended {
+  background: #d98872;
+  box-shadow: 0 0 0 6px rgba(217, 136, 114, 0.12);
+}
+
+.video-room-frame-shell {
+  min-height: 72vh;
+  overflow: hidden;
+  border-radius: 28px;
+}
+
+.video-room-frame {
+  width: 100%;
+  min-height: 72vh;
+  border: none;
+  background: #11131f;
+}
+
 .empty-state,
 .error-text {
   margin-top: 18px;
@@ -4486,6 +4827,7 @@ button:disabled {
   }
 
   .patient-booking-shell,
+  .patient-telemedicine-layout,
   .patient-directory-grid,
   .patient-booking-draft-grid,
   .patient-doctors-hero,
@@ -4604,6 +4946,11 @@ button:disabled {
 
   .patient-booking-topline,
   .patient-booking-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .video-room-topbar {
     flex-direction: column;
     align-items: flex-start;
   }
@@ -4795,6 +5142,18 @@ button:disabled {
   .public-doctor-card-head,
   .public-doctor-card-topline {
     align-items: flex-start;
+  }
+
+  .video-room-shell {
+    min-height: calc(100vh - 36px);
+    padding: 18px;
+    border-radius: 0;
+  }
+
+  .video-room-card,
+  .video-room-topbar,
+  .video-room-frame-shell {
+    border-radius: 20px;
   }
 
   .doctor-patient-table-row,

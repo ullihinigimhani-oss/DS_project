@@ -1,35 +1,94 @@
 import PatientPortalPage from './PatientPortalPage'
 import ModernSelect from '../../components/ModernSelect'
 import { formatDate, formatTime, usePatientPortal } from './PatientPortalContext'
+import { useMemo } from 'react'
 
 function BookAppointmentContent({ onNavigate }) {
   const {
     isConnectedPatient,
-    availableSlots,
+    availability,
     availabilityLoading,
     bookingBusyId,
     bookingDraft,
     selectedDoctorId,
-    verifiedDoctors,
+    doctorFilterQuery,
+    filteredVerifiedDoctors,
     selectedDoctor,
     suggestedDoctor,
-    weekStart,
     isTelemedicine,
     reason,
+    patientNameInput,
+    patientPhoneInput,
+    pendingPaymentBooking,
     setSelectedDoctorId,
-    setWeekStart,
+    setDoctorFilterQuery,
     setIsTelemedicine,
     setReason,
+    setPatientNameInput,
+    setPatientPhoneInput,
     clearBookingDraft,
     handleCreateBooking,
   } = usePatientPortal()
+
+  const slotWindows = useMemo(() => {
+    const groups = new Map()
+
+    availability.forEach((slot) => {
+      const groupKey =
+        slot.slot_group_key ||
+        `${slot.appointmentDate}-${slot.source_slot_start_time || slot.start_time}-${slot.source_slot_end_time || slot.end_time}`
+
+      if (!groups.has(groupKey)) {
+        groups.set(groupKey, {
+          key: groupKey,
+          appointmentDate: slot.appointmentDate,
+          windowStart: slot.source_slot_start_time || slot.start_time,
+          windowEnd: slot.source_slot_end_time || slot.end_time,
+          chunks: [],
+        })
+      }
+
+      groups.get(groupKey).chunks.push(slot)
+    })
+
+    return Array.from(groups.values())
+      .map((group) => {
+        const sortedChunks = [...group.chunks].sort((a, b) =>
+          String(a.start_time).localeCompare(String(b.start_time)),
+        )
+        const nextAvailable = sortedChunks.find((slot) => !slot.isBooked) || null
+        const total = sortedChunks.length
+        const booked = sortedChunks.filter((slot) => slot.isBooked).length
+
+        return {
+          ...group,
+          nextAvailable,
+          totalAppointmentsInWindow: total,
+          bookedAppointmentsInWindow: booked,
+          remainingAppointmentsInWindow: Math.max(total - booked, 0),
+        }
+      })
+      .sort((left, right) => {
+        const dateCompare = String(left.appointmentDate).localeCompare(String(right.appointmentDate))
+        if (dateCompare !== 0) return dateCompare
+        return String(left.windowStart).localeCompare(String(right.windowStart))
+      })
+  }, [availability])
+
+  const bookableWindows = slotWindows.filter((window) => window.nextAvailable)
+  const bookingFormComplete = Boolean(
+    selectedDoctor &&
+      reason.trim() &&
+      patientNameInput.trim() &&
+      patientPhoneInput.trim(),
+  )
 
   return (
     <div className="patient-page-stack">
       <section className="patient-surface-card">
         <div className="patient-card-topline">
           <h3>Book an appointment</h3>
-          <span className="patient-mini-badge">{availableSlots.length} open slots</span>
+          <span className="patient-mini-badge">{bookableWindows.length} open slot windows</span>
         </div>
 
         {bookingDraft ? (
@@ -90,6 +149,22 @@ function BookAppointmentContent({ onNavigate }) {
           <div className="patient-booking-form">
             <div className="patient-field">
               Select doctor
+              <input
+                type="text"
+                value={doctorFilterQuery}
+                onChange={(event) => setDoctorFilterQuery(event.target.value)}
+                placeholder="Filter by doctor name or specialization"
+              />
+              <select
+                value={selectedDoctorId}
+                onChange={(event) => setSelectedDoctorId(event.target.value)}
+              >
+                {filteredVerifiedDoctors.map((doctor) => (
+                  <option key={doctor.doctor_id} value={doctor.doctor_id}>
+                    {doctor.name || 'Doctor'} - {doctor.specialization || 'General Practice'}
+                  </option>
+                ))}
+              </select>
               <ModernSelect
                 value={selectedDoctorId}
                 onChange={(event) => setSelectedDoctorId(event.target.value)}
@@ -106,20 +181,26 @@ function BookAppointmentContent({ onNavigate }) {
                 <strong>{selectedDoctor.name || 'Doctor'}</strong>
                 <p>{selectedDoctor.specialization || 'General Practice'}</p>
                 <span>Consultation fee: {selectedDoctor.consultation_fee ?? 'N/A'}</span>
+                {pendingPaymentBooking ? (
+                  <div className="patient-booking-draft-notes">
+                    <strong>Appointment form fields (from model)</strong>
+                    <p>doctor_id: {pendingPaymentBooking.doctorId || selectedDoctor.doctor_id}</p>
+                    <p>appointment_date: {pendingPaymentBooking.appointmentDate}</p>
+                    <p>start_time: {pendingPaymentBooking.startTime}</p>
+                    <p>end_time: {pendingPaymentBooking.endTime}</p>
+                    <p>reason: {pendingPaymentBooking.reason || 'N/A'}</p>
+                    <p>doctor_name: {pendingPaymentBooking.doctorName || selectedDoctor.name || 'Doctor'}</p>
+                    <p>patient_name: {pendingPaymentBooking.patientName || patientNameInput || 'N/A'}</p>
+                    <p>patient_phone: {pendingPaymentBooking.patientPhone || patientPhoneInput || 'N/A'}</p>
+                    <p>is_telemedicine: {pendingPaymentBooking.isTelemedicine ? 'true' : 'false'}</p>
+                  </div>
+                ) : null}
               </div>
             ) : (
               <p className="empty-state">No verified doctors are available for booking yet.</p>
             )}
 
             <div className="patient-week-row">
-              <label className="patient-field compact">
-                Week starting
-                <input
-                  type="date"
-                  value={weekStart}
-                  onChange={(event) => setWeekStart(event.target.value)}
-                />
-              </label>
               <label className="patient-toggle">
                 <input
                   type="checkbox"
@@ -139,42 +220,86 @@ function BookAppointmentContent({ onNavigate }) {
                 placeholder="Share a short reason for the consultation."
               />
             </label>
+            <label className="patient-field">
+              Patient name (required)
+              <input
+                type="text"
+                value={patientNameInput}
+                onChange={(event) => setPatientNameInput(event.target.value)}
+                placeholder="Enter patient name"
+              />
+            </label>
+            <label className="patient-field">
+              Patient phone (required)
+              <input
+                type="tel"
+                value={patientPhoneInput}
+                onChange={(event) => setPatientPhoneInput(event.target.value)}
+                placeholder="Enter patient phone"
+              />
+            </label>
           </div>
 
           <div className="patient-slot-panel">
             {availabilityLoading ? <p className="empty-state">Loading available slots...</p> : null}
 
-            {!availabilityLoading && availableSlots.length === 0 ? (
+            {!availabilityLoading && slotWindows.length === 0 ? (
               <p className="empty-state">
                 No open slots are available for this doctor in the selected week yet.
               </p>
             ) : null}
 
             <div className="patient-slot-grid">
-              {availableSlots.map((slot) => {
-                const slotKey = slot.id || `${slot.appointmentDate}-${slot.start_time}`
+              {slotWindows.map((slotWindow) => {
+                const nextSlot = slotWindow.nextAvailable
+                const slotKey = slotWindow.key
                 return (
                   <article key={slotKey} className="patient-slot-card">
-                    <strong>{formatDate(slot.appointmentDate)}</strong>
+                    <strong>{formatDate(slotWindow.appointmentDate)}</strong>
                     <p>
-                      {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
+                      {formatTime(slotWindow.windowStart)} - {formatTime(slotWindow.windowEnd)}
+                    </p>
+                    <span>
+                      Booked in this window: {slotWindow.bookedAppointmentsInWindow}/
+                      {slotWindow.totalAppointmentsInWindow}
+                    </span>
+                    <p>
+                      {nextSlot
+                        ? `Next available appointment: ${formatTime(nextSlot.start_time)} - ${formatTime(nextSlot.end_time)}`
+                        : 'No free 15-minute appointment left in this window.'}
                     </p>
                     <button
                       type="button"
-                      disabled={!isConnectedPatient || bookingBusyId === slotKey}
+                      disabled={
+                        !isConnectedPatient ||
+                        !nextSlot ||
+                        bookingBusyId === slotKey ||
+                        !bookingFormComplete
+                      }
                       onClick={async () => {
-                        const created = await handleCreateBooking(slot)
+                        if (!nextSlot) return
+                        const created = await handleCreateBooking(nextSlot)
                         if (created) {
-                          onNavigate('/patient/my-bookings')
+                          onNavigate('/patient/payment')
                         }
                       }}
                     >
-                      {bookingBusyId === slotKey ? 'Booking...' : 'Book this slot'}
+                      {bookingBusyId === slotKey ? 'Booking...' : 'Book next appointment'}
                     </button>
+                    {!bookingFormComplete ? (
+                      <p className="empty-state">
+                        Fill required fields: reason, patient name, and patient phone.
+                      </p>
+                    ) : null}
                   </article>
                 )
               })}
             </div>
+            {pendingPaymentBooking ? (
+              <p className="empty-state">
+                A booking is waiting for payment. Continue from the payment page.
+              </p>
+            ) : null}
           </div>
         </div>
       </section>

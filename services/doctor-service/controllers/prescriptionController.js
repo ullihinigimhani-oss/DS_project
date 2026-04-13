@@ -32,6 +32,33 @@ const fetchJson = (url, timeoutMs = 3000) =>
     request.on('error', reject);
   });
 
+const fetchCombinedPatientPrescriptions = async (patientId) => {
+  const localResult = await db.query(
+    `SELECT *, 'standalone' AS source FROM prescriptions WHERE patient_id = $1 ORDER BY created_at DESC`,
+    [patientId]
+  );
+
+  let appointmentPrescriptions = [];
+  try {
+    const response = await fetchJson(
+      `${APPOINTMENT_SERVICE_URL}/api/v1/prescriptions/internal/patient/${patientId}`,
+      3000
+    );
+    if (response && response.success) {
+      appointmentPrescriptions = (response.data || []).map((p) => ({
+        ...p,
+        source: 'appointment',
+      }));
+    }
+  } catch (fetchErr) {
+    console.warn('Could not fetch appointment-service prescriptions:', fetchErr.message);
+  }
+
+  return [...localResult.rows, ...appointmentPrescriptions].sort(
+    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+  );
+};
+
 /* ── POST /api/v1/prescriptions ───────────────────────────────── */
 // Doctor issues a prescription to a patient
 exports.issuePrescription = async (req, res) => {
@@ -96,38 +123,45 @@ exports.getDoctorPrescriptions = async (req, res) => {
   }
 };
 
+/* ── GET /api/v1/prescriptions/my ─────────────────────────────── */
+// Role-aware self view: doctors see issued prescriptions, patients see their own prescriptions
+exports.getMyPrescriptions = async (req, res) => {
+  try {
+    const userType = req.user?.userType;
+
+    if (userType === 'doctor') {
+      return exports.getDoctorPrescriptions(req, res);
+    }
+
+    if (userType === 'patient') {
+      const prescriptions = await fetchCombinedPatientPrescriptions(req.user.userId);
+      return res.status(200).json({ success: true, data: prescriptions });
+    }
+
+    return res.status(403).json({
+      success: false,
+      message: 'Only doctors and patients can access personal prescriptions',
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 /* ── GET /api/v1/prescriptions/patient/:patientId ─────────────── */
 // Doctor views all prescriptions for a specific patient
 exports.getPatientPrescriptions = async (req, res) => {
   try {
     const { patientId } = req.params;
+    const isPatient = req.user?.userType === 'patient';
 
-    // Standalone prescriptions from doctor-service
-    const localResult = await db.query(
-      `SELECT *, 'standalone' AS source FROM prescriptions WHERE patient_id = $1 ORDER BY created_at DESC`,
-      [patientId]
-    );
-
-    // Appointment-linked prescriptions from appointment-service (best-effort)
-    let appointmentPrescriptions = [];
-    try {
-      const response = await fetchJson(
-        `${APPOINTMENT_SERVICE_URL}/api/prescriptions/internal/patient/${patientId}`,
-        3000
-      );
-      if (response && response.success) {
-        appointmentPrescriptions = (response.data || []).map((p) => ({
-          ...p,
-          source: 'appointment',
-        }));
-      }
-    } catch (fetchErr) {
-      console.warn('Could not fetch appointment-service prescriptions:', fetchErr.message);
+    if (isPatient && req.user?.userId !== patientId) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only access your own prescriptions',
+      });
     }
 
-    const combined = [...localResult.rows, ...appointmentPrescriptions].sort(
-      (a, b) => new Date(b.created_at) - new Date(a.created_at)
-    );
+    const combined = await fetchCombinedPatientPrescriptions(patientId);
 
     res.status(200).json({ success: true, data: combined });
   } catch (error) {

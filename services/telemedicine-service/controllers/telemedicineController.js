@@ -16,11 +16,27 @@ function generateRoomName(appointmentId) {
 const createSession = async (req, res) => {
   try {
     const { appointmentId, patientId, doctorId } = req.body;
+    const requesterId = req.user?.userId;
+    const requesterRole = req.user?.userType;
 
     if (!appointmentId || !patientId || !doctorId) {
       return res.status(400).json({
         success: false,
         message: 'appointmentId, patientId, and doctorId are required',
+      });
+    }
+
+    if (!requesterId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication is required',
+      });
+    }
+
+    if (requesterRole !== 'admin' && requesterId !== doctorId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the assigned doctor or an admin can prepare this session',
       });
     }
 

@@ -48,6 +48,10 @@ const initializeDatabase = async () => {
         ALTER TABLE appointments ADD CONSTRAINT chk_appt_status
             CHECK (status IN ('pending','confirmed','cancelled','completed'));
         ALTER TABLE appointments ADD COLUMN IF NOT EXISTS is_telemedicine BOOLEAN DEFAULT FALSE;
+        ALTER TABLE appointments ADD COLUMN IF NOT EXISTS payment_status VARCHAR(20) DEFAULT 'unpaid';
+        ALTER TABLE appointments DROP CONSTRAINT IF EXISTS chk_appt_payment_status;
+        ALTER TABLE appointments ADD CONSTRAINT chk_appt_payment_status
+            CHECK (payment_status IN ('unpaid','paid'));
     `);
 
     await pool.query(`

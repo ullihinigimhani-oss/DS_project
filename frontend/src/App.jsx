@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import ModernSelect from './components/ModernSelect'
 import ModernSearchBar from './components/ModernSearchBar'
 import LoginForm from './components/LoginForm'
 import RegisterForm from './components/RegisterForm'
@@ -671,19 +672,17 @@ export default function App() {
             />
           </div>
 
-          <label className="public-doctors-filter">
+          <div className="public-doctors-filter">
             <span>Specialty</span>
-            <select
+            <ModernSelect
               value={doctorSpecialtyFilter}
               onChange={(event) => setDoctorSpecialtyFilter(event.target.value)}
-            >
-              {doctorSpecialtyOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option === 'all' ? 'All specialties' : option}
-                </option>
-              ))}
-            </select>
-          </label>
+              options={doctorSpecialtyOptions.map((option) => ({
+                value: option,
+                label: option === 'all' ? 'All specialties' : option,
+              }))}
+            />
+          </div>
         </section>
 
         {directoryState === 'loading' ? (

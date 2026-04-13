@@ -1,3 +1,4 @@
+import ModernSelect from '../../components/ModernSelect'
 import ModernSearchBar from '../../components/ModernSearchBar'
 import {
   formatAdminAppointmentDate,
@@ -27,20 +28,20 @@ export default function AdminAppointmentsPage() {
           </div>
           <span className="dashboard-badge">{appointmentStats.total} total</span>
         </div>
-
         <div className="admin-filter-grid">
-          <label className="doctor-compact-field">
+          <div className="doctor-compact-field">
             <span>Status</span>
-            <select
+            <ModernSelect
               value={appointmentStatusFilter}
               onChange={(event) => setAppointmentStatusFilter(event.target.value)}
-            >
-              <option value="all">All statuses</option>
-              <option value="pending">Pending</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-          </label>
+              options={[
+                { value: 'all', label: 'All statuses' },
+                { value: 'pending', label: 'Pending' },
+                { value: 'confirmed', label: 'Confirmed' },
+                { value: 'cancelled', label: 'Cancelled' },
+              ]}
+            />
+          </div>
 
           <div className="doctor-compact-field">
             <span>Search</span>

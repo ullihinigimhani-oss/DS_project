@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import ModernSelect from '../../components/ModernSelect'
 import ModernSearchBar from '../../components/ModernSearchBar'
 import StatusPill from '../../components/StatusPill'
 import PatientPortalPage from './PatientPortalPage'
@@ -83,19 +84,17 @@ function DoctorsContent({ onNavigate }) {
             />
           </div>
 
-          <label className="patient-doctors-filter">
+          <div className="patient-doctors-filter">
             <span>Specialty</span>
-            <select
+            <ModernSelect
               value={specialtyFilter}
               onChange={(event) => setSpecialtyFilter(event.target.value)}
-            >
-              {specialtyOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option === 'all' ? 'All specialties' : option}
-                </option>
-              ))}
-            </select>
-          </label>
+              options={specialtyOptions.map((option) => ({
+                value: option,
+                label: option === 'all' ? 'All specialties' : option,
+              }))}
+            />
+          </div>
         </div>
 
         {filteredDoctors.length === 0 ? (

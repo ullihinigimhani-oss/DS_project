@@ -20,6 +20,11 @@ import PatientMyBookingsPage from './pages/patient/MyBookings'
 import PatientDoctorsPage from './pages/patient/Doctors'
 import PatientSymptomHistoryPage from './pages/patient/SymptomHistory'
 import PatientProfilePage from './pages/patient/Profile'
+import AdminPortalPage from './pages/Admin/AdminPortalPage'
+import AdminUsersPage from './pages/Admin/Users'
+import AdminDoctorsPage from './pages/Admin/Doctors'
+import AdminAppointmentsPage from './pages/Admin/Appointments'
+import AdminSettingsPage from './pages/Admin/Settings'
 import { checkEmailAvailability, loginUser, registerUser, verifyUser } from './utils/authService'
 import {
   submitDoctorVerification,
@@ -96,7 +101,6 @@ export default function App() {
   const [loginValues, setLoginValues] = useState({
     email: '',
     password: '',
-    role: 'patient',
   })
   const [registerValues, setRegisterValues] = useState({
     name: '',
@@ -117,7 +121,7 @@ export default function App() {
   const isPatientPortalRoute = currentPath.startsWith('/patient')
   const isAdminPortalRoute = currentPath === '/admin' || currentPath.startsWith('/admin/')
   const isAuthRoute = currentPath === '/login' || currentPath === '/register'
-  const activeRole = session?.role || loginValues.role
+  const activeRole = session?.role || 'patient'
   const topCondition = analysis?.possibleConditions?.[0] || null
 
   const quickStats = useMemo(() => {
@@ -356,7 +360,7 @@ export default function App() {
       persistSession(nextSession)
       setSession(nextSession)
       setAuthMessage('Signed in successfully.')
-      navigateTo(getRouteForRole(loginValues.role))
+      navigateTo(getRouteForRole(nextSession.role))
     } catch (error) {
       setAuthError(error.message || 'Login failed. Please check your credentials and try again.')
     } finally {
@@ -473,8 +477,8 @@ export default function App() {
       onChange={handleLoginChange}
       onSubmit={handleLogin}
       loading={authBusy}
-      roleHint={loginValues.role}
-      roleLabel="Sign in as"
+      roleHint={session?.role}
+      roleLabel=""
       navigateTo={navigateTo}
       bannerError={authError}
       bannerMessage={authMessage}

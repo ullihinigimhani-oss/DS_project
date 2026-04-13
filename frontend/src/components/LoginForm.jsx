@@ -129,30 +129,6 @@ export default function LoginForm({
               </div>
             </div>
 
-            {/* Role picker — full width */}
-            {!hideRolePicker && (
-              <div className="auth-field-group auth-role-row">
-                <span className="auth-label">{roleLabel}</span>
-                <div className="auth-role-picker">
-                  {['patient', 'doctor', 'admin'].map((role) => (
-                    <button
-                      key={role}
-                      type="button"
-                      className={`auth-role-chip ${roleHint === role ? 'auth-role-chip--active' : ''}`}
-                      onClick={() => onChange({ target: { name: 'role', value: role } })}
-                    >
-                      <span className="auth-role-icon" aria-hidden="true">
-                        {role === 'patient' && '◉'}
-                        {role === 'doctor' && '⚕'}
-                        {role === 'admin' && '⊕'}
-                      </span>
-                      {role}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Submit — full width */}
             <div className="auth-submit-row">
               <button type="submit" className="auth-submit" disabled={loading}>

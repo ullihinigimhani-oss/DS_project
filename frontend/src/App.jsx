@@ -110,6 +110,7 @@ export default function App() {
   const [loginValues, setLoginValues] = useState({
     email: '',
     password: '',
+    role: 'patient',
   })
   const [registerValues, setRegisterValues] = useState({
     name: '',
@@ -517,7 +518,7 @@ export default function App() {
       onChange={handleLoginChange}
       onSubmit={handleLogin}
       loading={authBusy}
-      hideRolePicker={true}
+      roleHint={loginValues.role || 'patient'}
       navigateTo={navigateTo}
       bannerError={authError}
       bannerMessage={authMessage}

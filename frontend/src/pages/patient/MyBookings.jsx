@@ -134,8 +134,8 @@ function MyBookingsContent({ onNavigate }) {
               isConnectedPatient={isConnectedPatient}
               bookingBusyId={bookingBusyId}
               onCancel={handleCancelBooking}
-              onPay={(selectedBooking) => {
-                preparePendingPaymentFromBooking(selectedBooking)
+              onPay={async (selectedBooking) => {
+                await preparePendingPaymentFromBooking(selectedBooking)
                 onNavigate('/patient/payment')
               }}
             />

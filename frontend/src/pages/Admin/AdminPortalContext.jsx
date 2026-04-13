@@ -22,6 +22,7 @@ export const adminSidebarItems = [
   { id: 'doctors', label: 'Doctor Verification', path: '/admin/doctors' },
   { id: 'appointments', label: 'Appointments', path: '/admin/appointments' },
   { id: 'notifications', label: 'Notifications', path: '/admin/notifications' },
+  { id: 'profile', label: 'Profile', path: '/admin/profile' },
   { id: 'settings', label: 'Settings', path: '/admin/settings' },
 ]
 

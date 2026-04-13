@@ -12,6 +12,7 @@ export default function PatientPortalPage({
   onNavigate,
   onRequireLogin,
   onSignOut,
+  updateSession,
   children,
 }) {
   return (
@@ -22,6 +23,7 @@ export default function PatientPortalPage({
       doctorDirectory={doctorDirectory}
       gatewayHealth={gatewayHealth}
       topCondition={topCondition}
+      updateSession={updateSession}
     >
       <PatientPortalLayout
         currentPath={currentPath}

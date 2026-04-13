@@ -27,12 +27,14 @@ import PatientPaymentPage from './pages/patient/Payment'
 import PatientSymptomHistoryPage from './pages/patient/SymptomHistory'
 import PatientNotificationsPage from './pages/patient/Notifications'
 import PatientProfilePage from './pages/patient/Profile'
+import PatientProfileCompletionPage from './pages/patient/ProfileCompletion'
 import AdminPortalPage from './pages/Admin/AdminPortalPage'
 import AdminUsersPage from './pages/Admin/Users'
 import AdminDoctorsPage from './pages/Admin/Doctors'
 import AdminAppointmentsPage from './pages/Admin/Appointments'
 import AdminNotificationsPage from './pages/Admin/Notifications'
 import AdminSettingsPage from './pages/Admin/Settings'
+import AdminProfilePage from './pages/Admin/Profile'
 import { checkEmailAvailability, loginUser, registerUser, verifyUser } from './utils/authService'
 import {
   submitDoctorVerification,
@@ -111,7 +113,7 @@ export default function App() {
   const [loginValues, setLoginValues] = useState({
     email: '',
     password: '',
-    role: 'patient',
+    role: '',
   })
   const [registerValues, setRegisterValues] = useState({
     name: '',
@@ -357,6 +359,13 @@ export default function App() {
       role: user.userType || fallback.role || fallback.userType || 'patient',
       mode: 'connected',
       token: authData.data.accessToken,
+      birthdate: user.birthdate || '',
+      gender: user.gender || '',
+      blood_type: user.blood_type || '',
+      allergies: user.allergies || '',
+      emergency_contact_name: user.emergency_contact_name || '',
+      emergency_contact_number: user.emergency_contact_number || '',
+      last_visit_date: user.last_visit_date || '',
     }
   }
 
@@ -464,6 +473,9 @@ export default function App() {
         try {
           await completeDoctorRegistration(nextSession.token)
           setAuthMessage('Doctor account created and verification documents were sent to admin review.')
+          persistSession(nextSession)
+          setSession(nextSession)
+          navigateTo(getRouteForRole(registerValues.userType))
         } catch (doctorSetupError) {
           setAuthError(
             `Doctor account was created, but the verification package could not be submitted: ${doctorSetupError.message}`,
@@ -471,11 +483,10 @@ export default function App() {
         }
       } else {
         setAuthMessage(data.message || 'Account created and signed in successfully.')
+        persistSession(nextSession)
+        setSession(nextSession)
+        navigateTo('/patient/complete-profile')
       }
-
-      persistSession(nextSession)
-      setSession(nextSession)
-      navigateTo(getRouteForRole(registerValues.userType))
     } catch (error) {
       setAuthError(error.message || 'Registration failed. Please try again.')
     } finally {
@@ -511,6 +522,15 @@ export default function App() {
     setAuthMessage('You have been signed out.')
     setAuthError('')
     navigateTo(wasDoctor ? '/login' : '/')
+  }
+
+  const updateSession = (newValues) => {
+    setSession(prev => {
+      if (!prev) return prev;
+      const nextSession = { ...prev, ...newValues }
+      persistSession(nextSession)
+      return nextSession
+    })
   }
 
   const renderLoginPage = () => (
@@ -617,6 +637,7 @@ export default function App() {
         onSignOut={handleSignOut}
         onRequireLogin={navigateTo}
         onNavigate={navigateTo}
+        updateSession={updateSession}
         analysis={analysis}
         symptoms={symptoms}
         analysisLoading={analysisLoading}
@@ -843,6 +864,8 @@ export default function App() {
         return renderAdminRoutePage(AdminNotificationsPage)
       case '/admin/settings':
         return renderAdminRoutePage(AdminSettingsPage)
+      case '/admin/profile':
+        return renderAdminRoutePage(AdminProfilePage)
       case '/patient':
         return renderPatientPage()
       case '/patient/book-appointment':
@@ -851,6 +874,8 @@ export default function App() {
         return renderPatientRoutePage(PatientConsultationsPage)
       case '/patient/my-bookings':
         return renderPatientRoutePage(PatientMyBookingsPage)
+      case '/patient/payment':
+        return renderPatientRoutePage(PatientPaymentPage)
       case '/patient/prescriptions':
         return renderPatientRoutePage(PatientPrescriptionsPage)
       case '/patient/doctors':
@@ -862,6 +887,8 @@ export default function App() {
         return renderPatientRoutePage(PatientNotificationsPage)
       case '/patient/profile':
         return renderPatientRoutePage(PatientProfilePage)
+      case '/patient/complete-profile':
+        return renderPatientRoutePage(PatientProfileCompletionPage)
       case '/doctor':
         return session?.role === 'doctor' ? renderDoctorDashboardPage() : renderLoginPage()
       case '/doctors':

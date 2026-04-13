@@ -59,6 +59,11 @@ const initializeDatabase = async (retries = 10, delay = 5000) => {
         CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC);
         CREATE INDEX IF NOT EXISTS idx_audit_logs_actor_id ON audit_logs(actor_id);
         CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS blood_type VARCHAR(10);
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS allergies TEXT;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS last_visit_date DATE;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS emergency_contact_name VARCHAR(100);
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS emergency_contact_number VARCHAR(20);
       `;
 
       await pool.query(createTableQuery);

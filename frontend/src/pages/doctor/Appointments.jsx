@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import StatusPill from '../../components/StatusPill'
+import { fetchPatientLatestSymptomAnalysis } from '../../utils/patientService'
 import DoctorPortalPage from './DoctorPortalPage'
 import {
   appointmentFilters,
@@ -9,8 +11,35 @@ import {
   useDoctorPortal,
 } from './DoctorPortalContext'
 
+function formatAnalysisSource(source) {
+  switch (source) {
+    case 'custom-model':
+      return 'Internal AI model'
+    case 'gemini-fallback':
+      return 'Gemini fallback'
+    case 'fallback':
+      return 'Safe fallback'
+    default:
+      return source || 'Unknown'
+  }
+}
+
+function formatCarePriority(level) {
+  switch (level) {
+    case 'urgent':
+      return 'Urgent'
+    case 'soon':
+      return 'Soon'
+    case 'self_care':
+      return 'Self care'
+    default:
+      return 'Routine'
+  }
+}
+
 function AppointmentsContent({ onNavigate }) {
   const {
+    session,
     schedule,
     appointments,
     appointmentLoading,
@@ -31,6 +60,46 @@ function AppointmentsContent({ onNavigate }) {
     preparePrescriptionDraft,
     prepareConsultationDraft,
   } = useDoctorPortal()
+  const [latestPatientAnalysis, setLatestPatientAnalysis] = useState(null)
+  const [analysisLoading, setAnalysisLoading] = useState(false)
+
+  useEffect(() => {
+    if (!session?.token || !selectedAppointment?.id || !selectedAppointment?.patient_id) {
+      setLatestPatientAnalysis(null)
+      return
+    }
+
+    let cancelled = false
+
+    const loadLatestAnalysis = async () => {
+      setAnalysisLoading(true)
+      try {
+        const response = await fetchPatientLatestSymptomAnalysis(session.token, selectedAppointment.patient_id)
+        if (!cancelled) {
+          setLatestPatientAnalysis(response.data || null)
+        }
+      } catch {
+        if (!cancelled) {
+          setLatestPatientAnalysis(null)
+        }
+      } finally {
+        if (!cancelled) {
+          setAnalysisLoading(false)
+        }
+      }
+    }
+
+    loadLatestAnalysis()
+
+    return () => {
+      cancelled = true
+    }
+  }, [selectedAppointment?.id, selectedAppointment?.patient_id, session?.token])
+
+  const latestAiCondition = latestPatientAnalysis?.possibleConditions?.[0] || null
+  const latestAiConfidence = latestPatientAnalysis?.confidence
+    ? Math.round(latestPatientAnalysis.confidence * 100)
+    : 0
 
   const appointmentHighlights = [
     {
@@ -271,6 +340,33 @@ function AppointmentsContent({ onNavigate }) {
                   <p>{selectedAppointment.reason}</p>
                 </div>
               ) : null}
+
+              <div className="doctor-note-panel doctor-appointment-ai-panel">
+                <strong>Latest AI symptom guidance</strong>
+                {analysisLoading ? (
+                  <p>Loading the patient&apos;s latest symptom summary...</p>
+                ) : latestPatientAnalysis ? (
+                  <>
+                    <p>
+                      <strong>{latestAiCondition?.name || 'Needs more clinical review'}</strong>
+                      {' '}| {latestAiConfidence}% confidence |{' '}
+                      {formatCarePriority(
+                        latestPatientAnalysis.consultationAdvice?.level || latestPatientAnalysis.severity,
+                      )}{' '}
+                      priority
+                    </p>
+                    <p>
+                      {formatAnalysisSource(latestPatientAnalysis.source)} suggested{' '}
+                      {latestPatientAnalysis.recommendedSpecialist || 'General Physician'} as the next specialist.
+                    </p>
+                    {latestPatientAnalysis.consultationAdvice?.message ? (
+                      <p>{latestPatientAnalysis.consultationAdvice.message}</p>
+                    ) : null}
+                  </>
+                ) : (
+                  <p>No saved AI symptom guidance is available for this patient yet.</p>
+                )}
+              </div>
 
               <div className="doctor-callout doctor-appointment-callout">
                 <strong>Next best step</strong>

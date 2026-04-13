@@ -44,6 +44,66 @@ function buildFallbackGuidance(symptoms, primaryModel) {
   };
 }
 
+function parseAnalysisRow(row) {
+  if (!row) return null;
+
+  let rawResponse = null;
+
+  if (row.raw_response) {
+    try {
+      rawResponse =
+        typeof row.raw_response === 'string'
+          ? JSON.parse(row.raw_response)
+          : row.raw_response;
+    } catch {
+      rawResponse = null;
+    }
+  }
+
+  const rawData = rawResponse?.data || {};
+  const possibleConditions = rawData.possibleConditions || row.possible_conditions || [];
+  const detectedSymptoms = rawData.detectedSymptoms || row.detected_symptoms || [];
+
+  return {
+    id: row.id,
+    userId: row.user_id,
+    analyzedAt: row.analyzed_at,
+    symptoms: row.symptoms,
+    detectedSymptoms,
+    possibleConditions,
+    confidence: rawData.confidence ?? row.confidence ?? 0,
+    recommendation:
+      rawData.recommendation ||
+      row.recommendation ||
+      PRELIMINARY_GUIDANCE_NOTICE,
+    guidanceType:
+      rawData.guidanceType || 'preliminary_symptom_guidance',
+    disclaimer:
+      rawData.disclaimer || PRELIMINARY_GUIDANCE_NOTICE,
+    consultationAdvice: rawData.consultationAdvice || null,
+    selfCare: rawData.selfCare || [],
+    whenToSeekCare: rawData.whenToSeekCare || [],
+    source: rawData.source || 'unknown',
+    recommendedSpecialist:
+      rawData.recommendedSpecialist ||
+      rawData.primaryModel?.recommendedSpecialist ||
+      'General Physician',
+    severity:
+      rawData.severity ||
+      rawData.consultationAdvice?.level ||
+      'routine',
+    primaryModel: rawData.primaryModel || null,
+  };
+}
+
+function canAccessPatientHistory(requestingUserId, requestingRole, patientId) {
+  if (!requestingUserId || !patientId) return false;
+
+  if (requestingUserId === patientId) return true;
+
+  return ['doctor', 'admin'].includes(String(requestingRole || '').toLowerCase());
+}
+
 const analyzeSymptoms = async (req, res) => {
   try {
     const { symptoms, sessionSymptoms } = req.body;
@@ -151,4 +211,39 @@ const getAnalysisHistory = async (req, res) => {
   }
 };
 
-module.exports = { analyzeSymptoms, getAnalysisHistory };
+const getLatestPatientAnalysis = async (req, res) => {
+  try {
+    const requestingUserId = req.user?.userId;
+    const requestingRole = req.user?.userType;
+    const { patientId } = req.params;
+
+    if (!canAccessPatientHistory(requestingUserId, requestingRole, patientId)) {
+      return res.status(403).json({
+        success: false,
+        message: 'You are not allowed to view this patient analysis summary',
+      });
+    }
+
+    const result = await db.query(
+      `SELECT id, user_id, symptoms, detected_symptoms, possible_conditions, confidence, recommendation, raw_response, analyzed_at
+       FROM symptom_analyses
+       WHERE user_id = $1
+       ORDER BY analyzed_at DESC
+       LIMIT 1`,
+      [patientId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(200).json({ success: true, data: null });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: parseAnalysisRow(result.rows[0]),
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+module.exports = { analyzeSymptoms, getAnalysisHistory, getLatestPatientAnalysis };

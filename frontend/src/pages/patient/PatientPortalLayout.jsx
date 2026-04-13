@@ -1,4 +1,5 @@
 import { getInitials, patientSidebarItems, usePatientPortal } from './PatientPortalContext'
+import NotificationBell from '../../components/NotificationBell'
 
 export default function PatientPortalLayout({
   currentPath,
@@ -84,11 +85,19 @@ export default function PatientPortalLayout({
             <p className="patient-portal-section-label">{activeNavItem?.label || 'Overview'}</p>
             <h1>{activeNavItem?.label || 'Overview'}</h1>
           </div>
-          <div className="patient-portal-header-user">
-            <div className="patient-avatar small">{getInitials(session?.name)}</div>
-            <div>
-              <strong>{session?.name || 'Patient'}</strong>
-              <span>{topCondition?.name || 'Care plan in progress'}</span>
+          <div className="portal-header-tools">
+            <NotificationBell
+              token={session?.token}
+              scope="mine"
+              pagePath="/patient/notifications"
+              onNavigate={onNavigate}
+            />
+            <div className="patient-portal-header-user">
+              <div className="patient-avatar small">{getInitials(session?.name)}</div>
+              <div>
+                <strong>{session?.name || 'Patient'}</strong>
+                <span>{topCondition?.name || 'Care plan in progress'}</span>
+              </div>
             </div>
           </div>
         </header>

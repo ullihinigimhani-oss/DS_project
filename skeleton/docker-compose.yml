@@ -110,6 +110,7 @@ services:
       JWT_SECRET: SyOudFfvRbmoURg4Mq2N34wq
       UPLOAD_DIR: /uploads/doctor-verification
       INTERNAL_SERVICE_KEY: healthcare-internal-dev
+      NOTIFICATION_SERVICE_URL: http://notification-service:3007
     depends_on:
       - postgres-doctor
     volumes:
@@ -231,6 +232,8 @@ services:
       DB_USER: admin
       DB_PASSWORD: password
       KAFKA_BROKER: kafka:9092
+      AUTH_SERVICE_URL: http://auth-service:3001
+      INTERNAL_SERVICE_KEY: healthcare-internal-dev
       ENABLE_SMS: "${ENABLE_SMS:-true}"
       SMSAPI_TOKEN: "367|2SaoowtSbq3Z5QnK4111TghRLMRaQZ0fgM7ZJyBF"
       SMSAPI_SENDER_ID: "SMSAPI Demo"

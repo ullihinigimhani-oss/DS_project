@@ -152,6 +152,7 @@ export function DoctorPortalProvider({ session, children }) {
   const [message, setMessage] = useState('')
   const [activeCallSessionId, setActiveCallSessionId] = useState(null)
   const [joinSessionId, setJoinSessionId] = useState(storedConsultationDraft?.sessionId || '')
+  const [consultationDraft, setConsultationDraft] = useState(storedConsultationDraft || null)
   const [appointmentFilter, setAppointmentFilter] = useState('all')
   const [selectedAppointmentId, setSelectedAppointmentId] = useState('')
   const [appointmentActionId, setAppointmentActionId] = useState('')
@@ -236,6 +237,20 @@ export function DoctorPortalProvider({ session, children }) {
     prescriptionValues.patientId,
     prescriptionValues.patientName,
   ])
+
+  useEffect(() => {
+    if (consultationDraft?.sessionId || joinSessionId) {
+      const nextDraft = {
+        ...(consultationDraft || {}),
+        sessionId: joinSessionId || consultationDraft?.sessionId || '',
+      }
+
+      writeStoredJson(consultationDraftKey, nextDraft)
+      return
+    }
+
+    removeStoredJson(consultationDraftKey)
+  }, [consultationDraft?.appointmentId, consultationDraft?.patientId, consultationDraft?.patientName, joinSessionId])
 
   const loadDoctorWorkspace = async () => {
     if (!isConnectedDoctor || !doctorId) return
@@ -704,7 +719,15 @@ export function DoctorPortalProvider({ session, children }) {
 
     if (!nextSessionId) return ''
 
-    writeStoredJson(consultationDraftKey, { sessionId: nextSessionId })
+    const nextDraft = {
+      sessionId: nextSessionId,
+      appointmentId: appointment.id || '',
+      patientId: appointment.patient_id || '',
+      patientName: appointment.patient_name || '',
+    }
+
+    writeStoredJson(consultationDraftKey, nextDraft)
+    setConsultationDraft(nextDraft)
     setJoinSessionId(nextSessionId)
     return nextSessionId
   }
@@ -725,6 +748,7 @@ export function DoctorPortalProvider({ session, children }) {
     message,
     activeCallSessionId,
     joinSessionId,
+    consultationDraft,
     appointmentFilter,
     selectedAppointmentId,
     appointmentActionId,

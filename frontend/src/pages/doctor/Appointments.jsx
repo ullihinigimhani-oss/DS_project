@@ -37,6 +37,17 @@ function formatCarePriority(level) {
   }
 }
 
+function formatConditionHeading(name) {
+  const value = String(name || '').trim()
+
+  if (!value) return 'Needs more clinical review'
+  if (/^(possible|needs|unclear|suspected)/i.test(value)) {
+    return value
+  }
+
+  return `Possible ${value}`
+}
+
 function AppointmentsContent({ onNavigate }) {
   const {
     session,
@@ -348,7 +359,7 @@ function AppointmentsContent({ onNavigate }) {
                 ) : latestPatientAnalysis ? (
                   <>
                     <p>
-                      <strong>{latestAiCondition?.name || 'Needs more clinical review'}</strong>
+                      <strong>{formatConditionHeading(latestAiCondition?.name)}</strong>
                       {' '}| {latestAiConfidence}% confidence |{' '}
                       {formatCarePriority(
                         latestPatientAnalysis.consultationAdvice?.level || latestPatientAnalysis.severity,

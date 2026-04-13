@@ -36,6 +36,17 @@ function formatUrgencyLevel(level) {
   }
 }
 
+function formatConditionHeading(name) {
+  const value = String(name || '').trim()
+
+  if (!value) return 'Needs more review'
+  if (/^(possible|needs|unclear|suspected)/i.test(value)) {
+    return value
+  }
+
+  return `Possible ${value}`
+}
+
 export default function AiSymptomWorkspace({
   session,
   history,
@@ -60,6 +71,8 @@ export default function AiSymptomWorkspace({
   const carePriority = formatUrgencyLevel(
     analysis?.consultationAdvice?.level || analysis?.severity,
   )
+  const isUrgentCare = (analysis?.consultationAdvice?.level || analysis?.severity) === 'urgent'
+  const topConditionLabel = formatConditionHeading(topCondition?.name)
 
   return (
     <div className="page-stack">
@@ -195,7 +208,7 @@ export default function AiSymptomWorkspace({
                 <strong>Quick summary</strong>
                 <ul>
                   <li>
-                    Possible condition: <strong>{topCondition?.name || 'Needs more review'}</strong>
+                    Possible condition: <strong>{topConditionLabel}</strong>
                   </li>
                   <li>
                     Confidence: <strong>{confidencePercent}%</strong>
@@ -211,27 +224,71 @@ export default function AiSymptomWorkspace({
               {topCondition?.name ? (
                 <div className="analysis-primary-callout">
                   <span>Most likely condition</span>
-                  <strong>{topCondition.name}</strong>
+                  <strong>{topConditionLabel}</strong>
                   <p>{topCondition.reason || 'Most likely match to discuss with a clinician.'}</p>
                 </div>
               ) : null}
-              <p>{analysis.recommendation}</p>
-              <div className="analysis-cta-row">
-                <button
-                  type="button"
-                  className="analysis-primary-cta"
-                  onClick={() => {
-                    if (onPrimaryAction) {
-                      onPrimaryAction({ analysis, topCondition, symptoms, session })
-                      return
-                    }
 
-                    onNavigate(getPrimaryActionPath(session))
-                  }}
-                >
-                  {primaryActionLabel || 'Book appointment'}
-                </button>
-              </div>
+              {isUrgentCare ? (
+                <div className="analysis-urgent-panel">
+                  <div>
+                    <span>Urgent next step</span>
+                    <strong>Seek urgent medical attention now</strong>
+                    <p>
+                      Do not rely only on online guidance if symptoms are severe, worsening, or
+                      happening right now. Go to the nearest emergency department or contact local
+                      emergency services.
+                    </p>
+                  </div>
+                  <div className="analysis-urgent-actions">
+                    <button
+                      type="button"
+                      className="analysis-primary-cta"
+                      onClick={() => {
+                        if (onPrimaryAction) {
+                          onPrimaryAction({ analysis, topCondition, symptoms, session })
+                          return
+                        }
+
+                        onNavigate(getPrimaryActionPath(session))
+                      }}
+                    >
+                      {primaryActionLabel || 'Book urgent review'}
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() =>
+                        document
+                          .getElementById('analysis-warning-section')
+                          ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                      }
+                    >
+                      Review warning signs
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              <p>{analysis.recommendation}</p>
+              {!isUrgentCare ? (
+                <div className="analysis-cta-row">
+                  <button
+                    type="button"
+                    className="analysis-primary-cta"
+                    onClick={() => {
+                      if (onPrimaryAction) {
+                        onPrimaryAction({ analysis, topCondition, symptoms, session })
+                        return
+                      }
+
+                      onNavigate(getPrimaryActionPath(session))
+                    }}
+                  >
+                    {primaryActionLabel || 'Book appointment'}
+                  </button>
+                </div>
+              ) : null}
 
               <div className="chip-group">
                 {(analysis.detectedSymptoms || []).map((symptom) => (
@@ -312,7 +369,7 @@ export default function AiSymptomWorkspace({
               ) : null}
 
               {(analysis.whenToSeekCare || []).length ? (
-                <div className="history-card">
+                <div className="history-card" id="analysis-warning-section">
                   <div className="history-header">
                     <strong>When to seek care</strong>
                   </div>

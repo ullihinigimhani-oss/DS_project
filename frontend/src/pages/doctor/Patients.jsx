@@ -81,6 +81,17 @@ function formatCarePriority(level) {
   }
 }
 
+function formatConditionHeading(name) {
+  const value = String(name || '').trim()
+
+  if (!value) return 'Needs more clinical review'
+  if (/^(possible|needs|unclear|suspected)/i.test(value)) {
+    return value
+  }
+
+  return `Possible ${value}`
+}
+
 function PatientsContent() {
   const { patientCount, prescriptions, appointments, session } = useDoctorPortal()
   const [selectedPatientId, setSelectedPatientId] = useState('')
@@ -426,7 +437,7 @@ function PatientsContent() {
                     </div>
 
                     <div className="doctor-callout doctor-ai-callout">
-                      <strong>{latestAiCondition?.name || 'Needs more clinical review'}</strong>
+                      <strong>{formatConditionHeading(latestAiCondition?.name)}</strong>
                       <p>
                         {latestAiCondition?.reason ||
                           patientLatestAnalysis.recommendation ||

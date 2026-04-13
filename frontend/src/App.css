@@ -1,3 +1,33 @@
+:root {
+  --app-bg: #191b28;
+  --app-bg-soft: #232538;
+  --app-surface: rgba(44, 43, 68, 0.86);
+  --app-surface-strong: rgba(52, 50, 80, 0.92);
+  --app-border: rgba(169, 161, 242, 0.14);
+  --app-text: #f4f1ff;
+  --app-text-muted: #c6c1dc;
+  --app-accent: #8d79f2;
+  --app-accent-strong: #5c61aa;
+  --app-accent-soft: rgba(141, 121, 242, 0.16);
+  --sidebar-gradient-top: #28243d;
+  --sidebar-gradient-mid: #212033;
+  --sidebar-gradient-bottom: #1b1e2d;
+  --sidebar-text: #f7f5ff;
+  --sidebar-text-muted: rgba(234, 231, 255, 0.74);
+  --sidebar-border: rgba(226, 223, 255, 0.08);
+  --sidebar-shadow: rgba(22, 23, 38, 0.2);
+  --sidebar-link-hover: rgba(255, 255, 255, 0.08);
+  --sidebar-link-active: linear-gradient(135deg, rgba(139, 110, 246, 0.28), rgba(90, 160, 255, 0.22));
+  --sidebar-link-active-border: rgba(212, 206, 255, 0.12);
+  --sidebar-user-bg: rgba(255, 255, 255, 0.06);
+  --sidebar-footnote-bg: rgba(140, 110, 246, 0.12);
+  --sidebar-signout-bg: rgba(140, 110, 246, 0.22);
+  --sidebar-signout-hover: rgba(140, 110, 246, 0.3);
+  --sidebar-brand-gradient: linear-gradient(135deg, #8c6ef6, #5aa0ff);
+  --sidebar-avatar-bg: linear-gradient(135deg, #d8c6ff, #f5ecff);
+  --sidebar-avatar-text: #2b2751;
+}
+
 .app-shell {
   width: min(1220px, calc(100% - 32px));
   margin: 0 auto;
@@ -27,9 +57,9 @@
   padding: 20px 26px;
   min-height: 72px;
   border-radius: 26px;
-  border: 1px solid rgba(46, 56, 74, 0.1);
-  background: rgba(255, 252, 248, 0.84);
-  box-shadow: 0 18px 46px rgba(38, 47, 61, 0.08);
+  border: 1px solid var(--app-border);
+  background: rgba(42, 41, 64, 0.88);
+  box-shadow: 0 18px 46px rgba(11, 13, 24, 0.24);
   backdrop-filter: blur(14px);
 }
 
@@ -42,7 +72,7 @@
 
 .brand-link {
   padding: 0;
-  color: #243040;
+  color: var(--app-text);
   font-size: 1rem;
   font-weight: 800;
   box-shadow: none;
@@ -57,7 +87,7 @@
 .nav-link {
   border-radius: 999px;
   padding: 12px 18px;
-  color: #35506d;
+  color: var(--app-text-muted);
   cursor: pointer;
   box-shadow: none;
   transition: transform 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, background 0.2s ease;
@@ -66,14 +96,14 @@
 }
 
 .nav-link:hover:not(.active) {
-  background: rgba(63, 96, 127, 0.08);
+  background: rgba(141, 121, 242, 0.12);
   transform: translateY(-1px);
 }
 
 .nav-link.active {
   color: #ffffff;
-  background: linear-gradient(135deg, #2d5a7b, #4a7a9e);
-  box-shadow: 0 6px 20px rgba(45, 90, 123, 0.28);
+  background: linear-gradient(135deg, var(--app-accent), var(--app-accent-strong));
+  box-shadow: 0 6px 20px rgba(28, 31, 56, 0.34);
 }
 
 .hero {
@@ -100,9 +130,9 @@
 .patient-overview-card,
 .patient-journey-card,
 .route-card {
-  border: 1px solid rgba(46, 56, 74, 0.1);
-  background: rgba(255, 252, 248, 0.84);
-  box-shadow: 0 20px 60px rgba(38, 47, 61, 0.1);
+  border: 1px solid var(--app-border);
+  background: rgba(43, 42, 66, 0.86);
+  box-shadow: 0 20px 60px rgba(10, 12, 23, 0.22);
   backdrop-filter: blur(14px);
 }
 
@@ -115,9 +145,9 @@
 
 .home-hero-copy {
   background:
-    radial-gradient(circle at top right, rgba(255, 206, 150, 0.22), transparent 28%),
-    radial-gradient(circle at bottom left, rgba(112, 162, 133, 0.16), transparent 28%),
-    linear-gradient(145deg, rgba(255, 250, 244, 0.96), rgba(249, 242, 232, 0.88));
+    radial-gradient(circle at top right, rgba(141, 121, 242, 0.18), transparent 28%),
+    radial-gradient(circle at bottom left, rgba(92, 97, 170, 0.16), transparent 28%),
+    linear-gradient(145deg, rgba(56, 54, 86, 0.96), rgba(42, 41, 64, 0.9));
   animation: homeReveal 0.72s ease both;
 }
 
@@ -149,7 +179,7 @@
   position: relative;
   z-index: 1;
   margin: 0 0 12px;
-  color: #bf6848;
+  color: #a99bff;
   font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -160,7 +190,7 @@
   position: relative;
   z-index: 1;
   margin: 0;
-  color: #243040;
+  color: var(--app-text);
   font-size: clamp(2.45rem, 5vw, 4.2rem);
   line-height: 0.96;
   letter-spacing: -0.04em;
@@ -171,7 +201,7 @@
   z-index: 1;
   max-width: 64ch;
   margin: 18px 0 0;
-  color: #607086;
+  color: var(--app-text-muted);
   font-size: 1rem;
 }
 
@@ -391,7 +421,7 @@
 }
 
 .subtle-text {
-  color: #6f7f93;
+  color: var(--app-text-muted);
   font-size: 0.92rem;
 }
 
@@ -412,14 +442,14 @@
 
 .stat-card span {
   display: block;
-  color: #748398;
+  color: var(--app-text-muted);
   font-size: 0.92rem;
 }
 
 .stat-card strong {
   display: block;
   margin-top: 10px;
-  color: #263549;
+  color: var(--app-text);
   word-break: break-word;
   font-size: 1.06rem;
   line-height: 1.3;
@@ -720,10 +750,10 @@ button {
   border-radius: 18px;
   padding: 13px 18px;
   color: #ffffff;
-  background: linear-gradient(135deg, #c86b49, #df8d60);
+  background: linear-gradient(135deg, var(--app-accent), var(--app-accent-strong));
   cursor: pointer;
   transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 14px 28px rgba(200, 107, 73, 0.22);
+  box-shadow: 0 14px 28px rgba(18, 21, 36, 0.28);
 }
 
 button:hover {
@@ -737,8 +767,8 @@ button:disabled {
 }
 
 .secondary-button {
-  color: #29415e;
-  background: linear-gradient(135deg, #dbe5ef, #edf3f8);
+  color: var(--app-text);
+  background: rgba(59, 59, 114, 0.5);
   box-shadow: none;
 }
 
@@ -781,10 +811,10 @@ button:disabled {
   height: 100vh;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 24%),
-    linear-gradient(180deg, #8e715d, #6c5547 55%, #4f4037);
-  color: #fff8f2;
-  border-right: 1px solid rgba(255, 242, 232, 0.12);
-  box-shadow: 2px 0 15px rgba(142, 85, 61, 0.15);
+    linear-gradient(180deg, var(--sidebar-gradient-top), var(--sidebar-gradient-mid) 58%, var(--sidebar-gradient-bottom));
+  color: var(--sidebar-text);
+  border-right: 1px solid var(--sidebar-border);
+  box-shadow: 2px 0 18px var(--sidebar-shadow);
   z-index: 100;
   overflow-y: auto;
 }
@@ -805,7 +835,7 @@ button:disabled {
   color: #ffffff;
   font-weight: 800;
   letter-spacing: 0.04em;
-  background: linear-gradient(135deg, #e96f64, #ffb36e);
+  background: var(--sidebar-brand-gradient);
 }
 
 .patient-portal-brand strong,
@@ -818,7 +848,7 @@ button:disabled {
 .patient-portal-user span {
   display: block;
   margin-top: 2px;
-  color: rgba(255, 244, 236, 0.76);
+  color: var(--sidebar-text-muted);
   font-size: 0.86rem;
 }
 
@@ -834,7 +864,7 @@ button:disabled {
   justify-content: flex-start;
   padding: 14px 18px;
   border-radius: 12px;
-  color: rgba(255, 248, 242, 0.95);
+  color: rgba(244, 242, 255, 0.95);
   background: transparent;
   box-shadow: none;
   white-space: nowrap;
@@ -846,14 +876,14 @@ button:disabled {
 }
 
 .patient-portal-link:hover {
-  background: rgba(255, 244, 236, 0.08);
+  background: var(--sidebar-link-hover);
   transform: translateX(4px);
   color: #fff;
 }
 
 .patient-portal-link.active {
-  background: rgba(255, 205, 170, 0.16);
-  box-shadow: inset 0 0 0 1px rgba(255, 228, 203, 0.24);
+  background: var(--sidebar-link-active);
+  box-shadow: inset 0 0 0 1px var(--sidebar-link-active-border);
   color: #fff;
 }
 
@@ -871,7 +901,7 @@ button:disabled {
   gap: 12px;
   padding: 14px 12px;
   border-radius: 18px;
-  background: rgba(255, 246, 239, 0.08);
+  background: var(--sidebar-user-bg);
 }
 
 .patient-avatar {
@@ -881,9 +911,9 @@ button:disabled {
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  color: #6a4d39;
+  color: var(--sidebar-avatar-text);
   font-weight: 800;
-  background: linear-gradient(135deg, #f7d39b, #fff3df);
+  background: var(--sidebar-avatar-bg);
 }
 
 .patient-avatar.small {
@@ -894,12 +924,12 @@ button:disabled {
 
 .patient-signout-button {
   width: 100%;
-  background: rgba(233, 155, 120, 0.24);
+  background: var(--sidebar-signout-bg);
   box-shadow: none;
 }
 
 .patient-signout-button:hover {
-  background: rgba(240, 173, 142, 0.34);
+  background: var(--sidebar-signout-hover);
 }
 
 .patient-portal-main {
@@ -1414,10 +1444,10 @@ button:disabled {
   height: 100vh;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 24%),
-    linear-gradient(180deg, #48695f, #355148 55%, #243b35);
-  color: #f8f4ee;
-  border-right: 1px solid rgba(255, 244, 232, 0.1);
-  box-shadow: 2px 0 15px rgba(28, 44, 67, 0.15);
+    linear-gradient(180deg, var(--sidebar-gradient-top), var(--sidebar-gradient-mid) 58%, var(--sidebar-gradient-bottom));
+  color: var(--sidebar-text);
+  border-right: 1px solid var(--sidebar-border);
+  box-shadow: 2px 0 18px var(--sidebar-shadow);
   z-index: 100;
   overflow-y: auto;
 }
@@ -1438,7 +1468,7 @@ button:disabled {
   color: #ffffff;
   font-weight: 800;
   letter-spacing: 0.04em;
-  background: linear-gradient(135deg, #f35b7a, #ff9c66);
+  background: var(--sidebar-brand-gradient);
 }
 
 .doctor-portal-brand strong,
@@ -1451,7 +1481,7 @@ button:disabled {
 .doctor-portal-user span {
   display: block;
   margin-top: 2px;
-  color: rgba(248, 240, 232, 0.72);
+  color: var(--sidebar-text-muted);
   font-size: 0.86rem;
 }
 
@@ -1467,7 +1497,7 @@ button:disabled {
   justify-content: flex-start;
   padding: 12px 16px;
   border-radius: 12px;
-  color: rgba(250, 244, 238, 0.94);
+  color: rgba(244, 242, 255, 0.95);
   background: transparent;
   box-shadow: none;
   white-space: nowrap;
@@ -1475,13 +1505,15 @@ button:disabled {
 }
 
 .doctor-portal-link:hover {
-  background: rgba(255, 246, 237, 0.09);
+  background: var(--sidebar-link-hover);
   transform: translateX(4px);
+  color: #fff;
 }
 
 .doctor-portal-link.active {
-  background: rgba(239, 200, 152, 0.18);
-  box-shadow: inset 0 0 0 1px rgba(255, 228, 194, 0.28);
+  background: var(--sidebar-link-active);
+  box-shadow: inset 0 0 0 1px var(--sidebar-link-active-border);
+  color: #fff;
 }
 
 .doctor-portal-footer {
@@ -1498,7 +1530,7 @@ button:disabled {
   gap: 12px;
   padding: 14px 12px;
   border-radius: 18px;
-  background: rgba(255, 246, 237, 0.08);
+  background: var(--sidebar-user-bg);
 }
 
 .doctor-avatar {
@@ -1508,9 +1540,9 @@ button:disabled {
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  color: #27443b;
+  color: var(--sidebar-avatar-text);
   font-weight: 800;
-  background: linear-gradient(135deg, #f3d588, #f7f3df);
+  background: var(--sidebar-avatar-bg);
   overflow: hidden;
 }
 
@@ -1528,12 +1560,12 @@ button:disabled {
 
 .doctor-signout-button {
   width: 100%;
-  background: rgba(224, 156, 107, 0.28);
+  background: var(--sidebar-signout-bg);
   box-shadow: none;
 }
 
 .doctor-signout-button:hover {
-  background: rgba(232, 172, 129, 0.38);
+  background: var(--sidebar-signout-hover);
 }
 
 .doctor-portal-main {

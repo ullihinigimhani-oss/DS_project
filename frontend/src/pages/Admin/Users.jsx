@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import ModernSearchBar from '../../components/ModernSearchBar'
 import { useAdminPortal } from './AdminPortalContext'
 
 export default function AdminUsersPage() {
@@ -35,18 +36,21 @@ export default function AdminUsersPage() {
         </div>
 
         <div className="admin-filter-grid">
-          <label className="doctor-compact-field">
+          <div className="doctor-compact-field">
             <span>Search</span>
-            <input
-              type="search"
+            <ModernSearchBar
               value={userSearch}
               onChange={(event) => {
                 setUserSearch(event.target.value)
                 setUsersPagination((current) => ({ ...current, page: 1 }))
               }}
+              onReset={() => {
+                setUserSearch('')
+                setUsersPagination((current) => ({ ...current, page: 1 }))
+              }}
               placeholder="Search by name, email, or phone"
             />
-          </label>
+          </div>
 
           <label className="doctor-compact-field">
             <span>Role</span>

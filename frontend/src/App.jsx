@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import ModernSearchBar from './components/ModernSearchBar'
 import LoginForm from './components/LoginForm'
 import RegisterForm from './components/RegisterForm'
 import SectionCard from './components/SectionCard'
@@ -657,15 +658,15 @@ export default function App() {
         </section>
 
         <section className="public-doctors-toolbar">
-          <label className="public-doctors-search">
+          <div className="public-doctors-search">
             <span>Search doctors</span>
-            <input
-              type="text"
+            <ModernSearchBar
               value={doctorSearch}
               onChange={(event) => setDoctorSearch(event.target.value)}
+              onReset={() => setDoctorSearch('')}
               placeholder="Search by doctor name or specialization..."
             />
-          </label>
+          </div>
 
           <label className="public-doctors-filter">
             <span>Specialty</span>

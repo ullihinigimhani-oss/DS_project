@@ -1,3 +1,4 @@
+import ModernSearchBar from '../../components/ModernSearchBar'
 import {
   formatAdminAppointmentDate,
   getAppointmentTone,
@@ -41,15 +42,15 @@ export default function AdminAppointmentsPage() {
             </select>
           </label>
 
-          <label className="doctor-compact-field">
+          <div className="doctor-compact-field">
             <span>Search</span>
-            <input
-              type="search"
+            <ModernSearchBar
               value={appointmentSearch}
               onChange={(event) => setAppointmentSearch(event.target.value)}
+              onReset={() => setAppointmentSearch('')}
               placeholder="Search by doctor, patient, or ID"
             />
-          </label>
+          </div>
         </div>
 
         <div className="admin-toolbar">

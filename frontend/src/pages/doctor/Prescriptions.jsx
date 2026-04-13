@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import ModernSearchBar from '../../components/ModernSearchBar'
 import StatusPill from '../../components/StatusPill'
 import { fetchPatientLatestSymptomAnalysis } from '../../utils/patientService'
 import DoctorPortalPage from './DoctorPortalPage'
@@ -333,14 +334,15 @@ function PrescriptionsContent() {
         </div>
         <p>Search by patient, medication, notes, or appointment ID to jump straight to a record.</p>
         <div className="doctor-toolbar">
-          <label className="doctor-compact-field doctor-prescription-search doctor-prescription-search-top">
-            Search history
-            <input
+          <div className="doctor-compact-field doctor-prescription-search doctor-prescription-search-top">
+            <span style={{ marginBottom: '0.5rem', display: 'block' }}>Search history</span>
+            <ModernSearchBar
               value={historyFilter}
               onChange={(event) => setHistoryFilter(event.target.value)}
+              onReset={() => setHistoryFilter('')}
               placeholder="Search by patient, medication, notes, or appointment ID"
             />
-          </label>
+          </div>
         </div>
       </section>
 

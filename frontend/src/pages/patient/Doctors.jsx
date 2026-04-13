@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import ModernSearchBar from '../../components/ModernSearchBar'
 import StatusPill from '../../components/StatusPill'
 import PatientPortalPage from './PatientPortalPage'
 import { getInitials, usePatientPortal } from './PatientPortalContext'
@@ -72,15 +73,15 @@ function DoctorsContent({ onNavigate }) {
         </div>
 
         <div className="patient-doctors-toolbar">
-          <label className="patient-doctors-search">
+          <div className="patient-doctors-search">
             <span>Search doctors</span>
-            <input
-              type="text"
+            <ModernSearchBar
               value={search}
               onChange={(event) => setSearch(event.target.value)}
+              onReset={() => setSearch('')}
               placeholder="Search by doctor name or specialization..."
             />
-          </label>
+          </div>
 
           <label className="patient-doctors-filter">
             <span>Specialty</span>

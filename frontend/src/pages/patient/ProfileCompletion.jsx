@@ -35,8 +35,8 @@ function Field({ label, children }) {
   )
 }
 
-function ProfileCompletionContent() {
-  const { session } = usePatientPortal()
+  function ProfileCompletionContent() {
+  const { session, updateSession } = usePatientPortal()
   const isEdit = Boolean(session?.birthdate)
 
   const [form, setForm] = useState({
@@ -76,9 +76,14 @@ function ProfileCompletionContent() {
         throw new Error(data.message || 'Failed to save profile. Try again.')
       }
 
+      if (updateSession) {
+         updateSession(data.data.user)
+      }
+
       setSuccess('Profile saved successfully! Redirecting…')
       setTimeout(() => {
-        window.location.href = '/patient/profile'
+        window.history.pushState({}, '', '/patient/profile')
+        window.dispatchEvent(new Event('popstate'))
       }, 1200)
     } catch (err) {
       setError(err.message)

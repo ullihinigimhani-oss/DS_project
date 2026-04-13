@@ -69,8 +69,8 @@ export default function PatientPortalLayout({
           <div className="patient-portal-user">
             <div className="patient-avatar">{getInitials(session?.name)}</div>
             <div>
-              <strong>{session?.name || 'Patient'}</strong>
-              <span>{session?.email || 'patient@example.com'}</span>
+              <strong>{session?.name || 'Welcome'}</strong>
+              <span>{session?.email || 'Update your profile'}</span>
             </div>
           </div>
           <button type="button" className="patient-signout-button" onClick={onSignOut}>
@@ -95,8 +95,8 @@ export default function PatientPortalLayout({
             <div className="patient-portal-header-user">
               <div className="patient-avatar small">{getInitials(session?.name)}</div>
               <div>
-                <strong>{session?.name || 'Patient'}</strong>
-                <span>{topCondition?.name || 'Care plan in progress'}</span>
+                <strong>{session?.name || 'Welcome'}</strong>
+                <span>{topCondition?.name || 'Check your symptoms'}</span>
               </div>
             </div>
           </div>

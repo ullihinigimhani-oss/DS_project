@@ -59,13 +59,28 @@ export default function AdminPortalLayout({
         </nav>
 
         <div className="admin-portal-footer">
-          <div className="admin-portal-user">
+          <button
+            type="button"
+            className="admin-portal-user"
+            onClick={() => onNavigate('/admin/profile')}
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              textAlign: 'left',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              width: '100%',
+            }}
+          >
             <div className="admin-avatar">{getInitials(session?.name)}</div>
             <div>
               <strong>{session?.name || 'Admin'}</strong>
               <span>{session?.email || 'admin@arogya.com'}</span>
             </div>
-          </div>
+          </button>
           <div className="admin-portal-footnote">
             <span>{overview.pendingDoctors} pending verifications</span>
           </div>
@@ -88,13 +103,27 @@ export default function AdminPortalLayout({
               pagePath="/admin/notifications"
               onNavigate={onNavigate}
             />
-            <div className="admin-portal-header-user">
+            <button
+              type="button"
+              className="admin-portal-header-user"
+              onClick={() => onNavigate('/admin/profile')}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                textAlign: 'left',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+              }}
+            >
               <div className="admin-avatar small">{getInitials(session?.name)}</div>
               <div>
                 <strong>{session?.name || 'Admin'}</strong>
-                <span>System operations</span>
+                <span>View Profile</span>
               </div>
-            </div>
+            </button>
           </div>
         </header>
 

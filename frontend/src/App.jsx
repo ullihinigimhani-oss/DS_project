@@ -34,6 +34,7 @@ import AdminDoctorsPage from './pages/Admin/Doctors'
 import AdminAppointmentsPage from './pages/Admin/Appointments'
 import AdminNotificationsPage from './pages/Admin/Notifications'
 import AdminSettingsPage from './pages/Admin/Settings'
+import AdminProfilePage from './pages/Admin/Profile'
 import { checkEmailAvailability, loginUser, registerUser, verifyUser } from './utils/authService'
 import {
   submitDoctorVerification,
@@ -112,7 +113,7 @@ export default function App() {
   const [loginValues, setLoginValues] = useState({
     email: '',
     password: '',
-    role: 'patient',
+    role: '',
   })
   const [registerValues, setRegisterValues] = useState({
     name: '',
@@ -523,6 +524,15 @@ export default function App() {
     navigateTo(wasDoctor ? '/login' : '/')
   }
 
+  const updateSession = (newValues) => {
+    setSession(prev => {
+      if (!prev) return prev;
+      const nextSession = { ...prev, ...newValues }
+      persistSession(nextSession)
+      return nextSession
+    })
+  }
+
   const renderLoginPage = () => (
     <LoginForm
       values={loginValues}
@@ -627,6 +637,7 @@ export default function App() {
         onSignOut={handleSignOut}
         onRequireLogin={navigateTo}
         onNavigate={navigateTo}
+        updateSession={updateSession}
         analysis={analysis}
         symptoms={symptoms}
         analysisLoading={analysisLoading}
@@ -853,6 +864,8 @@ export default function App() {
         return renderAdminRoutePage(AdminNotificationsPage)
       case '/admin/settings':
         return renderAdminRoutePage(AdminSettingsPage)
+      case '/admin/profile':
+        return renderAdminRoutePage(AdminProfilePage)
       case '/patient':
         return renderPatientPage()
       case '/patient/book-appointment':

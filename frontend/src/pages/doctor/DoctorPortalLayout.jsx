@@ -31,6 +31,7 @@ export default function DoctorPortalLayout({
       <VideoRoom
         sessionId={activeCallSessionId}
         peerName="Active Patient Consultation"
+        allowEndSession
         onEndRedirect={() => setActiveCallSessionId(null)}
       />
     )

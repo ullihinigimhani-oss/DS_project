@@ -14,7 +14,7 @@ export const patientSidebarItems = [
   { id: 'book', label: 'Book Appointment', path: '/patient/book-appointment' },
   { id: 'bookings', label: 'My Bookings', path: '/patient/my-bookings' },
   { id: 'doctors', label: 'Doctors', path: '/patient/doctors' },
-  { id: 'Consultations', label: 'Join Consultation', path: '/patient' },
+  { id: 'consultations', label: 'Join Consultation', path: '/patient/consultations' },
   { id: 'symptoms', label: 'Symptom History', path: '/patient/symptom-history' },
   { id: 'profile', label: 'Profile', path: '/patient/profile' },
 ]
@@ -31,7 +31,18 @@ export function getMondayString(baseDate = new Date()) {
 export function formatDate(value) {
   if (!value) return 'Date not set'
 
-  return new Date(`${value}T00:00:00`).toLocaleDateString(undefined, {
+  const normalized = String(value).trim()
+  const parsed = normalized.includes('T')
+    ? new Date(normalized)
+    : /^\d{4}-\d{2}-\d{2}$/.test(normalized)
+      ? new Date(`${normalized}T00:00:00`)
+      : new Date(normalized)
+
+  if (Number.isNaN(parsed.getTime())) {
+    return 'Date not set'
+  }
+
+  return parsed.toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',

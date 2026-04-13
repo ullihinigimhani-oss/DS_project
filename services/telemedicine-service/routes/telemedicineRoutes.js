@@ -3,7 +3,7 @@ const router = express.Router();
 const ctrl = require('../controllers/telemedicineController');
 const { authMiddleware } = require('../middlewares/authMiddleware');
 
-router.post('/sessions', ctrl.createSession);
+router.post('/sessions', authMiddleware, ctrl.createSession);
 router.get('/sessions/appointment/:appointmentId', authMiddleware, ctrl.getSessionByAppointment);
 router.get('/sessions/:id', authMiddleware, ctrl.getSessionById);
 router.get('/sessions', authMiddleware, ctrl.getSessions);

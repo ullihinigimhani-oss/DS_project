@@ -690,6 +690,21 @@
   transition: color 0.2s;
 }
 
+.auth-role-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.8rem;
+  height: 1.8rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: rgba(var(--auth-accent-rgb), 0.1);
+  color: var(--auth-accent-mid);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
 .auth-role-icon--lg {
   font-size: 1.5rem;
   display: block;
@@ -697,6 +712,11 @@
 
 .auth-role-chip--active .auth-role-icon {
   color: var(--auth-accent);
+}
+
+.auth-role-chip--active .auth-role-mark {
+  background: rgba(var(--auth-accent-rgb), 0.18);
+  color: var(--auth-accent-deep);
 }
 
 /* ── DOCTOR VERIFICATION SECTION ──────────────── */

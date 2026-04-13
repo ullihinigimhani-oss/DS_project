@@ -1,5 +1,11 @@
 import './auth.css'
 
+const loginRoleOptions = [
+  { value: 'patient', label: 'Patient', mark: 'PT' },
+  { value: 'doctor', label: 'Doctor', mark: 'DR' },
+  { value: 'admin', label: 'Admin', mark: 'AD' },
+]
+
 export default function LoginForm({
   values,
   onChange,
@@ -12,6 +18,8 @@ export default function LoginForm({
   bannerError = '',
   bannerMessage = '',
 }) {
+  const shouldShowRolePicker = hideRolePicker !== true
+
   return (
     <div className="auth-page auth-page--login">
       <div className="auth-bg" aria-hidden="true">
@@ -35,7 +43,9 @@ export default function LoginForm({
             </div>
 
             <h1 className="auth-form-title auth-form-title--login">
-              Sign in to<br /><em>your account</em>
+              Sign in to
+              <br />
+              <em>your account</em>
             </h1>
 
             <p className="auth-form-sub auth-form-sub--login">
@@ -98,28 +108,24 @@ export default function LoginForm({
               </div>
             </div>
 
-            {!hideRolePicker && (
+            {shouldShowRolePicker ? (
               <div className="auth-field-group auth-role-row">
                 <span className="auth-label">{roleLabel}</span>
                 <div className="auth-role-picker">
-                  {['patient', 'doctor', 'admin'].map((role) => (
+                  {loginRoleOptions.map((role) => (
                     <button
-                      key={role}
+                      key={role.value}
                       type="button"
-                      className={`auth-role-chip ${roleHint === role ? 'auth-role-chip--active' : ''}`}
-                      onClick={() => onChange({ target: { name: 'role', value: role } })}
+                      className={`auth-role-chip ${roleHint === role.value ? 'auth-role-chip--active' : ''}`}
+                      onClick={() => onChange({ target: { name: 'role', value: role.value } })}
                     >
-                      <span className="auth-role-icon" aria-hidden="true">
-                        {role === 'patient' && '◉'}
-                        {role === 'doctor' && '⚕'}
-                        {role === 'admin' && '⊕'}
-                      </span>
-                      {role}
+                      <span className="auth-role-mark" aria-hidden="true">{role.mark}</span>
+                      {role.label}
                     </button>
                   ))}
                 </div>
               </div>
-            )}
+            ) : null}
 
             <div className="auth-submit-row">
               <button type="submit" className="auth-submit" disabled={loading}>

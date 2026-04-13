@@ -1,4 +1,6 @@
 import { useEffect } from 'react'
+import ModernSelect from '../../components/ModernSelect'
+import ModernSearchBar from '../../components/ModernSearchBar'
 import { useAdminPortal } from './AdminPortalContext'
 
 export default function AdminUsersPage() {
@@ -35,49 +37,54 @@ export default function AdminUsersPage() {
         </div>
 
         <div className="admin-filter-grid">
-          <label className="doctor-compact-field">
+          <div className="doctor-compact-field">
             <span>Search</span>
-            <input
-              type="search"
+            <ModernSearchBar
               value={userSearch}
               onChange={(event) => {
                 setUserSearch(event.target.value)
                 setUsersPagination((current) => ({ ...current, page: 1 }))
               }}
+              onReset={() => {
+                setUserSearch('')
+                setUsersPagination((current) => ({ ...current, page: 1 }))
+              }}
               placeholder="Search by name, email, or phone"
             />
-          </label>
+          </div>
 
-          <label className="doctor-compact-field">
+          <div className="doctor-compact-field">
             <span>Role</span>
-            <select
+            <ModernSelect
               value={userRoleFilter}
               onChange={(event) => {
                 setUserRoleFilter(event.target.value)
                 setUsersPagination((current) => ({ ...current, page: 1 }))
               }}
-            >
-              <option value="all">All roles</option>
-              <option value="doctor">Doctor</option>
-              <option value="patient">Patient</option>
-              <option value="admin">Admin</option>
-            </select>
-          </label>
+              options={[
+                { value: 'all', label: 'All roles' },
+                { value: 'doctor', label: 'Doctor' },
+                { value: 'patient', label: 'Patient' },
+                { value: 'admin', label: 'Admin' },
+              ]}
+            />
+          </div>
 
-          <label className="doctor-compact-field">
+          <div className="doctor-compact-field">
             <span>Status</span>
-            <select
+            <ModernSelect
               value={userStatusFilter}
               onChange={(event) => {
                 setUserStatusFilter(event.target.value)
                 setUsersPagination((current) => ({ ...current, page: 1 }))
               }}
-            >
-              <option value="all">All statuses</option>
-              <option value="active">Active</option>
-              <option value="blocked">Blocked</option>
-            </select>
-          </label>
+              options={[
+                { value: 'all', label: 'All statuses' },
+                { value: 'active', label: 'Active' },
+                { value: 'blocked', label: 'Blocked' },
+              ]}
+            />
+          </div>
         </div>
 
         <div className="admin-toolbar">

@@ -1,4 +1,5 @@
 import VideoRoom from '../../components/VideoRoom'
+import NotificationBell from '../../components/NotificationBell'
 import { resolveDoctorAssetUrl } from '../../utils/doctorService'
 import { getInitials, sidebarItems, useDoctorPortal } from './DoctorPortalContext'
 
@@ -31,6 +32,7 @@ export default function DoctorPortalLayout({
       <VideoRoom
         sessionId={activeCallSessionId}
         peerName="Active Patient Consultation"
+        allowEndSession
         onEndRedirect={() => setActiveCallSessionId(null)}
       />
     )
@@ -109,17 +111,25 @@ export default function DoctorPortalLayout({
             <p className="doctor-portal-section-label">{activeNavItem?.label || 'Overview'}</p>
             <h1>{activeNavItem?.label || 'Overview'}</h1>
           </div>
-          <div className="doctor-portal-header-user">
-            <div className="doctor-avatar small">
-              {doctorImageUrl ? (
-                <img src={doctorImageUrl} alt={`Dr. ${profile?.name || session?.name || 'Doctor'}`} />
-              ) : (
-                getInitials(profile?.name || session?.name)
-              )}
-            </div>
-            <div>
-              <strong>Dr. {profile?.name || session?.name || 'Doctor'}</strong>
-              <span>{profile?.specialization || 'Doctor account'}</span>
+          <div className="portal-header-tools">
+            <NotificationBell
+              token={session?.token}
+              scope="mine"
+              pagePath="/doctor/notifications"
+              onNavigate={onNavigate}
+            />
+            <div className="doctor-portal-header-user">
+              <div className="doctor-avatar small">
+                {doctorImageUrl ? (
+                  <img src={doctorImageUrl} alt={`Dr. ${profile?.name || session?.name || 'Doctor'}`} />
+                ) : (
+                  getInitials(profile?.name || session?.name)
+                )}
+              </div>
+              <div>
+                <strong>Dr. {profile?.name || session?.name || 'Doctor'}</strong>
+                <span>{profile?.specialization || 'Doctor account'}</span>
+              </div>
             </div>
           </div>
         </header>

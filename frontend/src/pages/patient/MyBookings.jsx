@@ -7,6 +7,22 @@ function readText(value, fallback = 'Not provided') {
   return text || fallback
 }
 
+function safeFormatDate(value) {
+  try {
+    return formatDate(value)
+  } catch {
+    return 'Date pending'
+  }
+}
+
+function safeFormatTime(value) {
+  try {
+    return formatTime(value)
+  } catch {
+    return '--:--'
+  }
+}
+
 function formatPaymentLabel(status) {
   if (status === 'paid') return 'paid'
   if (status === 'pending') return 'payment pending'
@@ -24,9 +40,9 @@ function BookingCard({ booking, session, isConnectedPatient, bookingBusyId, onCa
         <div>
           <strong>{readText(booking.doctor_name, 'Doctor')}</strong>
           <p>
-            {readText(formatDate(booking.appointment_date), 'Date pending')} |{' '}
-            {readText(formatTime(booking.start_time), '--:--')} -{' '}
-            {readText(formatTime(booking.end_time), '--:--')}
+            {readText(safeFormatDate(booking.appointment_date), 'Date pending')} |{' '}
+            {readText(safeFormatTime(booking.start_time), '--:--')} -{' '}
+            {readText(safeFormatTime(booking.end_time), '--:--')}
           </p>
         </div>
         <StatusPill
@@ -148,9 +164,9 @@ function MyBookingsContent({ onNavigate }) {
                 <div>
                   <strong>{readText(booking.doctor_name, 'Doctor')}</strong>
                   <p>
-                    {readText(formatDate(booking.appointment_date), 'Date pending')} |{' '}
-                    {readText(formatTime(booking.start_time), '--:--')} -{' '}
-                    {readText(formatTime(booking.end_time), '--:--')}
+                    {readText(safeFormatDate(booking.appointment_date), 'Date pending')} |{' '}
+                    {readText(safeFormatTime(booking.start_time), '--:--')} -{' '}
+                    {readText(safeFormatTime(booking.end_time), '--:--')}
                   </p>
                 </div>
                 <StatusPill status="warn" label="cancelled" />

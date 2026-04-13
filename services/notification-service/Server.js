@@ -19,6 +19,7 @@ const smsConfigured = Boolean(process.env.SMSAPI_TOKEN);
 
 const promRegister = new client.Registry();
 client.collectDefaultMetrics({ register: promRegister });
+let kafkaRetryTimer = null;
 
 const notificationRequests = new client.Counter({
   name: 'notification_http_requests_total',
@@ -88,6 +89,32 @@ app.use((req, res) => {
   });
 });
 
+const ensureKafkaConsumer = async () => {
+  const kafkaReady = await initializeConsumer();
+
+  if (kafkaReady && kafkaRetryTimer) {
+    clearInterval(kafkaRetryTimer);
+    kafkaRetryTimer = null;
+  }
+
+  return kafkaReady;
+};
+
+const scheduleKafkaConsumerRetry = () => {
+  if (kafkaRetryTimer) {
+    return;
+  }
+
+  kafkaRetryTimer = setInterval(async () => {
+    const connected = await ensureKafkaConsumer();
+    if (connected) {
+      console.log('Notification service Kafka consumer recovered successfully');
+    } else {
+      console.warn('Notification service is retrying Kafka consumer connectivity...');
+    }
+  }, 10000);
+};
+
 const server = app.listen(PORT, async () => {
   console.log(`Notification Service running on port ${PORT}`);
   console.log(`Database host configured: ${process.env.DB_HOST || 'localhost'}`);
@@ -95,9 +122,10 @@ const server = app.listen(PORT, async () => {
   console.log(`SMS enabled: ${smsEnabled}`);
   try {
     await initializeDatabase();
-    const kafkaReady = await initializeConsumer();
+    const kafkaReady = await ensureKafkaConsumer();
     if (!kafkaReady) {
       console.warn('Notification service will continue without Kafka consumer connectivity');
+      scheduleKafkaConsumerRetry();
     }
   } catch (error) {
     console.error('Failed to start notification service:', error.message);
@@ -107,6 +135,10 @@ const server = app.listen(PORT, async () => {
 
 const shutdown = async (signal) => {
   console.log(`${signal} received: shutting down notification service`);
+  if (kafkaRetryTimer) {
+    clearInterval(kafkaRetryTimer);
+    kafkaRetryTimer = null;
+  }
   server.close(async () => {
     await disconnectConsumer();
     console.log('HTTP server closed');

@@ -35,6 +35,7 @@ export const sidebarItems = [
   { id: 'consultations', label: 'Consultations', path: '/doctor/consultations' },
   { id: 'prescriptions', label: 'Prescriptions', path: '/doctor/prescriptions' },
   { id: 'verification', label: 'Verification', path: '/doctor/verification' },
+  { id: 'notifications', label: 'Notifications', path: '/doctor/notifications' },
   { id: 'profile', label: 'Profile', path: '/doctor/profile' },
 ]
 
@@ -80,7 +81,18 @@ export function formatTime(value) {
 export function formatDate(value) {
   if (!value) return 'Date not set'
 
-  return new Date(`${value}T00:00:00`).toLocaleDateString(undefined, {
+  const normalized = String(value).trim()
+  const parsed = normalized.includes('T')
+    ? new Date(normalized)
+    : /^\d{4}-\d{2}-\d{2}$/.test(normalized)
+      ? new Date(`${normalized}T00:00:00`)
+      : new Date(normalized)
+
+  if (Number.isNaN(parsed.getTime())) {
+    return 'Date not set'
+  }
+
+  return parsed.toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -717,8 +729,6 @@ export function DoctorPortalProvider({ session, children }) {
     const nextSessionId =
       appointment.telemedicine_session_id || appointment.session_id || appointment.room_id || ''
 
-    if (!nextSessionId) return ''
-
     const nextDraft = {
       sessionId: nextSessionId,
       appointmentId: appointment.id || '',
@@ -776,6 +786,7 @@ export function DoctorPortalProvider({ session, children }) {
     setMessage,
     setActiveCallSessionId,
     setJoinSessionId,
+    setConsultationDraft,
     setAppointmentFilter,
     setSelectedAppointmentId,
     setRejectReason,

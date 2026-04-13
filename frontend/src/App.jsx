@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import ModernSelect from './components/ModernSelect'
+import ModernSearchBar from './components/ModernSearchBar'
 import LoginForm from './components/LoginForm'
 import RegisterForm from './components/RegisterForm'
 import SectionCard from './components/SectionCard'
@@ -14,17 +16,22 @@ import DoctorPatientsPage from './pages/doctor/Patients'
 import DoctorConsultationsPage from './pages/doctor/Consultations'
 import DoctorPrescriptionsPage from './pages/doctor/Prescriptions'
 import DoctorVerificationPage from './pages/doctor/Verification'
+import DoctorNotificationsPage from './pages/doctor/Notifications'
 import DoctorProfilePage from './pages/doctor/Profile'
 import PatientBookAppointmentPage from './pages/patient/BookAppointment'
+import PatientConsultationsPage from './pages/patient/Consultations'
 import PatientMyBookingsPage from './pages/patient/MyBookings'
+import PatientPrescriptionsPage from './pages/patient/Prescriptions'
 import PatientDoctorsPage from './pages/patient/Doctors'
 import PatientPaymentPage from './pages/patient/Payment'
 import PatientSymptomHistoryPage from './pages/patient/SymptomHistory'
+import PatientNotificationsPage from './pages/patient/Notifications'
 import PatientProfilePage from './pages/patient/Profile'
 import AdminPortalPage from './pages/Admin/AdminPortalPage'
 import AdminUsersPage from './pages/Admin/Users'
 import AdminDoctorsPage from './pages/Admin/Doctors'
 import AdminAppointmentsPage from './pages/Admin/Appointments'
+import AdminNotificationsPage from './pages/Admin/Notifications'
 import AdminSettingsPage from './pages/Admin/Settings'
 import { checkEmailAvailability, loginUser, registerUser, verifyUser } from './utils/authService'
 import {
@@ -127,7 +134,7 @@ export default function App() {
   const isPublicDoctorsRoute = currentPath === '/doctors'
   const isAuthRoute = currentPath === '/login' || currentPath === '/register'
   const isHomeRoute = currentPath === '/' || currentPath === '/Home'
-  const activeRole = session?.role || loginValues.role
+  const activeRole = session?.role || 'patient'
   const topCondition = analysis?.possibleConditions?.[0] || null
 
   const quickStats = useMemo(() => {
@@ -390,11 +397,12 @@ export default function App() {
         return
       }
 
+      // Role is determined from the backend response, not from user input
       const nextSession = createConnectedSession(data, loginValues)
       persistSession(nextSession)
       setSession(nextSession)
       setAuthMessage('Signed in successfully.')
-      navigateTo(getRouteForRole(loginValues.role))
+      navigateTo(getRouteForRole(nextSession.role))
     } catch (error) {
       setAuthError(error.message || 'Login failed. Please check your credentials and try again.')
     } finally {
@@ -511,8 +519,7 @@ export default function App() {
       onChange={handleLoginChange}
       onSubmit={handleLogin}
       loading={authBusy}
-      roleHint={loginValues.role}
-      roleLabel="Sign in as"
+      roleHint={loginValues.role || 'patient'}
       navigateTo={navigateTo}
       bannerError={authError}
       bannerMessage={authMessage}
@@ -659,29 +666,27 @@ export default function App() {
         </section>
 
         <section className="public-doctors-toolbar">
-          <label className="public-doctors-search">
+          <div className="public-doctors-search">
             <span>Search doctors</span>
-            <input
-              type="text"
+            <ModernSearchBar
               value={doctorSearch}
               onChange={(event) => setDoctorSearch(event.target.value)}
+              onReset={() => setDoctorSearch('')}
               placeholder="Search by doctor name or specialization..."
             />
-          </label>
+          </div>
 
-          <label className="public-doctors-filter">
+          <div className="public-doctors-filter">
             <span>Specialty</span>
-            <select
+            <ModernSelect
               value={doctorSpecialtyFilter}
               onChange={(event) => setDoctorSpecialtyFilter(event.target.value)}
-            >
-              {doctorSpecialtyOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option === 'all' ? 'All specialties' : option}
-                </option>
-              ))}
-            </select>
-          </label>
+              options={doctorSpecialtyOptions.map((option) => ({
+                value: option,
+                label: option === 'all' ? 'All specialties' : option,
+              }))}
+            />
+          </div>
         </section>
 
         {directoryState === 'loading' ? (
@@ -821,6 +826,8 @@ export default function App() {
         return renderDoctorRoutePage(DoctorPrescriptionsPage)
       case '/doctor/verification':
         return renderDoctorRoutePage(DoctorVerificationPage)
+      case '/doctor/notifications':
+        return renderDoctorRoutePage(DoctorNotificationsPage)
       case '/doctor/profile':
         return renderDoctorRoutePage(DoctorProfilePage)
       case '/admin':
@@ -832,21 +839,27 @@ export default function App() {
         return renderAdminRoutePage(AdminDoctorsPage)
       case '/admin/appointments':
         return renderAdminRoutePage(AdminAppointmentsPage)
+      case '/admin/notifications':
+        return renderAdminRoutePage(AdminNotificationsPage)
       case '/admin/settings':
         return renderAdminRoutePage(AdminSettingsPage)
       case '/patient':
         return renderPatientPage()
       case '/patient/book-appointment':
         return renderPatientRoutePage(PatientBookAppointmentPage)
+      case '/patient/consultations':
+        return renderPatientRoutePage(PatientConsultationsPage)
       case '/patient/my-bookings':
         return renderPatientRoutePage(PatientMyBookingsPage)
-      case '/patient/payment':
-        return renderPatientRoutePage(PatientPaymentPage)
+      case '/patient/prescriptions':
+        return renderPatientRoutePage(PatientPrescriptionsPage)
       case '/patient/doctors':
         return renderPatientRoutePage(PatientDoctorsPage)
       case '/patient/ai-symptoms':
       case '/patient/symptom-history':
         return renderPatientRoutePage(PatientSymptomHistoryPage)
+      case '/patient/notifications':
+        return renderPatientRoutePage(PatientNotificationsPage)
       case '/patient/profile':
         return renderPatientRoutePage(PatientProfilePage)
       case '/doctor':

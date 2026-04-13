@@ -80,6 +80,13 @@ function OverviewContent({ onNavigate }) {
             <button
               type="button"
               className="patient-chip-button"
+              onClick={() => onNavigate('/patient/prescriptions')}
+            >
+              View prescriptions
+            </button>
+            <button
+              type="button"
+              className="patient-chip-button"
               onClick={() => onNavigate('/patient/doctors')}
             >
               Browse doctors

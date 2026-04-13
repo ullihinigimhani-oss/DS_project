@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import ModernSearchBar from './ModernSearchBar'
 import {
   fetchNotifications,
   markAllNotificationsRead,
@@ -121,15 +122,15 @@ export default function NotificationCenter({
         </div>
 
         <div className="notification-filter-grid">
-          <label className="doctor-compact-field">
-            <span>Search</span>
-            <input
-              type="search"
+          <div className="doctor-compact-field">
+            <span>Search notifications</span>
+            <ModernSearchBar
               value={search}
               onChange={(event) => setSearch(event.target.value)}
+              onReset={() => setSearch('')}
               placeholder="Search notifications"
             />
-          </label>
+          </div>
 
           <label className="doctor-compact-field">
             <span>Status</span>

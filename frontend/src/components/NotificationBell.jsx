@@ -98,7 +98,7 @@ export default function NotificationBell({ token, scope = 'mine', onNavigate, pa
       // Keep the dropdown usable even if the bulk action fails.
     }
   }
-
+  
   const previewItems = useMemo(() => notifications.slice(0, 5), [notifications])
 
   return (
@@ -174,3 +174,4 @@ export default function NotificationBell({ token, scope = 'mine', onNavigate, pa
     </div>
   )
 }
+

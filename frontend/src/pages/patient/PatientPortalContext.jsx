@@ -179,6 +179,7 @@ export function PatientPortalProvider({
   doctorDirectory,
   gatewayHealth,
   topCondition,
+  updateSession,
   children,
 }) {
   const persistedState = readPersistedPortalState(session?.userId)
@@ -617,6 +618,7 @@ export function PatientPortalProvider({
     handleCancelBooking,
     handleDoctorSelect,
     preparePendingPaymentFromBooking,
+    updateSession,
   }
 
   return <PatientPortalContext.Provider value={value}>{children}</PatientPortalContext.Provider>

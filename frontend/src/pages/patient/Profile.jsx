@@ -31,9 +31,10 @@ const sectionStyle = {
 
 const rowStyle = {
   display: 'flex',
+  flexDirection: 'row',
   justifyContent: 'space-between',
-  alignItems: 'flex-start',
-  padding: '0.65rem 0',
+  alignItems: 'center',
+  padding: '0.85rem 0',
   borderBottom: '1px solid rgba(26,35,50,0.07)',
   gap: '1rem',
 }
@@ -42,15 +43,12 @@ const labelStyle = {
   fontSize: '0.82rem',
   fontWeight: 600,
   color: TEXT_MID,
-  flexShrink: 0,
-  minWidth: '160px',
 }
 
 const valueStyle = {
   fontWeight: 600,
-  fontSize: '0.925rem',
+  fontSize: '1rem',
   color: TEXT_DARK,
-  textAlign: 'right',
 }
 
 function Row({ label, value, placeholder = '—' }) {
@@ -66,9 +64,9 @@ function Row({ label, value, placeholder = '—' }) {
 
 function SectionHeading({ icon, title }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-      <span style={{ fontSize: '1.1rem' }}>{icon}</span>
-      <h3 style={{ margin: 0, fontSize: '0.78rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: TEXT_MID }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem', textAlign: 'center' }}>
+      <span style={{ fontSize: '1.4rem' }}>{icon}</span>
+      <h3 style={{ margin: 0, fontSize: '0.82rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: TEXT_MID }}>
         {title}
       </h3>
     </div>
@@ -92,24 +90,24 @@ function ProfileContent() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', maxWidth: '700px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%', maxWidth: '800px', margin: '0 auto' }}>
 
       {/* ── Identity card ── */}
       <div style={sectionStyle}>
         {/* Top bar */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.5rem', textAlign: 'center', gap: '1.25rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
             <div style={{
-              width: '52px',
-              height: '52px',
-              borderRadius: '16px',
+              width: '64px',
+              height: '64px',
+              borderRadius: '20px',
               background: 'linear-gradient(135deg, #1d9e75, #16866a)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: '#fff',
               fontWeight: 800,
-              fontSize: '1.1rem',
+              fontSize: '1.4rem',
               letterSpacing: '-0.01em',
               boxShadow: '0 6px 18px rgba(29,158,117,0.28)',
               flexShrink: 0,
@@ -118,23 +116,23 @@ function ProfileContent() {
             </div>
             <div>
               <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: ACCENT_WARM }}>Patient</p>
-              <h2 style={{ margin: '0.1rem 0 0', fontSize: '1.25rem', fontWeight: 700, color: TEXT_DARK, letterSpacing: '-0.01em' }}>
+              <h2 style={{ margin: '0.1rem 0 0', fontSize: '1.5rem', fontWeight: 700, color: TEXT_DARK, letterSpacing: '-0.01em' }}>
                 {session?.name || 'Patient'}
               </h2>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', alignItems: 'center' }}>
             <StatusPill status={isConnectedPatient ? 'ok' : 'warn'} label={isConnectedPatient ? 'Connected' : 'Preview'} />
             <button
               onClick={navigateToEdit}
               style={{
-                padding: '0.5rem 1.1rem',
+                padding: '0.65rem 1.4rem',
                 borderRadius: '10px',
                 border: '1px solid rgba(29,158,117,0.3)',
                 background: 'rgba(29,158,117,0.08)',
                 color: ACCENT_GREEN,
                 fontWeight: 700,
-                fontSize: '0.82rem',
+                fontSize: '0.85rem',
                 cursor: 'pointer',
                 letterSpacing: '0.03em',
                 transition: 'background 0.2s',

@@ -1,6 +1,7 @@
 const axios = require('axios');
 
 const SMSAPI_BASE = 'https://dashboard.smsapi.lk/api/v3';
+const SMS_BRAND_NAME = 'Arogya Healthcare System';
 
 const formatDate = (dateStr) => {
   const date = new Date(dateStr);
@@ -87,7 +88,7 @@ const sendSMS = async (to, body) => {
 
 const sendRegistrationSMS = async (phone, name) => {
   const body =
-    `Welcome to Smart Healthcare, ${name}! ` +
+    `Welcome to ${SMS_BRAND_NAME}, ${name}! ` +
     `Your registration was successful. You can now book appointments with our doctors. ` +
     `Thank you for joining us!`;
   return sendSMS(phone, body);
@@ -97,7 +98,7 @@ const sendAppointmentConfirmationSMS = async (phone, patientName, doctorName, ap
   const body =
     `Hello ${patientName}, your appointment with Dr. ${doctorName} ` +
     `has been booked for ${formatDate(appointmentDate)} at ${formatTime(startTime)}. ` +
-    `We will remind you 24 hours before. Smart Healthcare.`;
+    `We will remind you 24 hours before. ${SMS_BRAND_NAME}.`;
   return sendSMS(phone, body);
 };
 
@@ -105,7 +106,7 @@ const sendAppointmentReminderSMS = async (phone, patientName, doctorName, appoin
   const body =
     `Reminder: Hello ${patientName}, your appointment with Dr. ${doctorName} ` +
     `is tomorrow - ${formatDate(appointmentDate)} at ${formatTime(startTime)}. ` +
-    `Please be on time. Contact us if you need to reschedule. Smart Healthcare.`;
+    `Please be on time. Contact us if you need to reschedule. ${SMS_BRAND_NAME}.`;
   return sendSMS(phone, body);
 };
 

@@ -14,7 +14,7 @@ const app = express();
 const PORT = process.env.PORT || 3007;
 const KAFKA_BROKER = process.env.KAFKA_BROKER || 'kafka:9092';
 const smsEnabled = String(process.env.ENABLE_SMS || 'true').toLowerCase() === 'true';
-const smsSenderId = process.env.SMSAPI_SENDER_ID || 'SMSAPI Demo';
+const smsSenderId = process.env.SMSAPI_SENDER_ID || 'Arogya Healthcare System';
 const smsConfigured = Boolean(process.env.SMSAPI_TOKEN);
 
 const promRegister = new client.Registry();

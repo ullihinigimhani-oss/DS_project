@@ -236,7 +236,7 @@ services:
       INTERNAL_SERVICE_KEY: healthcare-internal-dev
       ENABLE_SMS: "${ENABLE_SMS:-true}"
       SMSAPI_TOKEN: "367|2SaoowtSbq3Z5QnK4111TghRLMRaQZ0fgM7ZJyBF"
-      SMSAPI_SENDER_ID: "SMSAPI Demo"
+      SMSAPI_SENDER_ID: "Arogya Healthcare System"
     depends_on:
       - postgres-notification
       - kafka

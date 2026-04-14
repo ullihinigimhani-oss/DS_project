@@ -98,3 +98,80 @@ export default function NotificationBell({ token, scope = 'mine', onNavigate, pa
       // Keep the dropdown usable even if the bulk action fails.
     }
   }
+  
+  const previewItems = useMemo(() => notifications.slice(0, 5), [notifications])
+
+  return (
+    <div className="notification-bell-shell" ref={shellRef}>
+      <button
+        type="button"
+        className={`notification-bell-button ${open ? 'active' : ''}`}
+        onClick={() => void handleOpen()}
+        aria-label="Open notifications"
+      >
+        <span className="notification-bell-icon" aria-hidden="true">
+          🔔
+        </span>
+        {unreadCount > 0 ? <span className="notification-bell-badge">{unreadCount}</span> : null}
+      </button>
+
+      {open ? (
+        <div className="notification-dropdown">
+          <div className="notification-dropdown-header">
+            <div>
+              <strong>Notifications</strong>
+              <span>{scope === 'all' ? 'System-wide updates' : 'Latest updates for you'}</span>
+            </div>
+
+            {scope === 'mine' && unreadCount > 0 ? (
+              <button type="button" className="notification-inline-action" onClick={() => void handleMarkAllRead()}>
+                Mark all read
+              </button>
+            ) : null}
+          </div>
+
+          {loading ? <p className="notification-dropdown-state">Loading notifications...</p> : null}
+          {!loading && error ? <p className="notification-dropdown-state">{error}</p> : null}
+          {!loading && !error && previewItems.length === 0 ? (
+            <p className="notification-dropdown-state">No notifications yet.</p>
+          ) : null}
+
+          {!loading && !error && previewItems.length > 0 ? (
+            <div className="notification-dropdown-list">
+              {previewItems.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`notification-dropdown-item ${item.read ? '' : 'unread'}`}
+                  onClick={() => void handleMarkAsRead(item.id)}
+                >
+                  <div className="notification-dropdown-item-top">
+                    <strong>{item.title}</strong>
+                    {!item.read ? <span className="notification-dot" /> : null}
+                  </div>
+                  <p>{item.message}</p>
+                  <div className="notification-dropdown-meta">
+                    {scope === 'all' && item.role ? <span>{item.role}</span> : null}
+                    <span>{formatRelativeTimestamp(item.createdAt)}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          <button
+            type="button"
+            className="notification-view-all"
+            onClick={() => {
+              setOpen(false)
+              onNavigate(pagePath)
+            }}
+          >
+            View all notifications
+          </button>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+

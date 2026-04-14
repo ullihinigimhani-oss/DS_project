@@ -1,4 +1,5 @@
 import './auth.css'
+import BrandLogo from './BrandLogo'
 
 const roleIcons = { patient: '◉', doctor: '⚕' }
 
@@ -37,10 +38,12 @@ export default function RegisterForm({
         <div className="auth-brand-inner auth-brand-inner--register">
           <div className="auth-login-brand-topline">Trusted by modern patients and doctors</div>
 
-          <div className="auth-brand-logo auth-brand-logo--panel">
-            <span className="auth-brand-pulse" aria-hidden="true" />
-            <span className="auth-brand-name">Arogya</span>
-          </div>
+          <BrandLogo
+            subtitle="Trusted by modern patients and doctors"
+            theme="dark"
+            size="auth-panel"
+            className="auth-brand-logo auth-brand-logo--panel"
+          />
 
           <div className="auth-brand-body auth-brand-body--register">
             <h2 className="auth-brand-headline">
@@ -76,10 +79,12 @@ export default function RegisterForm({
       <div className="auth-panel auth-panel--form">
         <div className="auth-form-wrap auth-form-wrap--scroll auth-form-wrap--register">
           <div className="auth-form-header auth-form-header--register">
-            <div className="auth-brand-logo auth-brand-logo--login auth-brand-logo--register-form">
-              <span className="auth-brand-pulse" aria-hidden="true" />
-              <span className="auth-brand-name">Arogya</span>
-            </div>
+            <BrandLogo
+              subtitle="Create your connected care profile"
+              theme="light"
+              size="auth-header"
+              className="auth-brand-logo auth-brand-logo--login auth-brand-logo--register-form"
+            />
             <div className="auth-form-eyebrow">
               <span className="auth-form-eyebrow-dot" aria-hidden="true" />
               New account

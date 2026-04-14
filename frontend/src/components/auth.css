@@ -129,8 +129,7 @@
 
 .auth-brand-logo {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: flex-start;
   flex-shrink: 0;
 }
 
@@ -1084,6 +1083,15 @@
 
 .auth-brand-logo--panel .auth-brand-name {
   color: #f9f7ff;
+}
+
+.auth-page--login .auth-brand-logo .arogya-brand__subtitle,
+.auth-page--register .auth-brand-logo--register-form .arogya-brand__subtitle {
+  color: #5a6c82;
+}
+
+.auth-brand-logo--panel .arogya-brand__subtitle {
+  color: rgba(232, 230, 247, 0.84);
 }
 
 .auth-login-brand-copy {

@@ -1,4 +1,5 @@
 import './auth.css'
+import BrandLogo from './BrandLogo'
 
 const loginRoleOptions = [
   { value: 'patient', label: 'Patient', mark: 'PT' },
@@ -32,10 +33,12 @@ export default function LoginForm({
       <div className="auth-panel auth-panel--form auth-panel--form-login">
         <div className="auth-form-wrap auth-form-wrap--login">
           <div className="auth-form-header auth-form-header--login">
-            <div className="auth-brand-logo auth-brand-logo--login">
-              <span className="auth-brand-pulse" aria-hidden="true" />
-              <span className="auth-brand-name">Arogya</span>
-            </div>
+            <BrandLogo
+              subtitle="Connected care platform"
+              theme="light"
+              size="auth-header"
+              className="auth-brand-logo auth-brand-logo--login"
+            />
 
             <div className="auth-form-eyebrow">
               <span className="auth-form-eyebrow-dot" aria-hidden="true" />
@@ -144,10 +147,12 @@ export default function LoginForm({
         <div className="auth-brand-inner auth-brand-inner--login">
           <div className="auth-login-brand-topline">Connected care platform</div>
 
-          <div className="auth-brand-logo auth-brand-logo--panel">
-            <span className="auth-brand-pulse" aria-hidden="true" />
-            <span className="auth-brand-name">Arogya</span>
-          </div>
+          <BrandLogo
+            subtitle="Connected care platform"
+            theme="dark"
+            size="auth-panel"
+            className="auth-brand-logo auth-brand-logo--panel"
+          />
 
           <div className="auth-login-brand-copy">
             <h2 className="auth-login-brand-title">

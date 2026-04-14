@@ -1,5 +1,6 @@
 import './Home.css'
 import StatusPill from './StatusPill'
+import BrandLogo from './BrandLogo'
 
 const prioritySpecialties = [
   { name: 'General Practice', note: 'Primary care and follow-up visits', count: 42, icon: 'GP' },
@@ -105,11 +106,7 @@ export default function Home({
 
       <nav className="hp-nav">
         <button type="button" className="hp-brand" onClick={() => navigateTo('/')}>
-          <span className="hp-brand-mark">AR</span>
-          <span className="hp-brand-copy">
-            <strong>Arogya</strong>
-            <span>Connected care platform</span>
-          </span>
+          <BrandLogo subtitle="Connected care platform" theme="dark" size="nav" />
         </button>
 
         <div className="hp-nav-links">

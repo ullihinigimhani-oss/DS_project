@@ -835,8 +835,10 @@ button:disabled {
 
 .patient-portal-brand {
   display: flex;
-  align-items: center;
-  gap: 14px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  width: 100%;
 }
 
 .patient-brand-mark {
@@ -2052,8 +2054,10 @@ button:disabled {
 
 .doctor-portal-brand {
   display: flex;
-  align-items: center;
-  gap: 14px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  width: 100%;
 }
 
 .doctor-brand-mark {
@@ -4389,10 +4393,12 @@ button:disabled {
 
 .admin-portal-brand {
   display: flex;
-  align-items: center;
-  gap: 14px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
   padding-bottom: 18px;
   border-bottom: 1px solid rgba(243, 238, 255, 0.08);
+  width: 100%;
 }
 
 .admin-brand-mark {

@@ -1,5 +1,6 @@
 import { adminSidebarItems, getInitials, useAdminPortal } from './AdminPortalContext'
 import NotificationBell from '../../components/NotificationBell'
+import BrandLogo from '../../components/BrandLogo'
 
 export default function AdminPortalLayout({
   currentPath,
@@ -38,11 +39,7 @@ export default function AdminPortalLayout({
     <div className="admin-portal">
       <aside className="admin-portal-sidebar">
         <div className="admin-portal-brand">
-          <div className="admin-brand-mark">AR</div>
-          <div>
-            <strong>Arogya</strong>
-            <span>Admin Control Panel</span>
-          </div>
+          <BrandLogo subtitle="Admin Control Panel" theme="dark" size="sidebar" />
         </div>
 
         <nav className="admin-portal-nav">

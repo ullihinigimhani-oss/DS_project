@@ -1,5 +1,6 @@
 import { getInitials, patientSidebarItems, usePatientPortal } from './PatientPortalContext'
 import NotificationBell from '../../components/NotificationBell'
+import BrandLogo from '../../components/BrandLogo'
 
 export default function PatientPortalLayout({
   currentPath,
@@ -45,11 +46,7 @@ export default function PatientPortalLayout({
     <div className="patient-portal">
       <aside className="patient-portal-sidebar">
         <div className="patient-portal-brand">
-          <div className="patient-brand-mark">AR</div>
-          <div>
-            <strong>Arogya</strong>
-            <span>Patient Workspace</span>
-          </div>
+          <BrandLogo subtitle="Patient Workspace" theme="dark" size="sidebar" />
         </div>
 
         <nav className="patient-portal-nav">

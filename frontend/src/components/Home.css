@@ -98,13 +98,13 @@
 .hp-brand {
   display: flex;
   align-items: center;
-  gap: 14px;
   border: none;
   padding: 0;
   background: transparent;
   color: inherit;
   cursor: pointer;
   box-shadow: none;
+  min-width: 0;
 }
 
 .hp-brand-mark {
@@ -135,6 +135,10 @@
 .hp-brand-copy span {
   color: var(--hp-text-muted);
   font-size: 0.88rem;
+}
+
+.hp-brand .arogya-brand__subtitle {
+  color: var(--hp-text-muted);
 }
 
 .hp-nav-links {

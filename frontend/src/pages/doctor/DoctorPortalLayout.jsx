@@ -1,5 +1,6 @@
 import VideoRoom from '../../components/VideoRoom'
 import NotificationBell from '../../components/NotificationBell'
+import BrandLogo from '../../components/BrandLogo'
 import { resolveDoctorAssetUrl } from '../../utils/doctorService'
 import { getInitials, sidebarItems, useDoctorPortal } from './DoctorPortalContext'
 
@@ -65,11 +66,7 @@ export default function DoctorPortalLayout({
     <div className="doctor-portal">
       <aside className="doctor-portal-sidebar">
         <div className="doctor-portal-brand">
-          <div className="doctor-brand-mark">AR</div>
-          <div>
-            <strong>Arogya</strong>
-            <span>Doctor Workspace</span>
-          </div>
+          <BrandLogo subtitle="Doctor Workspace" theme="dark" size="sidebar" />
         </div>
 
         <nav className="doctor-portal-nav">

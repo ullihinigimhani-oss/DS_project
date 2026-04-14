@@ -161,6 +161,7 @@ function PaymentForm({ onNavigate }) {
               <CardElement />
             </div>
           </label>
+          <br></br>
           <button type="submit" disabled={busy || !stripe || !clientSecret}>
             {busy ? 'Processing...' : 'Pay now'}
           </button>

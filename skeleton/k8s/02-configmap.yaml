@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: arogya-config
+  namespace: healthcare
+data:
+  NODE_ENV: development
+  CORS_ORIGIN: http://localhost,http://127.0.0.1,http://arogya.local
+  AUTH_SERVICE_URL: http://auth-service:3001
+  PATIENT_SERVICE_URL: http://patient-service:3002
+  DOCTOR_SERVICE_URL: http://doctor-service:3003
+  APPOINTMENT_SERVICE_URL: http://appointment-service:3004
+  TELEMEDICINE_SERVICE_URL: http://telemedicine-service:3005
+  PAYMENT_SERVICE_URL: http://payment-service:3006
+  NOTIFICATION_SERVICE_URL: http://notification-service:3007
+  AI_SERVICE_URL: http://ai-symptom-service:3008
+  ML_SERVICE_URL: http://ai-ml-service:5000
+  KAFKA_BROKER: kafka:9092
+  JITSI_BASE_URL: https://meet.jit.si
+  UPLOAD_BASE: /app/uploads
+  PATIENT_UPLOAD_DIR: /app/uploads/medical-records
+  DOCTOR_UPLOAD_DIR: /uploads/doctor-verification
+  ENABLE_SMS: "true"

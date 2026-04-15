@@ -1,0 +1,70 @@
+.arogya-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.arogya-brand--left {
+  align-items: flex-start;
+  text-align: left;
+}
+
+.arogya-brand--center {
+  align-items: center;
+  text-align: center;
+}
+
+.arogya-brand__image {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.arogya-brand__subtitle {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.arogya-brand--dark .arogya-brand__subtitle {
+  color: rgba(245, 241, 255, 0.78);
+}
+
+.arogya-brand--light .arogya-brand__subtitle {
+  color: #5a6c82;
+}
+
+.arogya-brand--nav .arogya-brand__image {
+  width: min(190px, 36vw);
+}
+
+.arogya-brand--sidebar .arogya-brand__image {
+  width: min(176px, 100%);
+}
+
+.arogya-brand--auth-header .arogya-brand__image {
+  width: min(180px, 48vw);
+}
+
+.arogya-brand--auth-panel .arogya-brand__image {
+  width: min(230px, 100%);
+}
+
+.arogya-brand--md .arogya-brand__image {
+  width: min(190px, 100%);
+}
+
+@media (max-width: 768px) {
+  .arogya-brand--nav .arogya-brand__image,
+  .arogya-brand--auth-header .arogya-brand__image,
+  .arogya-brand--auth-panel .arogya-brand__image {
+    width: min(170px, 60vw);
+  }
+
+  .arogya-brand__subtitle {
+    font-size: 0.82rem;
+  }
+}

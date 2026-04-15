@@ -1,0 +1,771 @@
+/* ═══════════════════════════════════════════════════════════════
+   Post-login creative layer — visuals only (no markup/logic changes)
+   Loaded after App.css
+═══════════════════════════════════════════════════════════════ */
+
+:root {
+  --pl-patient-glow: rgba(233, 111, 100, 0.14);
+  --pl-patient-line: rgba(142, 113, 93, 0.35);
+  --pl-doctor-glow: rgba(56, 168, 151, 0.12);
+  --pl-doctor-line: rgba(72, 105, 95, 0.4);
+  --pl-glass: rgba(255, 255, 255, 0.72);
+  --pl-glass-strong: rgba(255, 255, 255, 0.9);
+}
+
+/* ── App shell (non-auth routes) ───────────────────────────── */
+.app-shell:not(.app-shell--auth) {
+  position: relative;
+  isolation: isolate;
+}
+
+.app-shell:not(.app-shell--auth)::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 120% 80% at 10% -20%, rgba(29, 158, 117, 0.08), transparent 50%),
+    radial-gradient(ellipse 90% 60% at 100% 0%, rgba(233, 111, 100, 0.06), transparent 45%),
+    linear-gradient(180deg, #f4faf7 0%, #eef5f8 55%, #f7fbf8 100%);
+}
+
+/* Section / utility pages */
+.card {
+  border-radius: 26px;
+  border: 1px solid rgba(29, 158, 117, 0.12);
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 252, 250, 0.88) 100%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 20px 50px rgba(13, 31, 24, 0.06),
+    0 4px 16px rgba(29, 158, 117, 0.05);
+  backdrop-filter: blur(12px);
+}
+
+.card-header h2 {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.page-stack {
+  gap: 22px;
+}
+
+.doctor-list {
+  gap: 16px;
+}
+
+.doctor-card {
+  border-radius: 22px;
+  border: 1px solid rgba(29, 158, 117, 0.1);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(240, 249, 245, 0.5));
+  box-shadow: 0 12px 36px rgba(31, 53, 80, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.doctor-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 44px rgba(29, 158, 117, 0.1);
+}
+
+.history-card,
+.analysis-result {
+  border-radius: 20px;
+  border: 1px solid rgba(29, 158, 117, 0.1);
+}
+
+.analysis-form label {
+  color: #2a4a3d;
+}
+
+.placeholder-page {
+  border-radius: 20px;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px dashed rgba(29, 158, 117, 0.2);
+}
+
+/* ═════════════ PATIENT PORTAL ═══════════════════════════════ */
+.patient-portal {
+  border-radius: 28px;
+  border: 1px solid rgba(142, 113, 93, 0.14);
+  background:
+    radial-gradient(ellipse 80% 50% at 0% 0%, var(--pl-patient-glow), transparent 55%),
+    radial-gradient(ellipse 70% 45% at 100% 100%, rgba(123, 173, 167, 0.2), transparent 50%),
+    linear-gradient(165deg, #f8fafc 0%, #eef3f9 48%, #f5f0eb 100%);
+  box-shadow:
+    0 32px 64px rgba(79, 64, 55, 0.1),
+    0 1px 0 rgba(255, 255, 255, 0.85) inset;
+  overflow: hidden;
+}
+
+.patient-portal::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.45;
+  background-image:
+    linear-gradient(rgba(142, 113, 93, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(142, 113, 93, 0.04) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse 90% 80% at 50% 40%, black, transparent);
+}
+
+.patient-portal-sidebar {
+  padding: 18px 14px 20px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, transparent 28%),
+    linear-gradient(180deg, var(--sidebar-gradient-top), var(--sidebar-gradient-mid) 58%, var(--sidebar-gradient-bottom));
+  border-right: 1px solid var(--sidebar-border);
+  box-shadow:
+    4px 0 32px rgba(22, 23, 38, 0.28),
+    inset -1px 0 0 rgba(212, 206, 255, 0.08);
+}
+
+.patient-brand-mark {
+  border-radius: 16px;
+  background: var(--sidebar-brand-gradient);
+  box-shadow: 0 8px 24px rgba(92, 97, 170, 0.35);
+}
+
+.patient-portal-nav {
+  gap: 6px;
+  padding: 8px 0;
+}
+
+.patient-portal-link {
+  position: relative;
+  border-radius: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 13px 16px 13px 18px;
+  overflow: hidden;
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.patient-portal-link::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) scaleY(0.35);
+  width: 4px;
+  height: 0;
+  border-radius: 0 4px 4px 0;
+  background: linear-gradient(180deg, #d8c6ff, #8c6ef6);
+  opacity: 0;
+  transition: height 0.22s ease, opacity 0.2s ease;
+}
+
+.patient-portal-link:hover {
+  background: var(--sidebar-link-hover);
+  transform: translateX(2px);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
+}
+
+.patient-portal-link:hover::before {
+  opacity: 0.7;
+  height: 60%;
+}
+
+.patient-portal-link.active {
+  background: var(--sidebar-link-active);
+  box-shadow:
+    inset 0 0 0 1px var(--sidebar-link-active-border),
+    0 6px 20px rgba(0, 0, 0, 0.12);
+  color: #fff;
+}
+
+.patient-portal-link.active::before {
+  opacity: 1;
+  height: 70%;
+  transform: translateY(-50%) scaleY(1);
+}
+
+.patient-portal-user {
+  border-radius: 20px;
+  background: var(--sidebar-user-bg);
+  border: 1px solid rgba(226, 223, 255, 0.08);
+  backdrop-filter: blur(8px);
+}
+
+.patient-portal-user--clickable:hover {
+  background: var(--sidebar-link-hover);
+  border-color: rgba(226, 223, 255, 0.18);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.patient-signout-button {
+  border-radius: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  background: var(--sidebar-signout-bg);
+  border: 1px solid rgba(212, 206, 255, 0.14);
+}
+
+.patient-signout-button:hover {
+  background: var(--sidebar-signout-hover);
+}
+
+.patient-portal-main {
+  background:
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(255, 200, 170, 0.08), transparent),
+    linear-gradient(180deg, rgba(248, 250, 252, 0.95) 0%, rgba(238, 244, 250, 0.75) 100%);
+}
+
+.patient-portal-header {
+  border-radius: 24px;
+  border: 1px solid rgba(46, 70, 98, 0.07);
+  background: var(--pl-glass-strong);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 16px 40px rgba(31, 53, 80, 0.07);
+}
+
+.patient-portal-section-label {
+  color: #c17a5c;
+  letter-spacing: 0.11em;
+}
+
+.patient-welcome-panel,
+.patient-surface-card,
+.patient-portal-guard-card {
+  border-radius: 24px;
+  border: 1px solid rgba(46, 70, 98, 0.06);
+  background: var(--pl-glass);
+  backdrop-filter: blur(10px);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 16px 40px rgba(31, 53, 80, 0.07);
+}
+
+.patient-welcome-panel {
+  background:
+    radial-gradient(ellipse 70% 50% at 100% 0%, rgba(255, 190, 150, 0.2), transparent),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(255, 248, 240, 0.88));
+}
+
+.patient-metric-card {
+  border-radius: 22px;
+  border: 1px solid rgba(46, 70, 98, 0.06);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.92), rgba(252, 248, 244, 0.85));
+  box-shadow: 0 12px 28px rgba(79, 64, 55, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.patient-metric-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 36px rgba(79, 64, 55, 0.1);
+}
+
+.patient-chip-button {
+  border-radius: 999px;
+  font-weight: 600;
+  border: 1px solid rgba(200, 130, 90, 0.25);
+  background: linear-gradient(135deg, #fff7ef, #fde8d8);
+  box-shadow: 0 4px 12px rgba(200, 130, 90, 0.12);
+}
+
+.patient-chip-button:hover {
+  background: linear-gradient(135deg, #fff, #fde8d8);
+  box-shadow: 0 6px 18px rgba(200, 130, 90, 0.18);
+}
+
+.patient-directory-card,
+.patient-history-card,
+.patient-slot-card,
+.patient-booking-card {
+  border-radius: 20px;
+  border: 1px solid rgba(46, 70, 98, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(247, 250, 252, 0.88));
+  box-shadow: 0 8px 24px rgba(31, 53, 80, 0.05);
+}
+
+.patient-success {
+  border-radius: 18px;
+  border: 1px solid rgba(29, 158, 117, 0.25);
+  background: linear-gradient(135deg, #e4f7ef, #d8eee1);
+}
+
+.patient-portal-guard {
+  min-height: calc(100vh - 48px);
+}
+
+.patient-portal-guard-card {
+  max-width: 480px;
+}
+
+/* ═════════════ DOCTOR PORTAL ═══════════════════════════════ */
+.doctor-portal {
+  border-radius: 28px;
+  border: 1px solid rgba(52, 82, 74, 0.15);
+  background:
+    radial-gradient(ellipse 75% 55% at 100% 0%, var(--pl-doctor-glow), transparent 55%),
+    radial-gradient(ellipse 55% 40% at 0% 100%, rgba(243, 213, 136, 0.12), transparent 50%),
+    linear-gradient(195deg, #f0f6f8 0%, #e5eef6 45%, #eef3f9 100%);
+  box-shadow:
+    0 32px 64px rgba(28, 44, 67, 0.12),
+    0 1px 0 rgba(255, 255, 255, 0.85) inset;
+}
+
+.doctor-portal::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.4;
+  background-image:
+    linear-gradient(rgba(72, 105, 95, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(72, 105, 95, 0.035) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(ellipse 85% 75% at 40% 35%, black, transparent);
+}
+
+.doctor-portal-sidebar {
+  padding: 18px 14px 20px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, transparent 30%),
+    linear-gradient(180deg, var(--sidebar-gradient-top), var(--sidebar-gradient-mid) 58%, var(--sidebar-gradient-bottom));
+  border-right: 1px solid var(--sidebar-border);
+  box-shadow:
+    4px 0 36px rgba(22, 23, 38, 0.3),
+    inset -1px 0 0 rgba(212, 206, 255, 0.08);
+}
+
+.doctor-brand-mark {
+  border-radius: 16px;
+  background: var(--sidebar-brand-gradient);
+  box-shadow: 0 8px 26px rgba(92, 97, 170, 0.35);
+}
+
+.doctor-portal-nav {
+  gap: 6px;
+  padding: 8px 0;
+}
+
+.doctor-portal-link {
+  position: relative;
+  border-radius: 14px;
+  font-weight: 600;
+  padding: 12px 16px 12px 18px;
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.doctor-portal-link::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 0;
+  border-radius: 0 4px 4px 0;
+  background: linear-gradient(180deg, #d8c6ff, #8c6ef6);
+  opacity: 0;
+  transition: height 0.22s ease, opacity 0.2s ease;
+}
+
+.doctor-portal-link:hover {
+  background: var(--sidebar-link-hover);
+  transform: translateX(2px);
+}
+
+.doctor-portal-link:hover::before {
+  opacity: 0.75;
+  height: 55%;
+}
+
+.doctor-portal-link.active {
+  background: var(--sidebar-link-active);
+  box-shadow:
+    inset 0 0 0 1px var(--sidebar-link-active-border),
+    0 6px 20px rgba(0, 0, 0, 0.15);
+  color: #fff;
+}
+
+.doctor-portal-link.active::before {
+  opacity: 1;
+  height: 72%;
+}
+
+.doctor-portal-user {
+  border-radius: 20px;
+  background: var(--sidebar-user-bg);
+  border: 1px solid rgba(226, 223, 255, 0.08);
+}
+
+.doctor-portal-user--clickable:hover {
+  background: var(--sidebar-link-hover);
+  border-color: rgba(226, 223, 255, 0.18);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.doctor-portal-header-user--clickable {
+  padding: 8px 12px;
+  border-radius: 14px;
+  box-shadow: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.doctor-portal-header-user--clickable:hover {
+  background: rgba(20, 52, 82, 0.07);
+}
+
+.admin-portal-header-user--clickable {
+  padding: 8px 12px;
+  border-radius: 14px;
+  box-shadow: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.admin-portal-header-user--clickable:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.doctor-signout-button {
+  border-radius: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  background: var(--sidebar-signout-bg);
+  border: 1px solid rgba(212, 206, 255, 0.14);
+}
+
+.doctor-portal-main {
+  background:
+    radial-gradient(ellipse 55% 35% at 0% 0%, rgba(56, 168, 151, 0.07), transparent),
+    linear-gradient(180deg, rgba(248, 252, 253, 0.95) 0%, rgba(236, 244, 248, 0.8) 100%);
+}
+
+.doctor-portal-header {
+  border-radius: 24px;
+  border: 1px solid rgba(20, 52, 82, 0.07);
+  background: var(--pl-glass-strong);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 16px 40px rgba(28, 44, 67, 0.08);
+}
+
+.doctor-welcome-panel,
+.doctor-surface-card,
+.doctor-portal-guard-card {
+  border-radius: 24px;
+  border: 1px solid rgba(20, 52, 82, 0.06);
+  background: var(--pl-glass);
+  backdrop-filter: blur(10px);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    0 16px 40px rgba(28, 44, 67, 0.07);
+}
+
+.doctor-welcome-panel {
+  background:
+    radial-gradient(ellipse 65% 50% at 0% 0%, rgba(255, 214, 153, 0.22), transparent),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(244, 249, 255, 0.9));
+}
+
+.doctor-metric-card {
+  border-radius: 22px;
+  border: 1px solid rgba(20, 52, 82, 0.06);
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.94), rgba(240, 247, 252, 0.88));
+}
+
+.doctor-appointment-highlight,
+.doctor-schedule-highlight {
+  border-radius: 22px;
+  border: 1px solid rgba(43, 88, 122, 0.1);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(236, 244, 252, 0.75));
+  box-shadow: 0 10px 28px rgba(22, 43, 65, 0.06);
+}
+
+.doctor-list-card,
+.doctor-patient-table-row,
+.doctor-schedule-day-card,
+.doctor-schedule-slot-pill {
+  border-radius: 18px;
+  border: 1px solid rgba(20, 52, 82, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 249, 252, 0.85));
+}
+
+.doctor-patient-table-row.active {
+  border-color: rgba(56, 168, 151, 0.35);
+  box-shadow: 0 12px 32px rgba(56, 168, 151, 0.12);
+}
+
+.doctor-patient-summary-card {
+  border-radius: 22px;
+  border: 1px solid rgba(43, 88, 122, 0.1);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(236, 248, 244, 0.75));
+}
+
+.doctor-schedule-mode-button.active {
+  background: linear-gradient(135deg, #dff5ef, #c8ebe0);
+  border-color: rgba(29, 158, 117, 0.35);
+}
+
+.doctor-success {
+  border-radius: 16px;
+  border: 1px solid rgba(29, 158, 117, 0.25);
+}
+
+/* ═════════════ Shared: top nav (if used) ═══════════════════ */
+.top-nav {
+  border-radius: 28px;
+  border: 1px solid rgba(29, 158, 117, 0.14);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(240, 249, 245, 0.75));
+  box-shadow: 0 20px 48px rgba(13, 31, 24, 0.07);
+}
+
+/* Doctor: appointments, prescriptions, verification surfaces */
+.doctor-appointment-card,
+.doctor-appointment-summary-card,
+.doctor-empty-panel {
+  border-radius: 20px;
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.96), rgba(238, 246, 252, 0.88));
+  border: 1px solid rgba(20, 52, 82, 0.08);
+  box-shadow: 0 10px 28px rgba(28, 44, 67, 0.05);
+}
+
+.doctor-appointment-avatar {
+  border-radius: 18px;
+  box-shadow: 0 6px 16px rgba(244, 201, 125, 0.35);
+}
+
+.doctor-note-panel {
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255, 248, 230, 0.95), rgba(252, 240, 210, 0.75));
+  border: 1px solid rgba(216, 181, 116, 0.22);
+}
+
+.doctor-filter-button.active {
+  background: linear-gradient(135deg, #dff5ef, #c8ebe0);
+}
+
+.doctor-portal-guard-card {
+  max-width: 480px;
+}
+
+/* Patient: booking layout */
+.patient-booking-shell {
+  gap: 20px;
+}
+
+.patient-field input,
+.patient-field select,
+.patient-field textarea {
+  border-radius: 16px;
+  border: 1px solid rgba(29, 158, 117, 0.15);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.patient-field input:focus,
+.patient-field select:focus,
+.patient-field textarea:focus {
+  border-color: rgba(29, 158, 117, 0.45);
+  box-shadow: 0 0 0 3px rgba(29, 158, 117, 0.1);
+}
+
+.status-pill {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.result-banner,
+.consult-box {
+  border-radius: 18px;
+  border: 1px solid rgba(29, 158, 117, 0.12);
+}
+
+/* ═════════════ MODERN SEARCH & FILTER ECOSYSTEM ═════════════ */
+
+/* Toolbars & Filter Containers */
+.patient-doctors-toolbar,
+.public-doctors-toolbar,
+.admin-filter-grid,
+.doctor-prescription-search-top,
+.doctor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  margin-top: 12px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  box-shadow: 
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 10px 30px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.patient-doctors-toolbar:hover,
+.public-doctors-toolbar:hover,
+.admin-filter-grid:hover,
+.doctor-toolbar:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 15px 40px rgba(0, 0, 0, 0.12);
+}
+
+/* Label & Container Styling */
+.patient-doctors-search,
+.patient-doctors-filter,
+.public-doctors-search,
+.public-doctors-filter,
+.doctor-compact-field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-width: 240px;
+}
+
+.patient-doctors-search span,
+.patient-doctors-filter span,
+.public-doctors-search span,
+.public-doctors-filter span,
+.doctor-compact-field span {
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--app-text-muted);
+  opacity: 0.8;
+  margin-left: 4px;
+}
+
+/* Modern Inputs & Selects */
+.patient-doctors-toolbar input,
+.patient-doctors-toolbar select,
+.public-doctors-toolbar input,
+.public-doctors-toolbar select,
+.admin-filter-grid input,
+.admin-filter-grid select,
+.doctor-compact-field input,
+.doctor-compact-field select,
+.doctor-toolbar input,
+.doctor-toolbar select {
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: 16px;
+  font-size: 0.94rem;
+  font-weight: 500;
+  color: var(--app-text);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  outline: none;
+}
+
+/* Input Specifics */
+.admin-filter-grid input[type="search"],
+.patient-doctors-toolbar input[type="text"],
+.public-doctors-toolbar input[type="text"],
+.doctor-toolbar input {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='opacity:0.3'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 16px center;
+  padding-left: 46px;
+}
+
+/* Hover & Focus States */
+.patient-doctors-toolbar input:hover,
+.patient-doctors-toolbar select:hover,
+.public-doctors-toolbar input:hover,
+.public-doctors-toolbar select:hover,
+.admin-filter-grid input:hover,
+.admin-filter-grid select:hover,
+.doctor-compact-field input:hover,
+.doctor-compact-field select:hover,
+.doctor-toolbar input:hover,
+.doctor-toolbar select:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.patient-doctors-toolbar input:focus,
+.patient-doctors-toolbar select:focus,
+.public-doctors-toolbar input:focus,
+.public-doctors-toolbar select:focus,
+.admin-filter-grid input:focus,
+.admin-filter-grid select:focus,
+.doctor-compact-field input:focus,
+.doctor-compact-field select:focus,
+.doctor-toolbar input:focus,
+.doctor-toolbar select:focus {
+  background: rgba(25, 27, 40, 0.6);
+  border-color: var(--app-accent);
+  box-shadow: 
+    0 0 0 4px rgba(141, 121, 242, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.16);
+  transform: translateY(-1px);
+}
+
+/* Select Styling Polish */
+.patient-doctors-toolbar select,
+.public-doctors-toolbar select,
+.admin-filter-grid select,
+.doctor-compact-field select,
+.doctor-toolbar select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: calc(100% - 16px) center;
+  padding-right: 42px;
+}
+
+/* Dark theme specific adjustments if parent is light */
+.app-shell:not(.app-shell--auth) .admin-filter-grid input,
+.app-shell:not(.app-shell--auth) .admin-filter-grid select {
+    background-color: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.08);
+    color: #1a1a1a;
+}
+
+.app-shell:not(.app-shell--auth) .admin-filter-grid input:focus,
+.app-shell:not(.app-shell--auth) .admin-filter-grid select:focus {
+    background-color: #ffffff;
+}
+
+/* Enhancing results toplines */
+.public-doctors-results-topline,
+.patient-card-topline {
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 20px;
+  display: flex !important;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.public-doctors-kicker,
+.patient-portal-section-label {
+    margin-bottom: 4px;
+}

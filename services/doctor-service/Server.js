@@ -1,40 +1,78 @@
 const express = require('express');
 require('dotenv').config();
+const { initializeDatabase } = require('./config/postgres');
+const doctorRoutes = require('./routes/doctorRoutes');
+const prescriptionRoutes = require('./routes/prescriptionRoutes');
+const publicDoctorRoutes = require('./routes/publicDoctorRoutes');
+const scheduleRoutes = require('./routes/scheduleRoutes');
+const verificationRoutes = require('./routes/verificationRoutes');
+const internalVerificationRoutes = require('./routes/internalVerificationRoutes');
+const { UPLOAD_DIR } = require('./utils/fileStorage');
 
 const app = express();
 const PORT = process.env.PORT || 3003;
+let databaseReady = false;
 
 app.use(express.json());
+app.use('/uploads/doctor-verification', express.static(UPLOAD_DIR));
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ service: 'doctor-service', status: 'running', port: PORT });
+  res.json({
+    service: 'doctor-service',
+    status: 'running',
+    port: PORT,
+    database: databaseReady ? 'ready' : 'initializing',
+  });
 });
 
-// Get all doctors
-app.get('/api/doctors', (req, res) => {
-  // TODO: Implement database query
-  res.json({ message: 'Doctor service - Get all doctors', status: 'pending' });
+app.use('/api/v1/doctors', doctorRoutes);
+app.use('/api/v1/prescriptions', prescriptionRoutes);
+app.use('/api/v1/public', publicDoctorRoutes);
+app.use('/api/v1/schedule', scheduleRoutes);
+app.use('/api/v1/verification', verificationRoutes);
+app.use('/api/v1/internal/verification', internalVerificationRoutes);
+
+app.use((err, req, res, next) => {
+  if (err?.message === 'Only PDF files are allowed' || err?.name === 'MulterError') {
+    return res.status(400).json({
+      success: false,
+      message: err.message || 'Upload validation failed',
+    });
+  }
+
+  console.error('Doctor service error:', err);
+  return res.status(500).json({
+    success: false,
+    message: err.message || 'Unexpected server error',
+  });
 });
 
-// Get doctor by ID
-app.get('/api/doctors/:id', (req, res) => {
-  // TODO: Implement database query
-  res.json({ message: 'Doctor service - Get doctor by ID', doctorId: req.params.id });
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Route not found',
+  });
 });
 
-// Create doctor
-app.post('/api/doctors', (req, res) => {
-  // TODO: Implement doctor creation
-  res.json({ message: 'Doctor service - Create doctor', status: 'pending' });
-});
-
-// Upload verification documents
-app.post('/api/doctors/:id/verification', (req, res) => {
-  // TODO: Implement file upload
-  res.json({ message: 'Doctor service - Upload verification', status: 'pending' });
-});
+const initializeDatabaseWithRetry = async (attempt = 1) => {
+  try {
+    await initializeDatabase();
+    databaseReady = true;
+    console.log('Doctor database is ready.');
+  } catch (error) {
+    databaseReady = false;
+    const retryDelay = Math.min(attempt * 5000, 30000);
+    console.error(
+      `Doctor database initialization failed (attempt ${attempt}): ${error.message}. Retrying in ${retryDelay / 1000}s.`
+    );
+    setTimeout(() => {
+      void initializeDatabaseWithRetry(attempt + 1);
+    }, retryDelay);
+  }
+};
 
 app.listen(PORT, () => {
   console.log(`Doctor Service running on port ${PORT}`);
+  void initializeDatabaseWithRetry();
 });

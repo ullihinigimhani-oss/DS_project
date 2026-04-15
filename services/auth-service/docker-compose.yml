@@ -1,0 +1,54 @@
+services:
+  postgres-auth:
+    image: postgres:15-alpine
+    container_name: auth-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: auth_db
+    volumes:
+      # This mount auto-runs the script when the DB is created for the very first time
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: auth-zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: auth-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  # The Auth Service itself
+  auth-service:
+    build: .
+    container_name: auth-auth-service
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres-auth
+      - kafka
+    env_file:
+      - .env
+    environment:
+      # Ensure it points to the docker instances
+      - DB_HOST=postgres-auth
+      - KAFKA_BROKER=kafka:9092

@@ -1,0 +1,74 @@
+{{- range .Values.databases }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .serviceName }}
+  namespace: {{ $.Values.namespace }}
+spec:
+  clusterIP: None
+  selector:
+    app: {{ .serviceName }}
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .serviceName }}
+  namespace: {{ $.Values.namespace }}
+spec:
+  serviceName: {{ .serviceName }}
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .serviceName }}
+  template:
+    metadata:
+      labels:
+        app: {{ .serviceName }}
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: password
+            - name: POSTGRES_DB
+              value: {{ .dbName }}
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: standard
+        resources:
+          requests:
+            storage: {{ .storage }}
+{{- end }}

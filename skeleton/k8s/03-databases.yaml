@@ -1,0 +1,575 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-auth
+  namespace: healthcare
+spec:
+  clusterIP: None
+  selector:
+    app: postgres-auth
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-auth
+  namespace: healthcare
+spec:
+  serviceName: postgres-auth
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-auth
+  template:
+    metadata:
+      labels:
+        app: postgres-auth
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: password
+            - name: POSTGRES_DB
+              value: auth_db
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-patient
+  namespace: healthcare
+spec:
+  clusterIP: None
+  selector:
+    app: postgres-patient
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-patient
+  namespace: healthcare
+spec:
+  serviceName: postgres-patient
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-patient
+  template:
+    metadata:
+      labels:
+        app: postgres-patient
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: password
+            - name: POSTGRES_DB
+              value: patient_db
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-doctor
+  namespace: healthcare
+spec:
+  clusterIP: None
+  selector:
+    app: postgres-doctor
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-doctor
+  namespace: healthcare
+spec:
+  serviceName: postgres-doctor
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-doctor
+  template:
+    metadata:
+      labels:
+        app: postgres-doctor
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: password
+            - name: POSTGRES_DB
+              value: doctor_db
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-appointment
+  namespace: healthcare
+spec:
+  clusterIP: None
+  selector:
+    app: postgres-appointment
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-appointment
+  namespace: healthcare
+spec:
+  serviceName: postgres-appointment
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-appointment
+  template:
+    metadata:
+      labels:
+        app: postgres-appointment
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: password
+            - name: POSTGRES_DB
+              value: appointment_db
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-telemedicine
+  namespace: healthcare
+spec:
+  clusterIP: None
+  selector:
+    app: postgres-telemedicine
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-telemedicine
+  namespace: healthcare
+spec:
+  serviceName: postgres-telemedicine
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-telemedicine
+  template:
+    metadata:
+      labels:
+        app: postgres-telemedicine
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: password
+            - name: POSTGRES_DB
+              value: telemedicine_db
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-payment
+  namespace: healthcare
+spec:
+  clusterIP: None
+  selector:
+    app: postgres-payment
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-payment
+  namespace: healthcare
+spec:
+  serviceName: postgres-payment
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-payment
+  template:
+    metadata:
+      labels:
+        app: postgres-payment
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: password
+            - name: POSTGRES_DB
+              value: payment_db
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-notification
+  namespace: healthcare
+spec:
+  clusterIP: None
+  selector:
+    app: postgres-notification
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-notification
+  namespace: healthcare
+spec:
+  serviceName: postgres-notification
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-notification
+  template:
+    metadata:
+      labels:
+        app: postgres-notification
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: password
+            - name: POSTGRES_DB
+              value: notification_db
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-ai
+  namespace: healthcare
+spec:
+  clusterIP: None
+  selector:
+    app: postgres-ai
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-ai
+  namespace: healthcare
+spec:
+  serviceName: postgres-ai
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-ai
+  template:
+    metadata:
+      labels:
+        app: postgres-ai
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: password
+            - name: POSTGRES_DB
+              value: ai_db
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 2Gi

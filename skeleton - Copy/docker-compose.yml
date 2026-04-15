@@ -1,0 +1,390 @@
+#version: '3.8'
+
+services:
+  # Frontend - React Application
+  frontend:
+    build:
+      context: ../frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:3000/api
+    ports:
+      - "80:80"
+    depends_on:
+      - gateway
+    networks:
+      - healthcare-network
+
+  # API Gateway
+  gateway:
+    build: ../gateway
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      NODE_ENV: development
+      CORS_ORIGIN: http://localhost,http://127.0.0.1,http://localhost:80,http://127.0.0.1:80,http://localhost:81,http://127.0.0.1:81
+      AUTH_SERVICE_URL: http://auth-service:3001
+      PATIENT_SERVICE_URL: http://patient-service:3002
+      DOCTOR_SERVICE_URL: http://doctor-service:3003
+      APPOINTMENT_SERVICE_URL: http://appointment-service:3004
+      TELEMEDICINE_SERVICE_URL: http://telemedicine-service:3005
+      PAYMENT_SERVICE_URL: http://payment-service:3006
+      NOTIFICATION_SERVICE_URL: http://notification-service:3007
+      AI_SERVICE_URL: http://ai-symptom-service:3008
+    depends_on:
+      - auth-service
+      - patient-service
+      - doctor-service
+      - appointment-service
+      - telemedicine-service
+      - payment-service
+      - notification-service
+      - ai-symptom-service
+    networks:
+      - healthcare-network
+
+  # Auth Service
+  auth-service:
+    build: ../services/auth-service
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      NODE_ENV: development
+      JWT_SECRET: SyOudFfvRbmoURg4Mq2N34wq
+      JWT_EXPIRE: never
+      REFRESH_TOKEN_SECRET: SyOudFfvRbmoURg4Mq2N34wq_refresh
+      REFRESH_TOKEN_EXPIRE: never
+      DB_HOST: postgres-auth
+      DB_PORT: 5432
+      DB_NAME: auth_db
+      DB_USER: admin
+      DB_PASSWORD: password
+      KAFKA_BROKER: kafka:9092
+      DOCTOR_SERVICE_URL: http://doctor-service:3003
+      INTERNAL_SERVICE_KEY: healthcare-internal-dev
+    depends_on:
+      - postgres-auth
+      - kafka
+    networks:
+      - healthcare-network
+
+  # Patient Service
+  patient-service:
+    build: ../services/patient-service
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: 3002
+      NODE_ENV: development
+      DB_HOST: postgres-patient
+      DB_PORT: 5432
+      DB_NAME: patient_db
+      DB_USER: admin
+      DB_PASSWORD: password
+      JWT_SECRET: SyOudFfvRbmoURg4Mq2N34wq
+      DOCTOR_SERVICE_URL: http://doctor-service:3003
+      UPLOAD_BASE: /app/uploads
+      UPLOAD_DIR: /app/uploads/medical-records
+    depends_on:
+      - postgres-patient
+      - doctor-service
+    volumes:
+      - patient_uploads:/app/uploads
+    networks:
+      - healthcare-network
+
+  # Doctor Service
+  doctor-service:
+    build: ../services/doctor-service
+    ports:
+      - "3003:3003"
+    environment:
+      PORT: 3003
+      NODE_ENV: development
+      DB_HOST: postgres-doctor
+      DB_PORT: 5432
+      DB_NAME: doctor_db
+      DB_USER: admin
+      DB_PASSWORD: password
+      JWT_SECRET: SyOudFfvRbmoURg4Mq2N34wq
+      UPLOAD_DIR: /uploads/doctor-verification
+      INTERNAL_SERVICE_KEY: healthcare-internal-dev
+      NOTIFICATION_SERVICE_URL: http://notification-service:3007
+    depends_on:
+      - postgres-doctor
+    volumes:
+      - doctor_uploads:/uploads/doctor-verification
+    networks:
+      - healthcare-network
+
+  # AI Symptom Service
+  ai-symptom-service:
+    build: ../services/ai-symptom-service
+    ports:
+      - "3008:3008"
+    environment:
+      PORT: 3008
+      NODE_ENV: development
+      JWT_SECRET: SyOudFfvRbmoURg4Mq2N34wq
+      DB_HOST: postgres-ai
+      DB_PORT: 5432
+      DB_NAME: ai_db
+      DB_USER: admin
+      DB_PASSWORD: password
+      ML_SERVICE_URL: http://ai-ml-service:5000
+    depends_on:
+      - postgres-ai
+      - ai-ml-service
+    networks:
+      - healthcare-network
+
+  # Python ML service for AI symptom analysis
+  ai-ml-service:
+    build:
+      context: ..
+      dockerfile: services/ai-symptom-service/ml-integration/Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      PYTHON_SERVICE_PORT: 5000
+    networks:
+      - healthcare-network
+
+  # Appointment Service
+  appointment-service:
+    build: ../services/appointment-service
+    ports:
+      - "3004:3004"
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      PORT: 3004
+      NODE_ENV: development
+      DB_HOST: postgres-appointment
+      DB_PORT: 5432
+      DB_NAME: appointment_db
+      DB_USER: admin
+      DB_PASSWORD: password
+      JWT_SECRET: SyOudFfvRbmoURg4Mq2N34wq
+      AUTH_SERVICE_URL: http://auth-service:3001
+      DOCTOR_SERVICE_URL: http://doctor-service:3003
+      TELEMEDICINE_SERVICE_URL: http://telemedicine-service:3005
+      KAFKA_BROKER: kafka:9092
+    depends_on:
+      - postgres-appointment
+      - auth-service
+      - doctor-service
+      - kafka
+    networks:
+      - healthcare-network
+
+  # Telemedicine Service
+  telemedicine-service:
+    build: ../services/telemedicine-service
+    ports:
+      - "3005:3005"
+    environment:
+      PORT: 3005
+      NODE_ENV: development
+      DB_HOST: postgres-telemedicine
+      DB_PORT: 5432
+      DB_NAME: telemedicine_db
+      DB_USER: admin
+      DB_PASSWORD: password
+      JWT_SECRET: SyOudFfvRbmoURg4Mq2N34wq
+      JITSI_BASE_URL: https://meet.jit.si
+    depends_on:
+      - postgres-telemedicine
+    networks:
+      - healthcare-network
+
+  # Payment Service
+  payment-service:
+    build: ../services/payment-service
+    ports:
+      - "3006:3006"
+    environment:
+      PORT: 3006
+      NODE_ENV: development
+      DB_HOST: postgres-payment
+      DB_PORT: 5432
+      DB_NAME: payment_db
+      DB_USER: admin
+      DB_PASSWORD: password
+      KAFKA_BROKER: kafka:9092
+    depends_on:
+      - postgres-payment
+      - kafka
+    networks:
+      - healthcare-network
+
+  # Notification Service
+  notification-service:
+    build: ../services/notification-service
+    ports:
+      - "3007:3007"
+    environment:
+      PORT: 3007
+      NODE_ENV: development
+      DB_HOST: postgres-notification
+      DB_PORT: 5432
+      DB_NAME: notification_db
+      DB_USER: admin
+      DB_PASSWORD: password
+      KAFKA_BROKER: kafka:9092
+      AUTH_SERVICE_URL: http://auth-service:3001
+      INTERNAL_SERVICE_KEY: healthcare-internal-dev
+      ENABLE_SMS: "${ENABLE_SMS:-true}"
+      SMSAPI_TOKEN: "367|2SaoowtSbq3Z5QnK4111TghRLMRaQZ0fgM7ZJyBF"
+      SMSAPI_SENDER_ID: "Arogya Healthcare System"
+    depends_on:
+      - postgres-notification
+      - kafka
+    networks:
+      - healthcare-network
+
+  # PostgreSQL Databases
+  postgres-auth:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: auth_db
+    ports:
+      - "5401:5432"
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+    networks:
+      - healthcare-network
+
+  postgres-patient:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: patient_db
+    ports:
+      - "5402:5432"
+    volumes:
+      - patient_db_data:/var/lib/postgresql/data
+    networks:
+      - healthcare-network
+
+  postgres-doctor:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: doctor_db
+    ports:
+      - "5403:5432"
+    volumes:
+      - doctor_db_data:/var/lib/postgresql/data
+    networks:
+      - healthcare-network
+
+  postgres-ai:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ai_db
+    ports:
+      - "5408:5432"
+    volumes:
+      - ai_db_data:/var/lib/postgresql/data
+    networks:
+      - healthcare-network
+
+  postgres-appointment:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: appointment_db
+    ports:
+      - "5404:5432"
+    volumes:
+      - appointment_db_data:/var/lib/postgresql/data
+    networks:
+      - healthcare-network
+
+  postgres-telemedicine:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: telemedicine_db
+    ports:
+      - "5405:5432"
+    volumes:
+      - telemedicine_db_data:/var/lib/postgresql/data
+    networks:
+      - healthcare-network
+
+  postgres-payment:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: payment_db
+    ports:
+      - "5406:5432"
+    volumes:
+      - payment_db_data:/var/lib/postgresql/data
+    networks:
+      - healthcare-network
+
+  postgres-notification:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: notification_db
+    ports:
+      - "5407:5432"
+    volumes:
+      - notification_db_data:/var/lib/postgresql/data
+    networks:
+      - healthcare-network
+
+  # Kafka
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    networks:
+      - healthcare-network
+
+  # Zookeeper
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    ports:
+      - "2181:2181"
+    networks:
+      - healthcare-network
+
+volumes:
+  auth_db_data:
+  patient_db_data:
+  patient_uploads:
+  doctor_db_data:
+  ai_db_data:
+  doctor_uploads:
+  appointment_db_data:
+  telemedicine_db_data:
+  payment_db_data:
+  notification_db_data:
+
+networks:
+  healthcare-network:
+    driver: bridge

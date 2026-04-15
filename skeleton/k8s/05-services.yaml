@@ -1,0 +1,1009 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: patient-uploads-pvc
+  namespace: healthcare
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: doctor-uploads-pvc
+  namespace: healthcare
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: healthcare
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 80
+      targetPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: healthcare
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: arogya/frontend:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: healthcare
+spec:
+  selector:
+    app: gateway
+  ports:
+    - port: 3000
+      targetPort: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: healthcare
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+        - name: gateway
+          image: arogya/gateway:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: NODE_ENV
+            - name: CORS_ORIGIN
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: CORS_ORIGIN
+            - name: AUTH_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: AUTH_SERVICE_URL
+            - name: PATIENT_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: PATIENT_SERVICE_URL
+            - name: DOCTOR_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: DOCTOR_SERVICE_URL
+            - name: APPOINTMENT_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: APPOINTMENT_SERVICE_URL
+            - name: TELEMEDICINE_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: TELEMEDICINE_SERVICE_URL
+            - name: PAYMENT_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: PAYMENT_SERVICE_URL
+            - name: NOTIFICATION_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: NOTIFICATION_SERVICE_URL
+            - name: AI_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: AI_SERVICE_URL
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: healthcare
+spec:
+  selector:
+    app: auth-service
+  ports:
+    - port: 3001
+      targetPort: 3001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: healthcare
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      initContainers:
+        - name: wait-for-auth-db
+          image: busybox:1.36
+          command: ["sh", "-c", "until nc -z postgres-auth 5432; do sleep 2; done"]
+        - name: wait-for-kafka
+          image: busybox:1.36
+          command: ["sh", "-c", "until nc -z kafka 9092; do sleep 2; done"]
+      containers:
+        - name: auth-service
+          image: arogya/auth-service:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3001
+          env:
+            - name: PORT
+              value: "3001"
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: NODE_ENV
+            - name: DB_HOST
+              value: postgres-auth
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: auth_db
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: password
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: jwt-secret
+            - name: JWT_EXPIRE
+              value: never
+            - name: REFRESH_TOKEN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: refresh-token-secret
+            - name: REFRESH_TOKEN_EXPIRE
+              value: never
+            - name: KAFKA_BROKER
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: KAFKA_BROKER
+            - name: DOCTOR_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: DOCTOR_SERVICE_URL
+            - name: INTERNAL_SERVICE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: internal-service-key
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: patient-service
+  namespace: healthcare
+spec:
+  selector:
+    app: patient-service
+  ports:
+    - port: 3002
+      targetPort: 3002
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: patient-service
+  namespace: healthcare
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: patient-service
+  template:
+    metadata:
+      labels:
+        app: patient-service
+    spec:
+      initContainers:
+        - name: wait-for-patient-db
+          image: busybox:1.36
+          command: ["sh", "-c", "until nc -z postgres-patient 5432; do sleep 2; done"]
+      containers:
+        - name: patient-service
+          image: arogya/patient-service:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3002
+          env:
+            - name: PORT
+              value: "3002"
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: NODE_ENV
+            - name: DB_HOST
+              value: postgres-patient
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: patient_db
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: password
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: jwt-secret
+            - name: DOCTOR_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: DOCTOR_SERVICE_URL
+            - name: UPLOAD_BASE
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: UPLOAD_BASE
+            - name: UPLOAD_DIR
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: PATIENT_UPLOAD_DIR
+          volumeMounts:
+            - name: patient-uploads
+              mountPath: /app/uploads
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3002
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3002
+            initialDelaySeconds: 30
+            periodSeconds: 10
+      volumes:
+        - name: patient-uploads
+          persistentVolumeClaim:
+            claimName: patient-uploads-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: doctor-service
+  namespace: healthcare
+spec:
+  selector:
+    app: doctor-service
+  ports:
+    - port: 3003
+      targetPort: 3003
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: doctor-service
+  namespace: healthcare
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: doctor-service
+  template:
+    metadata:
+      labels:
+        app: doctor-service
+    spec:
+      initContainers:
+        - name: wait-for-doctor-db
+          image: busybox:1.36
+          command: ["sh", "-c", "until nc -z postgres-doctor 5432; do sleep 2; done"]
+      containers:
+        - name: doctor-service
+          image: arogya/doctor-service:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3003
+          env:
+            - name: PORT
+              value: "3003"
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: NODE_ENV
+            - name: DB_HOST
+              value: postgres-doctor
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: doctor_db
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: password
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: jwt-secret
+            - name: UPLOAD_DIR
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: DOCTOR_UPLOAD_DIR
+            - name: INTERNAL_SERVICE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: internal-service-key
+            - name: NOTIFICATION_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: NOTIFICATION_SERVICE_URL
+          volumeMounts:
+            - name: doctor-uploads
+              mountPath: /uploads/doctor-verification
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3003
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3003
+            initialDelaySeconds: 30
+            periodSeconds: 10
+      volumes:
+        - name: doctor-uploads
+          persistentVolumeClaim:
+            claimName: doctor-uploads-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: appointment-service
+  namespace: healthcare
+spec:
+  selector:
+    app: appointment-service
+  ports:
+    - port: 3004
+      targetPort: 3004
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: appointment-service
+  namespace: healthcare
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: appointment-service
+  template:
+    metadata:
+      labels:
+        app: appointment-service
+    spec:
+      initContainers:
+        - name: wait-for-appointment-db
+          image: busybox:1.36
+          command: ["sh", "-c", "until nc -z postgres-appointment 5432; do sleep 2; done"]
+        - name: wait-for-kafka
+          image: busybox:1.36
+          command: ["sh", "-c", "until nc -z kafka 9092; do sleep 2; done"]
+      containers:
+        - name: appointment-service
+          image: arogya/appointment-service:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3004
+          env:
+            - name: PORT
+              value: "3004"
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: NODE_ENV
+            - name: DB_HOST
+              value: postgres-appointment
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: appointment_db
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: password
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: jwt-secret
+            - name: AUTH_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: AUTH_SERVICE_URL
+            - name: DOCTOR_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: DOCTOR_SERVICE_URL
+            - name: TELEMEDICINE_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: TELEMEDICINE_SERVICE_URL
+            - name: KAFKA_BROKER
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: KAFKA_BROKER
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3004
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3004
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: telemedicine-service
+  namespace: healthcare
+spec:
+  selector:
+    app: telemedicine-service
+  ports:
+    - port: 3005
+      targetPort: 3005
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telemedicine-service
+  namespace: healthcare
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: telemedicine-service
+  template:
+    metadata:
+      labels:
+        app: telemedicine-service
+    spec:
+      initContainers:
+        - name: wait-for-telemedicine-db
+          image: busybox:1.36
+          command: ["sh", "-c", "until nc -z postgres-telemedicine 5432; do sleep 2; done"]
+      containers:
+        - name: telemedicine-service
+          image: arogya/telemedicine-service:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3005
+          env:
+            - name: PORT
+              value: "3005"
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: NODE_ENV
+            - name: DB_HOST
+              value: postgres-telemedicine
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: telemedicine_db
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: password
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: jwt-secret
+            - name: JITSI_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: JITSI_BASE_URL
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3005
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3005
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: healthcare
+spec:
+  selector:
+    app: payment-service
+  ports:
+    - port: 3006
+      targetPort: 3006
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: healthcare
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      initContainers:
+        - name: wait-for-payment-db
+          image: busybox:1.36
+          command: ["sh", "-c", "until nc -z postgres-payment 5432; do sleep 2; done"]
+        - name: wait-for-kafka
+          image: busybox:1.36
+          command: ["sh", "-c", "until nc -z kafka 9092; do sleep 2; done"]
+      containers:
+        - name: payment-service
+          image: arogya/payment-service:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3006
+          env:
+            - name: PORT
+              value: "3006"
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: NODE_ENV
+            - name: DB_HOST
+              value: postgres-payment
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: payment_db
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: password
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: jwt-secret
+            - name: KAFKA_BROKER
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: KAFKA_BROKER
+            - name: STRIPE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: stripe-secret-key
+            - name: STRIPE_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: stripe-webhook-secret
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3006
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3006
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: healthcare
+spec:
+  selector:
+    app: notification-service
+  ports:
+    - port: 3007
+      targetPort: 3007
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: healthcare
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      initContainers:
+        - name: wait-for-notification-db
+          image: busybox:1.36
+          command: ["sh", "-c", "until nc -z postgres-notification 5432; do sleep 2; done"]
+        - name: wait-for-kafka
+          image: busybox:1.36
+          command: ["sh", "-c", "until nc -z kafka 9092; do sleep 2; done"]
+      containers:
+        - name: notification-service
+          image: arogya/notification-service:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3007
+          env:
+            - name: PORT
+              value: "3007"
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: NODE_ENV
+            - name: DB_HOST
+              value: postgres-notification
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: notification_db
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: password
+            - name: KAFKA_BROKER
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: KAFKA_BROKER
+            - name: AUTH_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: AUTH_SERVICE_URL
+            - name: INTERNAL_SERVICE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: internal-service-key
+            - name: ENABLE_SMS
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: ENABLE_SMS
+            - name: SMSAPI_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: smsapi-token
+            - name: SMSAPI_SENDER_ID
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: smsapi-sender-id
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3007
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3007
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-symptom-service
+  namespace: healthcare
+spec:
+  selector:
+    app: ai-symptom-service
+  ports:
+    - port: 3008
+      targetPort: 3008
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-symptom-service
+  namespace: healthcare
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-symptom-service
+  template:
+    metadata:
+      labels:
+        app: ai-symptom-service
+    spec:
+      initContainers:
+        - name: wait-for-ai-db
+          image: busybox:1.36
+          command: ["sh", "-c", "until nc -z postgres-ai 5432; do sleep 2; done"]
+        - name: wait-for-ai-ml-service
+          image: busybox:1.36
+          command: ["sh", "-c", "until nc -z ai-ml-service 5000; do sleep 2; done"]
+      containers:
+        - name: ai-symptom-service
+          image: arogya/ai-symptom-service:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3008
+          env:
+            - name: PORT
+              value: "3008"
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: NODE_ENV
+            - name: DB_HOST
+              value: postgres-ai
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: ai_db
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: password
+            - name: ML_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: arogya-config
+                  key: ML_SERVICE_URL
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: gemini-api-key
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: jwt-secret
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3008
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3008
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-ml-service
+  namespace: healthcare
+spec:
+  selector:
+    app: ai-ml-service
+  ports:
+    - port: 5000
+      targetPort: 5000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-ml-service
+  namespace: healthcare
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-ml-service
+  template:
+    metadata:
+      labels:
+        app: ai-ml-service
+    spec:
+      containers:
+        - name: ai-ml-service
+          image: arogya/ai-ml-service:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+          env:
+            - name: PYTHON_SERVICE_PORT
+              value: "5000"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 10
